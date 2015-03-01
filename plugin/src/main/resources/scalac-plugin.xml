@@ -1,0 +1,4 @@
+<plugin>
+  <name>tasty</name>
+  <classname>scala.tasty.internal.scalac.Plugin</classname>
+</plugin>
