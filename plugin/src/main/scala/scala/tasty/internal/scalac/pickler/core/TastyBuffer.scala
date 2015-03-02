@@ -20,7 +20,7 @@ object TastyBuffer {
 
   /** The maximal number of address bytes.
    *  Since addresses are written as base-128 natural numbers,
-   *  the value of 4 gives a maximal array size of 512M.
+   *  the value of 4 gives a maximal array size of 256M.
    */
   final val AddrWidth = 4
 }
@@ -59,6 +59,12 @@ class TastyBuffer(initialSize: Int) {
   def writeNat(x: Int): Unit =
     writeLongNat(x.toLong & 0x00000000FFFFFFFFL)
     
+  /** Write a natural number in 2's complement big endian format, base 128.
+   *  All but the last digits have bit 0x80 set.
+   */
+  def writeInt(x: Int): Unit = 
+    writeLongInt(x)
+    
   /**
    * Like writeNat, but for longs. Note that the
    * binary representation of LongNat is identical to Nat
@@ -66,14 +72,37 @@ class TastyBuffer(initialSize: Int) {
    * Int.MAX_VALUE.
    */
   def writeLongNat(x: Long): Unit = {
-    def writeNatPrefix(x: Long): Unit = {
+    def writePrefix(x: Long): Unit = {
       val y = x >>> 7
-      if (y != 0L) writeNatPrefix(y)
+      if (y != 0L) writePrefix(y)
       writeByte((x & 0x7f).toInt)
     }
     val y = x >>> 7
-    if (y != 0L) writeNatPrefix(y)
+    if (y != 0L) writePrefix(y)
     writeByte(((x & 0x7f) | 0x80).toInt)
+  }
+  
+  /** Like writeInt, but for longs */
+  def writeLongInt(x: Long): Unit = {
+    def writePrefix(x: Long): Unit = {
+      val y = x >> 7
+      if (y != 0L - ((x >> 6) & 1)) writePrefix(y)
+      writeByte((x & 0x7f).toInt)
+    }
+    val y = x >> 7
+    if (y != 0L - ((x >> 6) & 1)) writePrefix(y)
+    writeByte(((x & 0x7f) | 0x80).toInt)    
+  }
+  
+  /** Write an uncompressed Long stored in 8 bytes in big endian format */
+  def writeUncompressedLong(x: Long): Unit = {
+    var y = x
+    val bytes = new Array[Byte](8)
+    for (i <- 7 to 0 by -1) {
+      bytes(i) = (y & 0xff).toByte
+      y = y >>> 8      
+    }
+    writeBytes(bytes, 8)
   }
 
   // -- Address handling --------------------------------------------
@@ -139,6 +168,9 @@ class TastyBuffer(initialSize: Int) {
   /** Fill reserved space at address `at` with address `target` */
   def fillAddr(at: Addr, target: Addr) = 
     putNat(at, target.index, AddrWidth)
+    
+  /** Write address without leading zeroes */
+  def writeAddr(addr: Addr): Unit = writeNat(addr.index)
       
   // -- Finalization --------------------------------------------
 

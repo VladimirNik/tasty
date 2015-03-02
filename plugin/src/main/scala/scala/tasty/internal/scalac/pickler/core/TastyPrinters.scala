@@ -5,26 +5,24 @@ package core
 import util.Texts._
 
 trait TastyPrinters {
-  self: TastyNames with TastyReaders with TastyUnpicklers =>
+  self: TastyNames with TastyReaders with TastyUnpicklers with PositionUnpicklers =>
   import TastyName._
   import TastyUnpickler._
 
   class TastyPrinter(bytes: Array[Byte]) /*(implicit ctx: Context)*/ {
 
-    val reader = new TastyReader(bytes)
-    val unpickler = new TastyUnpickler(reader)
-
-    import unpickler.{tastyName, unpickled}
+    val unpickler = new TastyUnpickler(bytes)
+    import unpickler.{ tastyName, unpickle }
 
     def nameToString(name: TastyName): String = name match {
-      case Simple(name) => name.toString
+      case Simple(name)          => name.toString
       case Qualified(qual, name) => nameRefToString(qual) + "." + nameRefToString(name)
       case Signed(original, params, result) =>
         //TODO - changed from i"..." (dotty) to s"..."
         s"${nameRefToString(original)}@${params.map(nameRefToString)}%,%:${nameRefToString(result)}"
-      case Expanded(original) => nameRefToString(original) + "/EXPANDED"
-      case ModuleClass(original) => nameRefToString(original) + "/MODULECLASS"
-      case SuperAccessor(accessed) => nameRefToString(accessed) + "/SUPERACCESSOR"
+      case Expanded(original)       => nameRefToString(original) + "/EXPANDED"
+      case ModuleClass(original)    => nameRefToString(original) + "/MODULECLASS"
+      case SuperAccessor(accessed)  => nameRefToString(accessed) + "/SUPERACCESSOR"
       case DefaultGetter(meth, num) => nameRefToString(meth) + "/DEFAULTGETTER" + num
     }
 
@@ -38,32 +36,26 @@ trait TastyPrinters {
       println("Names:")
       printNames()
       println("Trees:")
-      unpickled(new TreeUnpickler)
+      unpickle(new TreeSectionUnpickler)
+      //TODO - fix PositionSectionUnpickler
+      /*unpickle(new PositionSectionUnpickler)*/
     }
 
-    class TreeUnpickler extends SectionUnpickler[Text]("ASTs") {
-
+    class TreeSectionUnpickler extends SectionUnpickler[Unit]("ASTs") {
       import PickleFormat._
-
-      def unpickle(reader: TastyReader, tastyName: TastyName.Table): Text = {
+      def unpickle(reader: TastyReader, tastyName: TastyName.Table): Unit = {
         import reader._
-        val sb = new StringBuilder(s"${reader.end.index - reader.from.index} bytes of AST:")
         var indent = 0
-        def newLine() = print(f"\n ${currentAddr.index - from.index}%5d:" + " " * indent)
+        def newLine() = print(f"\n ${index(currentAddr) - index(startAddr)}%5d:" + " " * indent)
         def printNat() = print(" " + readNat())
         def printName() = {
           val idx = readNat()
-          print(" ");
-          print(idx);
-          print("[");
-          print(nameRefToString(NameRef(idx)));
-          print("]")
+          print(" "); print(idx); print("["); print(nameRefToString(NameRef(idx))); print("]")
         }
         def printTree(): Unit = {
           newLine()
           val tag = readByte()
-          print(" ");
-          print(astTagToString(tag))
+          print(" "); print(astTagToString(tag))
           indent += 2
           if (tag >= firstLengthTreeTag) {
             val len = readNat()
@@ -75,15 +67,13 @@ trait TastyPrinters {
                 printName()
               case RENAMED =>
                 printName(); printName()
-              case VALDEF | DEFDEF | TYPEDEF | TYPEPARAM | PARAM | NAMEDARG | BIND | REFINEDtype =>
+              case VALDEF | DEFDEF | TYPEDEF | TYPEPARAM | PARAM | NAMEDARG | SELFDEF | BIND | REFINEDtype =>
                 printName(); printTrees()
               case RETURN =>
                 printNat(); printTrees()
               case METHODtype | POLYtype =>
                 printTree()
-                until(end) {
-                  printName(); printTree()
-                }
+                until(end) { printName(); printTree() }
               case PARAMtype =>
                 printNat(); printNat()
               case _ =>
@@ -93,30 +83,38 @@ trait TastyPrinters {
               println(s"incomplete read, current = $currentAddr, end = $end")
               skipTo(currentAddr)
             }
-          }
-          else if (tag >= firstTreeNatTreeTag) {
-            printTree()
-            newLine()
+          } else if (tag >= firstNatASTTreeTag) {
             tag match {
               case IDENT | SELECT | TERMREF | TYPEREF => printName()
-              case _ => printNat()
+              case _                                  => printNat()
             }
-          }
-          else if (tag >= firstNatTreeTag)
+            printTree()
+          } else if (tag >= firstNatTreeTag)
             tag match {
-              case TERMREFstatic | TYPEREFstatic | STRINGconst => printName()
-              case _ => printNat()
+              case TERMREFpkg | TYPEREFpkg | STRINGconst => printName()
+              case _                                     => printNat()
             }
           indent -= 2
         }
-        println(s"base = $currentAddr")
-        while (!atEnd) {
+        //TODO - changed from i"..." (dotty) to s"..."
+        println(s"start = ${reader.startAddr}, base = $base, current = $currentAddr, end = $endAddr")
+        println(s"${endAddr.index - startAddr.index} bytes of AST, base = $currentAddr")
+        while (!isAtEnd) {
           printTree()
           newLine()
         }
-        sb.toString
       }
     }
 
+    //TODO - fix PositionUnpickler for Scala
+//    class PositionSectionUnpickler extends SectionUnpickler[Unit]("Positions") {
+//      def unpickle(reader: TastyReader, tastyName: TastyName.Table): Unit = {
+//        print(s"${reader.endAddr.index - reader.currentAddr.index}")
+//        val (totalRange, positions) = new PositionUnpickler(reader).unpickle()
+//        println(s" position bytes in $totalRange:")
+//        val sorted = positions.toSeq.sortBy(_._1.index)
+//        for ((addr, pos) <- sorted) println(s"${addr.index}: ${offsetToInt(pos.start)} .. ${pos.end}")
+//      }
+//    }
   }
 }
