@@ -93,7 +93,7 @@ trait TastyReaders {
     /** Read a long integer number in 2's complement big endian format, base 128. */
     def readLongInt(): Long = {
       var b = bytes(bp)
-      var x = (b << 1).toByte >> 1 // sign extend with bit 6.
+      var x: Long = (b << 1).toByte >> 1 // sign extend with bit 6.
       bp += 1
       while ((b & 0x80) == 0) {
         b = bytes(bp)
@@ -124,7 +124,7 @@ trait TastyReaders {
     def readEnd(): Addr = addr(readNat() + bp)
 
     /** Set read position to the one pointed to by `addr` */
-    def skipTo(addr: Addr): Unit =
+    def goto(addr: Addr): Unit =
       bp = index(addr)
 
     /** Perform `op` until `end` address is reached and collect results in a list. */

@@ -9,124 +9,128 @@ single byte tag. Non-terminals are mixed case. Prefixes of the form
 lower case letter*_ are for explanation of semantic content only, they
 can be dropped without changing the grammar.
 Micro-syntax:
-  LongNat       = Digit* StopDigit        // big endian, value fits in a Long without overflow
-  LongInt       = LongNat                 // big endian 2's complement, value fits in a Long without overflow
-  Nat           = LongNat                 // value fits in an Int without overflow
-  Int           = LongInt                 // value fits in an Int without overflow
+  LongInt       = Digit* StopDigit        // big endian 2's complement, value fits in a Long w/o overflow
+  Int           = LongInt                 // big endian 2's complement, fits in an Int w/o overflow
+  Nat           = LongInt                 // non-negative value, fits in an Int without overflow
   Digit         = 0 | ... | 127
   StopDigit     = 128 | ... | 255         // value = digit - 128
 Macro-format:
-  File          = Header majorVersion_Nat minorVersion_Nat UUID nameTable_Length Name* Section*
+  File          = Header majorVersion_Nat minorVersion_Nat UUID
+                  nameTable_Length Name* Section*
   Header        = "5CA1AB1F"
-  UUID          = Byte*16
+  UUID          = Byte*16                // random UUID
   Section       = NameRef Length Bytes
   Length        = Nat                    // length of rest of entry in bytes
-  Name          = UTF8          Length UTF8-CodePoint*
-                  QUALIFIED     Length qualified_NameRef selector_NameRef
-                  SIGNED        Length original_NameRef resultSig_NameRef paramSig_NameRef*
-                  EXPANDED      Length original_NameRef
-                  MODULECLASS   Length module_NameRef
-                  SUPERACCESSOR Length accessed_NameRef
-                  DEFAULTGETTER Length method_NameRef paramNumber_Nat
+  Name          = UTF8           Length UTF8-CodePoint*
+                  QUALIFIED      Length qualified_NameRef selector_NameRef
+                  SIGNED         Length original_NameRef resultSig_NameRef paramSig_NameRef*
+                  EXPANDED       Length original_NameRef
+                  MODULECLASS    Length module_NameRef
+                  SUPERACCESSOR  Length accessed_NameRef
+                  DEFAULTGETTER  Length method_NameRef paramNumber_Nat
+                  SHADOWED       Length original_NameRef
+                  MANGLED        Length mangle_NameRef name_NameRef
                   ...
   NameRef       = Nat                    // ordinal number of name in name table, starting from 1.
 Note: Unqualified names in the name table are strings. The context decides whether a name is
 a type-name or a term-name. The same string can represent both.
 Standard-Section: "ASTs" TopLevelStat*
-  TopLevelStat  = PACKAGE       Length Path TopLevelStat*
+  TopLevelStat  = PACKAGE        Length Path TopLevelStat*
                   Stat
   Stat          = Term
-                  VALDEF        Length NameRef Type rhs_Tree Modifier*
-                  DEFDEF        Length NameRef TypeParam* Params* return_Type rhs_Tree
-                                       Modifier*
-                  TYPEDEF       Length NameRef (Type | Template) Modifier*
-                  IMPORT        Length qual_Term Selector*
-  TypeParam     = TYPEPARAM     Length NameRef Type Modifier*
-  Params        = PARAMS        Length Param*
-  Param         = PARAM         Length NameRef Type Modifier*
-  Template      = TEMPLATE      Length TypeParam* Param* Parent* Self? Stat* // Stat* always starts with the primary constructor.
+                  VALDEF         Length NameRef Type rhs_Term? Modifier*
+                  DEFDEF         Length NameRef TypeParam* Params* return_Type rhs_Term?
+                                        Modifier*
+                  TYPEDEF        Length NameRef (Type | Template) Modifier*
+                  IMPORT         Length qual_Term Selector*
+  Selector      = IMPORTED              name_NameRef
+                  RENAMED        Length from_NameRef to_NameRef
+                                 // Imports are for scala.meta, they are not used in the backend
+  TypeParam     = TYPEPARAM      Length NameRef Type Modifier*
+  Params        = PARAMS         Length Param*
+  Param         = PARAM          Length NameRef Type rhs_Term? Modifier*  // rhs_Term is present in the case of an aliased class parameter
+  Template      = TEMPLATE       Length TypeParam* Param* Parent* Self? Stat* // Stat* always starts with the primary constructor.
   Parent        = Application
                   Type
-  Self          = SELFDEF       Length NameRef Type
-  Selector      = IMPORTED      Length name_NameRef
-                  RENAMED       Length from_NameRef to_NameRef
+  Self          = SELFDEF               selfName_NameRef selfType_Type
   Term          = Path
                   Application
-                  IDENT                NameRef Type
-                  SELECT               possiblySigned_NameRef qual_Term
-                  SUPER         Length this_Term mixinTrait_Type?
-                  NEW           Length cls_Type
-                  PAIR          Length left_Term right_Term
-                  TYPED         Length expr_Term ascription_Type
-                  NAMEDARG      Length paramName_NameRef arg_Term
-                  ASSIGN        Length lhs_Term rhs_Term
-                  BLOCK         Length expr_Term Stat*
-                  IF            Length cond_Term then_Term else_Term
-                  CLOSURE       Length meth_Term target_Type env_Term*
-                  MATCH         Length sel_Term CaseDef*
-                  RETURN        Length meth_ASTRef expr_Term?
-                  TRY           Length expr_Term CaseDef* finalizer_Term?
-                  THROW         Length expr_Term
-                  REPEATED      Length elem_Term*
-                  BIND          Length boundName_NameRef patType_Type pat_Term
-                  ALTERNATIVE   Length alt_Term*
-                  UNAPPLY       Length fun_Term ImplicitArg* pat_Type pat_Term*
+                  IDENT                 NameRef Type     // used when ident’s type is not a TermRef
+                  SELECT                possiblySigned_NameRef qual_Term
+                  NEW                   cls_Type
+                  SUPER          Length this_Term mixinTrait_Type?
+                  PAIR           Length left_Term right_Term
+                  TYPED          Length expr_Term ascription_Type
+                  NAMEDARG       Length paramName_NameRef arg_Term
+                  ASSIGN         Length lhs_Term rhs_Term
+                  BLOCK          Length expr_Term Stat*
+                  IF             Length cond_Term then_Term else_Term
+                  CLOSURE        Length meth_Term target_Type env_Term*
+                  MATCH          Length sel_Term CaseDef*
+                  RETURN         Length meth_ASTRef expr_Term?
+                  TRY            Length expr_Term CaseDef* finalizer_Term?
+                  REPEATED       Length elem_Term*
+                  BIND           Length boundName_NameRef patType_Type pat_Term
+                  ALTERNATIVE    Length alt_Term*
+                  UNAPPLY        Length fun_Term ImplicitArg* pat_Type pat_Term*
                   EMPTYTREE
-  Application   = APPLY         Length fn_Term arg_Term*
-                  TYPEAPPLY     Length fn_Term arg_Type*
-  CaseDef       = CASEDEF       Length pat_Tree rhs_Tree guard_Tree?
-  ImplicitArg   = IMPLICITARG   Length arg_Tree
-  Annotation    = ANNOTATION    Length tycon_Symbol fullAnnotation_Term
+                  SHARED                term_ASTRef
+  Application   = APPLY          Length fn_Term arg_Term*
+                  TYPEAPPLY      Length fn_Term arg_Type*
+  CaseDef       = CASEDEF        Length pat_Term rhs_Tree guard_Tree?
+  ImplicitArg   = IMPLICITARG           arg_Term
   ASTRef        = Nat                             // byte position in AST payload
   Path          = Constant
-                  TERMREFdirect        sym_ASTRef
-                  TERMREFsymbol        sym_ASTRef qual_Type
-                  TERMREFpkg           fullyQualified_NameRef
-                  TERMREF              possiblySigned_NameRef qual_Type
-                  THIS          Length clsRef_Type
-                  SKOLEMtype           refinedType_ASTref
-                  SHARED               path_ASTRef
+                  TERMREFdirect         sym_ASTRef
+                  TERMREFsymbol         sym_ASTRef qual_Type
+                  TERMREFpkg            fullyQualified_NameRef
+                  TERMREF               possiblySigned_NameRef qual_Type
+                  THIS                  clsRef_Type
+                  SKOLEMtype            refinedType_ASTRef
+                  SHARED                path_ASTRef
   Constant      = UNITconst
                   FALSEconst
                   TRUEconst
-                  BYTEconst            Int
-                  SHORTconst           Int
-                  CHARconst            Nat
-                  INTconst             Int
-                  LONGconst            LongInt
-                  FLOATconst           Int
-                  DOUBLEconst          LongInt
-                  STRINGconst          NameRef
+                  BYTEconst             Int
+                  SHORTconst            Int
+                  CHARconst             Nat
+                  INTconst              Int
+                  LONGconst             LongInt
+                  FLOATconst            Int
+                  DOUBLEconst           LongInt
+                  STRINGconst           NameRef
                   NULLconst
-                  CLASSconst    Length Type
-                  ENUMconst     Length Path
+                  CLASSconst            Type
+                  ENUMconst             Path
   Type          = Path
-                  TYPEREFdirect        sym_ASTRef
-                  TYPEREFsymbol        sym_ASTRef qual_Type
-                  TYPEREFpkg           fullyQualified_NameRef
-                  TYPEREF              possiblySigned_NameRef qual_Type
-                  SUPERtype     Length this_Type underlying_Type
-                  REFINEDtype   Length underlying_Type refinement_NameRef info_Type
-                  APPLIEDtype   Length tycon_Type arg_Type*
-                  TYPEBOUNDS    Length low_Type high_Type
-                  TYPEALIAS     Length alias_Type
-                  ANNOTATED     Length fullAnnotation_Term underlying_Type
-                  ANDtype       Length left_Type right_Type
-                  ORtype        Length left_Type right_Type
-                  BIND          Length boundName_NameRef underlying_Type selfRef_Type
-                  BYNAMEtype    Length underlying_Type
-                  POLYtype      Length result_Type NamesTypes      // needed for refinements
-                  METHODtype    Length result_Type NamesTypes      // needed for refinements
-                  PARAMtype     Length binder_ASTref paramNum_Nat  // needed for refinements
+                  TYPEREFdirect         sym_ASTRef
+                  TYPEREFsymbol         sym_ASTRef qual_Type
+                  TYPEREFpkg            fullyQualified_NameRef
+                  TYPEREF               possiblySigned_NameRef qual_Type
+                  SUPERtype      Length this_Type underlying_Type
+                  REFINEDtype    Length underlying_Type refinement_NameRef info_Type
+                  APPLIEDtype    Length tycon_Type arg_Type*
+                  TYPEBOUNDS     Length low_Type high_Type
+                  TYPEALIAS      Length alias_Type (COVARIANT | CONTRAVARIANT)?
+                  ANNOTATED      Length fullAnnotation_Term underlying_Type
+                  ANDtype        Length left_Type right_Type
+                  ORtype         Length left_Type right_Type
+                  BIND           Length boundName_NameRef bounds_Type selfRef_Type
+                                        // for type-variables defined in a type pattern
+                                        // bounds = type bounds, selfRef = reference to type itself.                  
+                  BYNAMEtype            underlying_Type
+                  POLYtype       Length result_Type NamesTypes      // needed for refinements
+                  METHODtype     Length result_Type NamesTypes      // needed for refinements
+                  PARAMtype      Length binder_ASTref paramNum_Nat  // needed for refinements
                   NOTYPE
-                  SHARED               type_ASTRef
+                  SHARED                type_ASTRef
   NamesTypes    = ParamType*
   NameType      = paramName_NameRef typeOrBounds_ASTRef
   Modifier      = PRIVATE
-                  INTERNAL            // package private
+                  INTERNAL              // package private
                   PROTECTED
-                  PRIVATEqualified     Length qualifier_Type    // will be dropped
-                  PROTECTEDqualified   Length qualifier_Type  // will be dropped
+                  PRIVATEqualified     qualifier_Type   // will be dropped
+                  PROTECTEDqualified   qualifier_Type   // will be dropped
                   ABSTRACT
                   FINAL
                   SEALED
@@ -134,31 +138,32 @@ Standard-Section: "ASTs" TopLevelStat*
                   IMPLICIT
                   LAZY
                   OVERRIDE
-                  INLINE
-                  ABSOVERRIDE         // abstract override
-                  STATIC            // mapped to static Java member
-                  MODULE            // an object or its class
-                  TRAIT            
-                  LOCAL           // private[this] or protected[this]
-                  SYNTHETIC         // generated by Scala compiler
-                  ARTIFACT            // to be tagged Java Synthetic
-                  MUTABLE             // a var
-                  LABEL           // method generated as a label
+                  INLINE                // macro
+                  ABSOVERRIDE           // abstract override
+                  STATIC                // mapped to static Java member
+                  MODULE                // an object or its class
+                  TRAIT                 // a trait
+                  LOCAL                 // private[this] or protected[this]
+                  SYNTHETIC             // generated by Scala compiler
+                  ARTIFACT              // to be tagged Java Synthetic
+                  MUTABLE               // a var
+                  LABEL                 // method generated as a label
                   FIELDaccessor         // getter or setter
-                  PARAMaccessor         // getter or setter for class param
                   CASEaccessor          // getter for case class param
-                  COVARIANT         // type param marked “+”
+                  COVARIANT             // type param marked “+”
                   CONTRAVARIANT         // type param marked “-”
-                  SCALA2X           // Imported from Scala2.x
-                  DEFAULTparameterized        // Method with default params
-                  DEFAULTinit         // variable with “_” initializer
-                  INSUPERCALL         // defined the argument of a constructor supercall
+                  SCALA2X               // Imported from Scala2.x
+                  DEFAULTparameterized  // Method with default params
+                  DEFAULTinit           // variable with “_” initializer
+                  INSUPERCALL           // defined in the argument of a constructor supercall
                   Annotation
-Note: Tree tags are grouped into 4 categories that determine what follows, and thus allow to compute the size of the tagged tree in a generic way.
+  Annotation    = ANNOTATION     Length tycon_Type fullAnnotation_Term
+Note: Tree tags are grouped into 5 categories that determine what follows, and thus allow to compute the size of the tagged tree in a generic way.
   Category 1 (tags 0-63)   :  tag
-  Category 2 (tags 64-99)  :  tag Nat
-  Category 3 (tags 100-127):  tag Nat AST
-  Category 4 (tags 128-255):  tag Length <payload>
+  Category 2 (tags 64-95)  :  tag Nat
+  Category 3 (tags 96-111) :  tag AST
+  Category 4 (tags 112-127):  tag Nat AST
+  Category 5 (tags 128-255):  tag Length <payload>
 Standard Section: "Positions" sourceLength_Nat Assoc*
   Assoc         = addr_Delta offset_Delta offset_Delta?
                                             // addr_Delta      :
@@ -179,7 +184,7 @@ object PickleFormat {
 
   final val header = "5CA1AB1F"
   final val MajorVersion = 0
-  final val MinorVersion = 4
+  final val MinorVersion = 5
 
   // Name tags
 
@@ -190,10 +195,10 @@ object PickleFormat {
   final val MODULECLASS = 5
   final val SUPERACCESSOR = 6
   final val DEFAULTGETTER = 7
+  final val SHADOWED = 8
 
 // AST tags
 
-  final val EMPTYTREE = 0
   final val NOTYPE = 1
   final val UNITconst = 2
   final val FALSEconst = 3
@@ -220,14 +225,13 @@ object PickleFormat {
   final val MUTABLE = 24
   final val LABEL = 25
   final val FIELDaccessor = 26
-  final val PARAMaccessor = 27
-  final val CASEaccessor = 28
-  final val COVARIANT = 29
-  final val CONTRAVARIANT = 30
-  final val SCALA2X = 31
-  final val DEFAULTparameterized = 32
-  final val DEFAULTinit = 33
-  final val INSUPERCALL = 34
+  final val CASEaccessor = 27
+  final val COVARIANT = 28
+  final val CONTRAVARIANT = 29
+  final val SCALA2X = 30
+  final val DEFAULTparameterized = 31
+  final val DEFAULTinit = 32
+  final val INSUPERCALL = 33
 
   final val SHARED = 64
   final val TERMREFdirect = 65
@@ -243,13 +247,24 @@ object PickleFormat {
   final val FLOATconst = 75
   final val DOUBLEconst = 76
   final val STRINGconst = 77
+  final val IMPORTED = 78
+  
+  final val THIS = 96
+  final val CLASSconst = 97
+  final val ENUMconst = 98
+  final val BYNAMEtype = 99
+  final val NEW = 100
+  final val IMPLICITarg = 101
+  final val PRIVATEqualified = 102
+  final val PROTECTEDqualified = 103
 
-  final val IDENT = 100
-  final val SELECT = 101
-  final val TERMREFsymbol = 102
-  final val TERMREF = 103
-  final val TYPEREFsymbol = 104
-  final val TYPEREF = 105
+  final val IDENT = 112
+  final val SELECT = 113
+  final val TERMREFsymbol = 114
+  final val TERMREF = 115
+  final val TYPEREFsymbol = 116
+  final val TYPEREF = 117
+  final val SELFDEF = 118
 
   final val PACKAGE = 128
   final val VALDEF = 129
@@ -258,58 +273,82 @@ object PickleFormat {
   final val IMPORT = 132
   final val TYPEPARAM = 133
   final val PARAMS = 134
-  final val PARAM = 135
-  final val IMPORTED = 136
-  final val RENAMED = 137
-  final val APPLY = 138
-  final val TYPEAPPLY = 139
-  final val NEW = 140
-  final val PAIR = 141
-  final val TYPED = 142
-  final val NAMEDARG = 143
-  final val ASSIGN = 144
-  final val BLOCK = 145
-  final val IF = 146
-  final val CLOSURE = 147
-  final val MATCH = 148
-  final val RETURN = 149
-  final val TRY = 150
-  final val THROW = 151
-  final val REPEATED = 152
-  final val BIND = 153
-  final val ALTERNATIVE = 154
-  final val UNAPPLY = 155
-  final val ANNOTATED = 156
-  final val CASEDEF = 157
-  final val IMPLICITarg = 158
-  final val TEMPLATE = 159
-  final val SELFDEF = 160
-  final val THIS = 161
-  final val SUPER = 162
-  final val CLASSconst = 163
-  final val ENUMconst = 164
-  final val SUPERtype = 165
-  final val REFINEDtype = 166
-  final val APPLIEDtype = 167
-  final val TYPEBOUNDS = 168
-  final val TYPEALIAS = 169
-  final val ANDtype = 170
-  final val ORtype = 171
-  final val BYNAMEtype = 172
-  final val METHODtype = 173
-  final val POLYtype = 174
-  final val PARAMtype = 175
-  final val IMPLICITARG = 176
-  final val ANNOTATION = 177
-  final val PRIVATEqualified = 178
-  final val PROTECTEDqualified = 179
+  final val PARAM = 136
+  final val RENAMED = 138
+  final val APPLY = 139
+  final val TYPEAPPLY = 140
+  final val PAIR = 142
+  final val TYPED = 143
+  final val NAMEDARG = 144
+  final val ASSIGN = 145
+  final val BLOCK = 146
+  final val IF = 147
+  final val CLOSURE = 148
+  final val MATCH = 149
+  final val RETURN = 150
+  final val TRY = 151
+  final val REPEATED = 153
+  final val BIND = 154
+  final val ALTERNATIVE = 155
+  final val UNAPPLY = 156
+  final val ANNOTATED = 157
+  final val CASEDEF = 158
+  final val TEMPLATE = 160
+  final val SUPER = 163
+  final val SUPERtype = 166
+  final val REFINEDtype = 167
+  final val APPLIEDtype = 168
+  final val TYPEBOUNDS = 169
+  final val TYPEALIAS = 170
+  final val ANDtype = 171
+  final val ORtype = 172
+  final val METHODtype = 174
+  final val POLYtype = 175
+  final val PARAMtype = 176
+  final val ANNOTATION = 178
 
-  final val firstSimpleTreeTag = EMPTYTREE
+  final val firstSimpleTreeTag = NOTYPE
   final val firstNatTreeTag = SHARED
+  final val firstASTTreeTag = THIS
   final val firstNatASTTreeTag = IDENT
   final val firstLengthTreeTag = PACKAGE
 
   def isParamTag(tag: Int) = tag == PARAM || tag == TYPEPARAM
+
+  def isModifierTag(tag: Int) = tag match {
+    case PRIVATE
+       | INTERNAL
+       | PROTECTED
+       | ABSTRACT
+       | FINAL
+       | SEALED
+       | CASE
+       | IMPLICIT
+       | LAZY
+       | OVERRIDE
+       | INLINE
+       | ABSOVERRIDE
+       | STATIC
+       | MODULE
+       | TRAIT
+       | LOCAL
+       | SYNTHETIC
+       | ARTIFACT
+       | MUTABLE
+       | LABEL
+       | FIELDaccessor
+       | CASEaccessor
+       | COVARIANT
+       | CONTRAVARIANT
+       | SCALA2X
+       | DEFAULTparameterized
+       | DEFAULTinit
+       | INSUPERCALL
+       | ANNOTATION
+       | PRIVATEqualified
+       | PROTECTEDqualified => true
+    case _ => false
+   }
 
   def nameTagToString(tag: Int): String = tag match {
     case UTF8 => "UTF8"
@@ -322,7 +361,6 @@ object PickleFormat {
   }
 
   def astTagToString(tag: Int): String = tag match {
-    case EMPTYTREE => "EMPTYTREE"
     case NOTYPE => "NOTYPE"
     case UNITconst => "UNITconst"
     case FALSEconst => "FALSEconst"
@@ -349,7 +387,6 @@ object PickleFormat {
     case MUTABLE => "MUTABLE"
     case LABEL => "LABEL"
     case FIELDaccessor => "FIELDaccessor"
-    case PARAMaccessor => "PARAMaccessor"
     case CASEaccessor => "CASEaccessor"
     case COVARIANT => "COVARIANT"
     case CONTRAVARIANT => "CONTRAVARIANT"
@@ -403,7 +440,6 @@ object PickleFormat {
     case MATCH => "MATCH"
     case RETURN => "RETURN"
     case TRY => "TRY"
-    case THROW => "THROW"
     case REPEATED => "REPEATED"
     case BIND => "BIND"
     case ALTERNATIVE => "ALTERNATIVE"
@@ -428,7 +464,6 @@ object PickleFormat {
     case POLYtype => "POLYtype"
     case METHODtype => "METHODtype"
     case PARAMtype => "PARAMtype"
-    case IMPLICITARG => "IMPLICITARG"
     case ANNOTATION => "ANNOTATION"
     case PRIVATEqualified => "PRIVATEqualified"
     case PROTECTEDqualified => "PROTECTEDqualified"

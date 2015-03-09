@@ -47,7 +47,7 @@ trait TastyUnpicklers {
       val end = start + length
       val result = tag match {
         case UTF8 =>
-          skipTo(end)
+          goto(end)
           Simple(termName(bytes, start.index, length))
         case QUALIFIED =>
           Qualified(readNameRef(), readNameRef())
@@ -64,6 +64,8 @@ trait TastyUnpicklers {
           SuperAccessor(readNameRef())
         case DEFAULTGETTER =>
           DefaultGetter(readNameRef(), readNat())
+        case SHADOWED =>
+          Shadowed(readNameRef())
       }
       assert(currentAddr == end, s"bad name $result $start $currentAddr $end")
       result
@@ -89,7 +91,7 @@ trait TastyUnpicklers {
         val secName = readString()
         val secEnd = readEnd()
         sectionReader(secName) = new TastyReader(bytes, currentAddr.index, secEnd.index, currentAddr.index)
-        skipTo(secEnd)
+        goto(secEnd)
       }
     }
 

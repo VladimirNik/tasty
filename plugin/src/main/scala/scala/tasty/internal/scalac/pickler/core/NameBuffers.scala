@@ -5,7 +5,7 @@ package core
 import TastyBuffer._
 import scala.io.Codec
 import PickleFormat._
-import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable
 import util.TastyUtils
 
 //TODO - fix - remove TastyUtils from inheritance
@@ -17,7 +17,7 @@ trait NameBuffers extends TastyUtils {
 
   class NameBuffer extends TastyBuffer(100000) {
 
-    private val nameRefs = new LinkedHashMap[TastyName, NameRef]
+    private val nameRefs = new mutable.LinkedHashMap[TastyName, NameRef]
 
     def nameIndex(name: TastyName): NameRef = nameRefs.get(name) match {
       case Some(ref) =>
@@ -27,8 +27,23 @@ trait NameBuffers extends TastyUtils {
         nameRefs(name) = ref
         ref
     }
-    def nameIndex(name: Name): NameRef = nameIndex(Simple(name.toTermName))
+    def nameIndex(name: Name): NameRef = {
+      val tname =
+        if (isShadowedName(name)) Shadowed(nameIndex(revertShadowed(name)))
+        else Simple(name.toTermName)
+      nameIndex(tname)
+    }
+
     def nameIndex(str: String): NameRef = nameIndex(str.toTermName)
+
+    def fullNameIndex(name: Name): NameRef = {
+      val pos = name.lastIndexOf('.')
+      if (pos > 0)
+        //TODO - take and drop are from TastyUtils
+        nameIndex(Qualified(fullNameIndex(take(name)(pos)), nameIndex(drop(name)(pos + 1))))
+      else
+        nameIndex(name)
+    }
 
     private def withLength(op: => Unit): Unit = {
       val lengthAddr = currentAddr
@@ -67,6 +82,9 @@ trait NameBuffers extends TastyUtils {
       case DefaultGetter(method, paramNumber) =>
         writeByte(DEFAULTGETTER)
         withLength { writeNameRef(method); writeNat(paramNumber) }
+      case Shadowed(original) =>
+        writeByte(SHADOWED)
+        withLength { writeNameRef(original) }
     }
 
     override def assemble(): Unit = {

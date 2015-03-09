@@ -14,7 +14,7 @@ trait PositionPicklers extends TastyUtils {
 
   val global: Global
   import global._
-  
+
   def exists(pos: Position) = pos != NoPosition
 
   object PositionPickler {

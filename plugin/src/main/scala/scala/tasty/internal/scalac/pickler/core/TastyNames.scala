@@ -22,6 +22,7 @@ trait TastyNames {
     case class ModuleClass(module: NameRef) extends TastyName
     case class SuperAccessor(accessed: NameRef) extends TastyName
     case class DefaultGetter(method: NameRef, num: Int) extends TastyName
+    case class Shadowed(original: NameRef) extends TastyName
 
     class Table extends (NameRef => TastyName) {
       private val names = new mutable.ArrayBuffer[TastyName]

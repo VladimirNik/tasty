@@ -63,12 +63,12 @@ trait TastyPrinters {
             val end = currentAddr + len
             def printTrees() = until(end)(printTree())
             tag match {
-              case IMPORTED =>
-                printName()
               case RENAMED =>
                 printName(); printName()
-              case VALDEF | DEFDEF | TYPEDEF | TYPEPARAM | PARAM | NAMEDARG | SELFDEF | BIND | REFINEDtype =>
+              case VALDEF | DEFDEF | TYPEDEF | TYPEPARAM | PARAM | NAMEDARG | BIND =>
                 printName(); printTrees()
+              case REFINEDtype =>
+                printTree(); printName(); printTrees()
               case RETURN =>
                 printNat(); printTrees()
               case METHODtype | POLYtype =>
@@ -81,18 +81,20 @@ trait TastyPrinters {
             }
             if (currentAddr != end) {
               println(s"incomplete read, current = $currentAddr, end = $end")
-              skipTo(currentAddr)
+              goto(end)
             }
           } else if (tag >= firstNatASTTreeTag) {
             tag match {
-              case IDENT | SELECT | TERMREF | TYPEREF => printName()
-              case _                                  => printNat()
+              case IDENT | SELECT | TERMREF | TYPEREF | SELFDEF => printName()
+              case _ => printNat()
             }
             printTree()
-          } else if (tag >= firstNatTreeTag)
+          } else if (tag >= firstASTTreeTag)
+            printTree()
+          else if (tag >= firstNatTreeTag)
             tag match {
-              case TERMREFpkg | TYPEREFpkg | STRINGconst => printName()
-              case _                                     => printNat()
+              case TERMREFpkg | TYPEREFpkg | STRINGconst | IMPORTED => printName()
+              case _ => printNat()
             }
           indent -= 2
         }
@@ -106,7 +108,7 @@ trait TastyPrinters {
       }
     }
 
-    //TODO - fix PositionUnpickler for Scala
+      //TODO - fix PositionUnpickler for Scala
 //    class PositionSectionUnpickler extends SectionUnpickler[Unit]("Positions") {
 //      def unpickle(reader: TastyReader, tastyName: TastyName.Table): Unit = {
 //        print(s"${reader.endAddr.index - reader.currentAddr.index}")

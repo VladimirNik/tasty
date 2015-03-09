@@ -4,14 +4,15 @@ import scala.reflect.ClassTag
 
 object Util {
 
-  /** The index `i` in `candidates.indices` such that `candidates(i) <= x` and
-    *  `candidates(i)` is closest to `x`, determined by binary search, or -1
-    *  if `x < candidates(0)`.
-    *  @param  hint   If between 0 and `candidates.length` use this
-    *                 as the first search point, otherwise use
-    *                 `candidates.length/2`.
-    *  @pre   candidates is sorted
-    */
+  /**
+   * The index `i` in `candidates.indices` such that `candidates(i) <= x` and
+   *  `candidates(i)` is closest to `x`, determined by binary search, or -1
+   *  if `x < candidates(0)`.
+   *  @param  hint   If between 0 and `candidates.length` use this
+   *                 as the first search point, otherwise use
+   *                 `candidates.length/2`.
+   *  @pre   candidates is sorted
+   */
   def bestFit(candidates: Array[Int], length: Int, x: Int, hint: Int = -1): Int = {
     def recur(lo: Int, hi: Int, mid: Int): Int =
       if (x < candidates(mid))
