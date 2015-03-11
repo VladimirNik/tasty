@@ -69,11 +69,11 @@ trait TreePicklers extends NameBuffers
 
     private def pickleName(name: Name) = writeNat(nameIndex(name).index)
     private def pickleName(name: TastyName) = writeNat(nameIndex(name).index)
-//    private def pickleNameAndSig(name: Name, sig: Signature) = {
-//      val Signature(params, result) = sig
-//      pickleName(TastyName.Signed(nameIndex(name), params.map(fullNameIndex), fullNameIndex(result)))
-//    }
-//
+    private def pickleNameAndSig(name: Name, sig: Signature) = {
+      val Signature(params, result) = sig
+      pickleName(TastyName.Signed(nameIndex(name), params.map(fullNameIndex), fullNameIndex(result)))
+    }
+
     private def pickleSymRef(sym: Symbol)/*(implicit ctx: Context)*/ = symRefs.get(sym) match {
       case Some(label) =>
         if (label != NoAddr) writeRef(label) else pickleForwardSymRef(sym)
@@ -138,8 +138,9 @@ trait TreePicklers extends NameBuffers
       }
 
       def pickleType(tpe0: Type, richTypes: Boolean = false): Unit = try {
+        //TODO - see stripTypeVar - probably not required
 //        val tpe = tpe0.stripTypeVar
-        //TODO - see stripTypeVar
+        //TODO remove val tpe = tpe0
         val tpe = tpe0
         val prev = pickledTypes.get(tpe)
         if (prev == null) {
@@ -201,6 +202,7 @@ trait TreePicklers extends NameBuffers
 //            }
           case tpe: ThisType =>
             writeByte(THIS)
+            //TODO - probably - tpe.typeOfThis
 //            pickleType(tpe.tref)
           case tpe: SuperType =>
             writeByte(SUPERtype)
@@ -299,7 +301,7 @@ trait TreePicklers extends NameBuffers
         tree match {
           case Ident(name) =>
             tree.tpe match {
-                //TODO - implement
+                //TODO - implement (what is TermRef?)
 //              case tp: TermRef => pickleType(tp)
               case _ =>
                 writeByte(IDENT)
@@ -315,9 +317,9 @@ trait TreePicklers extends NameBuffers
               case tp: NamedType if isShadowedName(tp.name)/*tp.name.isShadowedName*/ => tp.name
               case _                                       => name
             }
-//            val sig = tree.tpe.signature
-//            if (sig == Signature.NotAMethod) pickleName(realName)
-//            else pickleNameAndSig(realName, sig)
+            val sig = Signature(tree.tpe) //tree.tpe.signature
+            if (sig.notAMethod /*Signature.NotAMethod*/) pickleName(realName)
+            else pickleNameAndSig(realName, sig)
             pickleTree(qual)
           case Apply(fun, args) =>
             writeByte(APPLY)
@@ -433,19 +435,23 @@ trait TreePicklers extends NameBuffers
               pickleParams(params)
               tree.parents.foreach(pickleTree)
               //TODO - implement
+              val cinfo @ ClassInfoType(_, _, _) = tree.symbol.owner.info
 //              val cinfo @ ClassInfo(_, _, _, _, selfInfo) = tree.symbol.owner.info
-//              if ((selfInfo ne NoType) || !tree.self.isEmpty) {
+              if (/*TODO - selfInfo in Scala? (selfInfo ne NoType) ||*/ !tree.self.isEmpty) {
                 writeByte(SELFDEF)
                 pickleName(tree.self.name)
                 withSymbolicRefsTo(tree.symbol.owner) {
+                //TODO - check what's used in the example
 //                  pickleType {
 //                    cinfo.selfInfo match {
 //                      case sym: Symbol => sym.info
 //                      case tp: Type    => tp
 //                    }
 //                  }
-//                }
+                }
               }
+              pickleStats(rest)
+              //TODO - check - probably constructor is in the rest
 //              pickleStats(tree.constr :: rest)
             }
           case Import(expr, selectors) =>

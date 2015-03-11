@@ -22,4 +22,23 @@ trait TastyUtils {
 
   //TODO - likeTyped transformation removed from revertShadowed
   def revertShadowed(name: Name): Name = (drop(name)(SHADOWED.length))
+
+  import global.{TypeName, MethodSymbol, Type, PolyType, MethodType, tpnme}
+
+  case class Signature(paramsSig: List[TypeName], resSig: TypeName) {
+    def notAMethod = paramsSig.isEmpty && resSig.isEmpty
+  }
+
+  object Signature {
+    def apply(tpe: Type): Signature = {
+      tpe match {
+        case _: MethodType | _: PolyType =>
+          //TODO - add erasure
+          val paramsSig = tpe.paramss.flatten map {_.tpe.typeSymbol.fullNameAsName('.').toTypeName}
+          val resSig = tpe.finalResultType.typeSymbol.fullNameAsName('.').toTypeName
+          Signature(paramsSig, resSig)
+        case _ => Signature(List(), tpnme.EMPTY.toTypeName)
+      }
+    }
+  }
 }
