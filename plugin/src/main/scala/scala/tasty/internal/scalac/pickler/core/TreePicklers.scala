@@ -422,6 +422,8 @@ trait TreePicklers extends NameBuffers
             pickleDef(DEFDEF, tree.symbol, tree.tpt, tree.rhs, pickleAllParams)
           case tree: TypeDef =>
             pickleDef(TYPEDEF, tree.symbol, tree.rhs)
+          case tree: ClassDef =>
+            pickleTree(tree.impl)
           case tree: Template =>
             registerDef(tree.symbol)
             writeByte(TEMPLATE)
