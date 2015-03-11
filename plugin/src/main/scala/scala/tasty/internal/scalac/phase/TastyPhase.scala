@@ -24,9 +24,9 @@ trait TastyPhase {
         println("<=== Tasty phase ===>")
         if (!unit.isJava) {
           val tree = unit.body
-          val picklers = new TreePicklers {
+          val picklers = new {
             val global: self.global.type = self.global
-          }
+          } with TreePicklers
           val pickler = new picklers.TastyPickler            
           val treePkl = new picklers.TreePickler(pickler)
           treePkl.pickle(tree :: Nil)
