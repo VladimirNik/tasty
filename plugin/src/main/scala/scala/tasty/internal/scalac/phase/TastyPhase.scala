@@ -21,16 +21,16 @@ trait TastyPhase {
 
     override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
       override def apply(unit: CompilationUnit) {
-        println("<=== Tasty phase ===>")
-        if (!unit.isJava) {
-          val tree = unit.body
-          val picklers = new {
-            val global: self.global.type = self.global
-          } with TreePicklers
-          val pickler = new picklers.TastyPickler            
-          val treePkl = new picklers.TreePickler(pickler)
-          treePkl.pickle(tree :: Nil)
-        }
+        println(s"<=== Tasty phase: ${unit.toString()} ===>")
+//        if (!unit.isJava) {
+//          val tree = unit.body
+//          val picklers = new {
+//            val global: self.global.type = self.global
+//          } with TreePicklers
+//          val pickler = new picklers.TastyPickler            
+//          val treePkl = new picklers.TreePickler(pickler)
+//          treePkl.pickle(tree :: Nil)
+//        }
       }
     }
   }
