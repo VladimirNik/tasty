@@ -17,7 +17,7 @@ object TastyBuffer {
     
     def relativeTo(base: Addr): Addr = this - base.index - AddrWidth
   }
-
+  
   val NoAddr = Addr(-1)
 
   /** The maximal number of address bytes.

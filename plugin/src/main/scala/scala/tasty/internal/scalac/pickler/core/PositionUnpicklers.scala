@@ -10,7 +10,7 @@ trait PositionUnpicklers {
   self: TastyReaders =>
 
   import scala.reflect.internal.util.Position
-    
+
   object PositionUnpickler {
     type AddrToPosition = mutable.HashMap[Addr, Position]
   }
@@ -38,6 +38,6 @@ trait PositionUnpicklers {
         curIndex += indexDelta
       }
       (Position(0, sourceLength), positions)
-    }*/
+    } */
   }
 }

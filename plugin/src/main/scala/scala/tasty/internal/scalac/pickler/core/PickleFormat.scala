@@ -182,7 +182,7 @@ Standard Section: "Positions" sourceLength_Nat Assoc*
 
 object PickleFormat {
 
-  final val header = "5CA1AB1F"
+  final val header = Array(0x5C, 0xA1, 0xAB, 0x1F)
   final val MajorVersion = 0
   final val MinorVersion = 5
 
@@ -192,14 +192,13 @@ object PickleFormat {
   final val QUALIFIED = 2
   final val SIGNED = 3
   final val EXPANDED = 4
-  final val MODULECLASS = 5
+  final val OBJECTCLASS = 5
   final val SUPERACCESSOR = 6
   final val DEFAULTGETTER = 7
   final val SHADOWED = 8
 
 // AST tags
 
-  final val NOTYPE = 1
   final val UNITconst = 2
   final val FALSEconst = 3
   final val TRUEconst = 4
@@ -217,7 +216,7 @@ object PickleFormat {
   final val INLINE = 16
   final val ABSOVERRIDE = 17
   final val STATIC = 18
-  final val MODULE = 19
+  final val OBJECT = 19
   final val TRAIT = 20
   final val LOCAL = 21
   final val SYNTHETIC = 22
@@ -230,8 +229,7 @@ object PickleFormat {
   final val CONTRAVARIANT = 29
   final val SCALA2X = 30
   final val DEFAULTparameterized = 31
-  final val DEFAULTinit = 32
-  final val INSUPERCALL = 33
+  final val INSUPERCALL = 32
 
   final val SHARED = 64
   final val TERMREFdirect = 65
@@ -283,7 +281,7 @@ object PickleFormat {
   final val ASSIGN = 145
   final val BLOCK = 146
   final val IF = 147
-  final val CLOSURE = 148
+  final val LAMBDA = 148
   final val MATCH = 149
   final val RETURN = 150
   final val TRY = 151
@@ -307,7 +305,7 @@ object PickleFormat {
   final val PARAMtype = 176
   final val ANNOTATION = 178
 
-  final val firstSimpleTreeTag = NOTYPE
+  final val firstSimpleTreeTag = UNITconst
   final val firstNatTreeTag = SHARED
   final val firstASTTreeTag = THIS
   final val firstNatASTTreeTag = IDENT
@@ -329,7 +327,7 @@ object PickleFormat {
        | INLINE
        | ABSOVERRIDE
        | STATIC
-       | MODULE
+       | OBJECT
        | TRAIT
        | LOCAL
        | SYNTHETIC
@@ -342,7 +340,6 @@ object PickleFormat {
        | CONTRAVARIANT
        | SCALA2X
        | DEFAULTparameterized
-       | DEFAULTinit
        | INSUPERCALL
        | ANNOTATION
        | PRIVATEqualified
@@ -355,13 +352,12 @@ object PickleFormat {
     case QUALIFIED => "QUALIFIED"
     case SIGNED => "SIGNED"
     case EXPANDED => "EXPANDED"
-    case MODULECLASS => "MODULECLASS"
+    case OBJECTCLASS => "OBJECTCLASS"
     case SUPERACCESSOR => "SUPERACCESSOR"
     case DEFAULTGETTER => "DEFAULTGETTER"
   }
 
   def astTagToString(tag: Int): String = tag match {
-    case NOTYPE => "NOTYPE"
     case UNITconst => "UNITconst"
     case FALSEconst => "FALSEconst"
     case TRUEconst => "TRUEconst"
@@ -379,7 +375,7 @@ object PickleFormat {
     case INLINE => "INLINE"
     case ABSOVERRIDE => "ABSOVERRIDE"
     case STATIC => "STATIC"
-    case MODULE => "MODULE"
+    case OBJECT => "OBJECT"
     case TRAIT => "TRAIT"
     case LOCAL => "LOCAL"
     case SYNTHETIC => "SYNTHETIC"
@@ -392,7 +388,6 @@ object PickleFormat {
     case CONTRAVARIANT => "CONTRAVARIANT"
     case SCALA2X => "SCALA2X"
     case DEFAULTparameterized => "DEFAULTparameterized"
-    case DEFAULTinit => "DEFAULTinit"
     case INSUPERCALL => "INSUPERCALL"
 
     case SHARED => "SHARED"
@@ -436,7 +431,7 @@ object PickleFormat {
     case ASSIGN => "ASSIGN"
     case BLOCK => "BLOCK"
     case IF => "IF"
-    case CLOSURE => "CLOSURE"
+    case LAMBDA => "LAMBDA"
     case MATCH => "MATCH"
     case RETURN => "RETURN"
     case TRY => "TRY"

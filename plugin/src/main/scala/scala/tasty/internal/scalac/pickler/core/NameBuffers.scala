@@ -74,7 +74,7 @@ trait NameBuffers extends TastyUtils {
         writeByte(EXPANDED)
         withLength { writeNameRef(original) }
       case ModuleClass(module) =>
-        writeByte(MODULECLASS)
+        writeByte(OBJECTCLASS)
         withLength { writeNameRef(module) }
       case SuperAccessor(accessed) =>
         writeByte(SUPERACCESSOR)
