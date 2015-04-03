@@ -36,6 +36,10 @@ trait TreePicklers extends NameBuffers
       fillRef(lengthAddr, currentAddr, relative = true)
     }
 
+    def addrOfSym(sym: Symbol): Option[Addr] = {
+      symRefs.get(sym)
+    }
+    
     private var makeSymbolicRefsTo: Symbol = NoSymbol
 
     /**
@@ -587,9 +591,13 @@ trait TreePicklers extends NameBuffers
 //        withLength { pickleType(ann.symbol.typeRef); pickleTree(ann.tree) }
       }
 
+      def updateMapWithDeltas[T](mp: collection.mutable.Map[T, Addr]) =
+        for (key <- mp.keysIterator.toBuffer[T]) mp(key) = adjusted(mp(key))
+      
       trees.foreach(tree => if (!tree.isEmpty) pickleTree(tree))
       assert(forwardSymRefs.isEmpty, s"unresolved symbols: ${forwardSymRefs.keySet.toList}%, %")
       compactify()
+      updateMapWithDeltas(symRefs)
     }
   }
 }
