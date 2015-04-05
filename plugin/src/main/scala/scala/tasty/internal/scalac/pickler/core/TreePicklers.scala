@@ -67,7 +67,6 @@ trait TreePicklers extends NameBuffers
       symRefs(sym) = currentAddr
       forwardSymRefs.get(sym) match {
         case Some(refs) =>
-          //TODO - add fillRef to logging
           refs.foreach(fillRef(_, currentAddr, relative = false))
           forwardSymRefs -= sym
         case None =>
@@ -90,7 +89,6 @@ trait TreePicklers extends NameBuffers
       pickleName(TastyName.Signed(nameIndex(name), params.map(fullNameIndex), fullNameIndex(result)))
     }
 
-    //TODO - add to logging
     private def pickleSymRef(sym: Symbol)/*(implicit ctx: Context)*/ = symRefs.get(sym) match {
       case Some(label) =>
         //TODO - add writeRef to logging
@@ -110,7 +108,7 @@ trait TreePicklers extends NameBuffers
       forwardSymRefs(sym) = ref :: forwardSymRefs.getOrElse(sym, Nil)
     }
 
-    var debugCond = true
+    var debugCond = false //true
     var logCond = true
   
     def setDebugCond(tr: Tree) = true /*tr match {
@@ -134,12 +132,12 @@ trait TreePicklers extends NameBuffers
     }
     
     private def writeByte(b: Int) = {
-      //log(s"astTag: ${astTagToString(b)} ($b)")
+      log(s"astTag: ${astTagToString(b)} ($b)")
       bwriteByte(b)
     }
     
     def pickle(trees: List[Tree])/*(implicit ctx: Context)*/ = {
-      println("=== PICKLING STARTED ===")
+      debug("=== PICKLING STARTED ===")
       
       def qualifiedName(sym: Symbol): TastyName =
         if (sym.isRoot || sym.owner.isRoot) TastyName.Simple(sym.name.toTermName)
@@ -203,9 +201,7 @@ trait TreePicklers extends NameBuffers
           pickledTypes.put(tpe, currentAddr)
           pickleNewType(tpe, richTypes)
         } else {
-          log(s"        SHARED")
           writeByte(SHARED)
-          //TODO - add writeRef to logging
           writeRef(prev.asInstanceOf[Addr])
         }
       } catch {
@@ -237,19 +233,18 @@ trait TreePicklers extends NameBuffers
             debug(s"   sym: ${showRaw(sym)}")
             if (sym.hasPackageFlag /*sym.is(Flags.Package)*/) {
               debug(s"     sym.is(Flags.Package): ${sym.hasPackageFlag}")
-              writeByte(if (sym.isType /*TODO - fix it tpe.isType*/) {log(s"     byte: TYPEREFpkg"); TYPEREFpkg} else {log(s"     byte: TERMREFpkg"); TERMREFpkg})
+              writeByte(if (sym.isType /*TODO - fix it tpe.isType*/) TYPEREFpkg else TERMREFpkg)
               debug(s"       tpe.isType: ${sym.isType}")
               debug(s"       qualifiedName(sym): ${qualifiedName(sym)}")
               pickleName(qualifiedName(sym))
             } else if (tpe.prefix == NoPrefix) {
               debug(s"     if tpe.prefix == NoPrefix")
               def pickleRef() = {
-                writeByte(if (sym.isType /*tpe.isType*/) {log(s"     byte: TYPEREFdirect"); TYPEREFdirect} else {log(s"     byte: TERMREFdirect"); TERMREFdirect})
+                writeByte(if (sym.isType /*tpe.isType*/) TYPEREFdirect else TERMREFdirect)
                 pickleSymRef(sym)
               }
               if (false /* TODO - how to set this condition in scala? - sym is Flags.BindDefinedType */) {
                 registerDef(sym)
-                log(s"     byte: BIND")
                 writeByte(BIND)
                 withLength {
                   pickleName(sym.name)
@@ -271,7 +266,7 @@ trait TreePicklers extends NameBuffers
                 //                debug(s"     case prefix: ThisType if prefix.cls == makeSymbolicRefsTo =>")
                 //                pickleType(NamedType.withFixedSym(tpe.prefix, tpe.symbol))
                 case _ =>
-                  writeByte(if (sym.isType /*tpe.isType*/ ) { log(s"     byte: TYPEREF"); TYPEREF } else { log(s"     byte: TERMREF"); TERMREF })
+                  writeByte(if (sym.isType /*tpe.isType*/ ) TYPEREF else TERMREF)
                   pickleName(sym.name /*tpe.name*/ ); pickleType(tpe.prefix)
               }
               //            }
@@ -280,7 +275,7 @@ trait TreePicklers extends NameBuffers
             /* TODO - this is an original else part of the dotty's TypeRef processing 
             else {
               debug(s"     else")
-              writeByte(if (sym.isType /*tpe.isType*/) {log(s"     byte: TYPEREFsymbol"); TYPEREFsymbol} else {log(s"     byte: TERMREFsymbol"); TERMREFsymbol})
+              writeByte(if (sym.isType /*tpe.isType*/) TYPEREFsymbol else TERMREFsymbol)
               pickleSymRef(sym); pickleType(tpe.prefix)
             }*/
             debug(s"     --- WithFixedSym ***")
@@ -299,7 +294,6 @@ trait TreePicklers extends NameBuffers
               debug(s"     sym.sym.isEmptyPackage: ${sym.isEmptyPackage}")
               debug(s"     sym.isEmptyPrefix: ${sym.isEmptyPrefix}")
               debug(s"     sym.isEmptyPackageClass: ${sym.isEmptyPackageClass}")
-              log(s"     byte: TERMREF");
               writeByte(TERMREF)
               debug(s"   tpe.name: ${ /*tpe*/ sym.name}")
               val sig = Signature(tpe)
@@ -312,10 +306,9 @@ trait TreePicklers extends NameBuffers
               //scala - SingleType(ThisType(java), java.lang) - in dotty should be - TypeRef(NoPrefix,lang) - WithFixedSym
               debug(s"     *** WithFixedSym (scala - SingleType) ***")
               debug(s"     sym.is(Flags.Package): ${sym.hasPackageFlag}")
-              log(s"     byte: TYPEREFpkg");
               writeByte(TYPEREFpkg) 
               //TODO - fix - originally should be:
-              //writeByte(if (sym.isType /*TODO - fix it tpe.isType*/) {log(s"     byte: TYPEREFpkg"); TYPEREFpkg } else {log(s"     byte: TERMREFpkg"); TERMREFpkg})
+              //writeByte(if (sym.isType /*TODO - fix it tpe.isType*/) TYPEREFpkg else TERMREFpkg)
               debug(s"       tpe.isType: ${sym.isType}")
               debug(s"       qualifiedName(sym): ${qualifiedName(sym)}")
               pickleName(qualifiedName(sym))
@@ -335,13 +328,12 @@ trait TreePicklers extends NameBuffers
 //                debug(s"     case prefix: ThisType if prefix.cls == makeSymbolicRefsTo =>")
 //                pickleType(NamedType.withFixedSym(tpe.prefix, tpe.symbol))
 //              case _ =>
-//                writeByte(if (tpe.isType) {log(s"     byte: TYPEREF"); TYPEREF} else {log(s"     byte: TERMREF"); TERMREF})
+//                writeByte(if (tpe.isType) TYPEREF else TERMREF)
 //                pickleName(tpe.name); pickleType(tpe.prefix)
 //            }}
 //            debug(s"     --- NamedType ***")
           case tpe: ThisType =>
             debug(s"     *** ThisType ***")
-            log(s"     byte: THIS");
             writeByte(THIS)
             debug(s"   tpe.tref: ${showRaw(tpe.typeOfThis)}")
             debug(s"   tpe.underlying: ${showRaw(tpe.underlying)}")
@@ -350,13 +342,11 @@ trait TreePicklers extends NameBuffers
             debug(s"     --- ThisType ***")
           case tpe: SuperType =>
             debug(s"     *** SuperType ***")
-            log(s"     byte: SUPERtype");
             writeByte(SUPERtype)
             withLength { pickleType(tpe.thistpe); pickleType(tpe.supertpe) }
             debug(s"     --- SuperType ***")
 //          case tpe: SkolemType =>
 //            debug(s"     *** SkolemType ***")
-//            log(s"     byte: SKOLEMtype");
 //            writeByte(SKOLEMtype)
 //            writeRef(pickledTypes.get(tpe.binder).asInstanceOf[Addr])
 //            debug(s"     --- SkolemType ***")
@@ -365,7 +355,6 @@ trait TreePicklers extends NameBuffers
 //            val args = tpe.argInfos(interpolate = false)
 //            debug(s"     args.size: ${args.size}"
 //            if (args.isEmpty) {
-//              log(s"     byte: REFINEDtype");
 //              writeByte(REFINEDtype)
 //              withLength {
 //                pickleType(tpe.parent)
@@ -373,23 +362,19 @@ trait TreePicklers extends NameBuffers
 //                pickleType(tpe.refinedInfo, richTypes = true)
 //              }
 //            } else {
-//              log(s"     byte: APPLIEDtype");
 //              writeByte(APPLIEDtype)
 //              withLength { pickleType(tpe.withoutArgs(args)); args.foreach(pickleType(_)) }
 //            }
             debug(s"     --- RefinedType ***")
 //          case tpe: TypeAlias =>
 //            debug(s"     *** TypeAlias ***")
-//            log(s"     byte: TYPEALIAS");
 //            writeByte(TYPEALIAS)
 //            withLength {
 //              pickleType(tpe.alias, richTypes)
 //              tpe.variance match {
 //                case 1  => 
-//                  log(s"     byte: COVARIANT");
 //                  writeByte(COVARIANT)
 //                case -1 => 
-//                  log(s"     byte: CONTRAVARIANT");
 //                  writeByte(CONTRAVARIANT)
 //                case 0  =>
 //              }
@@ -397,36 +382,31 @@ trait TreePicklers extends NameBuffers
 //            debug(s"     --- TypeAlias ***")
           case tpe: TypeBounds =>
             debug(s"     *** TypeBounds ***")
-            log(s"     byte: TYPEBOUNDS");
             writeByte(TYPEBOUNDS)
             withLength { pickleType(tpe.lo, richTypes); pickleType(tpe.hi, richTypes) }
             debug(s"     --- TypeBounds ***")
           case tpe: AnnotatedType =>
             debug(s"     *** AnnotatedType ***")
-            log(s"     byte: ANNOTATED");
             writeByte(ANNOTATED)
 //            withLength { pickleTree(tpe.annot.tree); pickleType(tpe.tpe, richTypes) }
             debug(s"     --- AnnotatedType ***")
 //          case tpe: AndOrType =>
 //            debug(s"     *** AndOrType ***")
-//            writeByte(if (tpe.isAnd) {log(s"     byte: ANDtype"); ANDtype} else {log(s"     byte: ORtype"); ORtype})
+//            writeByte(if (tpe.isAnd) ANDtype else ORtype)
 //            withLength { pickleType(tpe.tp1, richTypes); pickleType(tpe.tp2, richTypes) }
 //            debug(s"     --- AndOrType ***")
 //          case tpe: ExprType =>
 //            debug(s"     *** ExprType ***")
-//            log(s"     byte: BYNAMEtype");
 //            writeByte(BYNAMEtype)
 //            pickleType(tpe.underlying)
 //            debug(s"     --- ExprType ***")
           case tpe: MethodType if richTypes =>
             debug(s"     *** MethodType if richTypes ***")
-            log(s"     byte: METHODtype");
             writeByte(METHODtype)
 //            pickleMethodic(tpe.resultType, tpe.paramNames, tpe.paramTypes)
             debug(s"     --- MethodType if richTypes ***")
           case tpe: PolyType if richTypes =>
             debug(s"     *** PolyType if richTypes ***")
-            log(s"     byte: POLYtype");
             writeByte(POLYtype)
 //            pickleMethodic(tpe.resultType, tpe.paramNames, tpe.paramBounds)
             debug(s"     --- PolyType if richTypes ***")
@@ -481,7 +461,6 @@ trait TreePicklers extends NameBuffers
 //        val binder = pickledTypes.get(tpe.binder)
 //        val pickled = binder != null
 //        if (pickled) {
-//          log(s"     byte: PARAMtype");
 //          writeByte(PARAMtype)
 //          withLength { writeRef(binder.asInstanceOf[Addr]); writeNat(tpe.paramNum) }
 //        }
@@ -495,7 +474,6 @@ trait TreePicklers extends NameBuffers
 
       def emulateApply(funAndArgsPickling: => Unit) = {
         debug(s"     @@@ emulateApply(fun, args) @@@")
-        log(s"     byte: APPLY")
         writeByte(APPLY)
         withLength {
           funAndArgsPickling
@@ -505,7 +483,6 @@ trait TreePicklers extends NameBuffers
 
       def emulateNew(tpe: => Type) = {
         debug(s"     @@@ emulateNew($tpe) @@@")
-        log(s"     byte: NEW")
         writeByte(NEW)
         pickleType(tpe)
         debug(s"     === emulateNew @@@")
@@ -513,7 +490,6 @@ trait TreePicklers extends NameBuffers
       
       def emulateSelect(realName: Name, tpe: Type)(qualPickling: => Unit) = {
         debug(s"     @@@ emulateSelect(qual, $realName) @@@")
-        log(s"     byte: SELECT")
         writeByte(SELECT)
 //        val realName = tree.tpe match {
 //          case tp: NamedType if isShadowedName(tp.name) /*tp.name.isShadowedName*/ => tp.name
@@ -542,7 +518,6 @@ trait TreePicklers extends NameBuffers
 //              debug(s"     case tp: TermRef")
 //              case tp: TermRef => pickleType(tp)
               case _ =>
-                log(s"     byte: IDENT")
                 writeByte(IDENT)
                 pickleName(name)
                 pickleType(tree.tpe)
@@ -556,7 +531,6 @@ trait TreePicklers extends NameBuffers
           //TODO - fix in select
           case Select(qual, name) =>
             debug(s"     @@@ Select(qual, $name) @@@")
-            log(s"     byte: SELECT")
             writeByte(SELECT)
             val realName = tree.tpe match {
               case tp: NamedType if isShadowedName(tp.name)/*tp.name.isShadowedName*/ => tp.name
@@ -571,7 +545,6 @@ trait TreePicklers extends NameBuffers
             debug(s"     @@@ Apply(fun, args) @@@")
             debug(s"     fun: $fun")
             debug(s"     args.size: ${args.size}")
-            log(s"     byte: APPLY")
             writeByte(APPLY)
             withLength {
               pickleTree(fun)
@@ -582,7 +555,6 @@ trait TreePicklers extends NameBuffers
             debug(s"     @@@ TypeApply(fun, args) @@@")
             debug(s"     fun: $fun")
             debug(s"     args.size: ${args.size}")
-            log(s"     byte: TYPEAPPLY")
             writeByte(TYPEAPPLY)
             withLength {
               pickleTree(fun)
@@ -601,7 +573,6 @@ trait TreePicklers extends NameBuffers
           case Super(qual, mix) =>
             debug(s"     @@@ Super(qual, mix) @@@")
             debug(s"     mix: $mix")
-            log(s"     byte: SUPER")
             writeByte(SUPER)
             withLength {
               pickleTree(qual);
@@ -616,63 +587,53 @@ trait TreePicklers extends NameBuffers
             debug(s"     === Super @@@")
           case New(tpt) =>
             debug(s"     @@@ New($tpt) @@@")
-            log(s"     byte: NEW")
             writeByte(NEW)
             pickleTpt(tpt)
             debug(s"     === New @@@")
 //          case Pair(left, right) =>
 //            debug(s"     @@@ Pair @@@")
-//            log(s"     byte: PAIR")
 //            writeByte(PAIR)
 //            withLength { pickleTree(left); pickleTree(right) }
 //            debug(s"     === Pair @@@")
           case Typed(expr, tpt) =>
             debug(s"     @@@ Typed(expr, $tpt) @@@")
-            log(s"     byte: TYPED")
             writeByte(TYPED)
             withLength { pickleTree(expr); pickleTpt(tpt) }
             debug(s"     === Typed @@@")
 //          case NamedArg(name, arg) =>
 //            debug(s"     @@@ NamedArg($name, arg) @@@")
-//            log(s"     byte: NAMEDARG")
 //            writeByte(NAMEDARG)
 //            withLength { pickleName(name); pickleTree(arg) }
 //            debug(s"     === NamedArg @@@")
           case Assign(lhs, rhs) =>
             debug(s"     @@@ Assign(lhs, rhs) @@@")
-            log(s"     byte: ASSIGN")
             writeByte(ASSIGN)
             withLength { pickleTree(lhs); pickleTree(rhs) }
             debug(s"     === Assign @@@")
           case Block(stats, expr) =>
             debug(s"     @@@ Block(stats, expr) @@@")
-            log(s"     byte: BLOCK")
             writeByte(BLOCK)
             stats.foreach(preRegister)
             withLength { pickleTree(expr); stats.foreach(pickleTree) }
             debug(s"     === Block @@@")
           case If(cond, thenp, elsep) =>
             debug(s"     @@@ If(cond, thenp, elsep) @@@")
-            log(s"     byte: IF")
             writeByte(IF)
             withLength { pickleTree(cond); pickleTree(thenp); pickleTree(elsep) }
             debug(s"     === If @@@")
 //          case Closure(env, meth, tpt) =>
 //            debug(s"     @@@ Closure(env, meth, tpt) @@@")
-//            log(s"     byte: LAMBDA")
 //            writeByte(LAMBDA)
 //            withLength { pickleTree(meth); pickleTpt(tpt); env.foreach(pickleTree) }
           case Match(selector, cases) =>
             debug(s"     @@@ Match(selector, cases) @@@")
             debug(s"     selector: $selector")
             cases.foreach { x => debug(s"     case: $x") }
-            log(s"     byte: MATCH")
             writeByte(MATCH)
             withLength { pickleTree(selector); cases.foreach(pickleTree) }
             debug(s"     === Match @@@")
           case CaseDef(pat, guard, rhs) =>
             debug(s"     @@@ CaseDef(pat, guard, rhs) @@@")
-            log(s"     byte: CASEDEF")
             writeByte(CASEDEF)
             debug(s"     pat: $pat")
             debug(s"     guard: $guard")
@@ -681,19 +642,16 @@ trait TreePicklers extends NameBuffers
             debug(s"     === CaseDef @@@")
 //          case Return(expr, from) =>
 //            debug(s"     @@@ Return(expr, from) @@@")
-//            log(s"     byte: RETURN")
 //            writeByte(RETURN)
 //            withLength { pickleSymRef(from.symbol); pickleTreeUnlessEmpty(expr) }
 //            debug(s"     === Return @@@")
           case Try(block, cases, finalizer) =>
             debug(s"     @@@ Try @@@")
-            log(s"     byte: TRY")
             writeByte(TRY)
             withLength { pickleTree(block); cases.foreach(pickleTree); pickleTreeUnlessEmpty(finalizer) }
             debug(s"     === Try @@@")
 //          case SeqLiteral(elems) =>
 //            debug(s"     @@@ SeqLiteral @@@")
-//            log(s"     byte: REPEATED")
 //            writeByte(REPEATED)
 //            withLength { elems.foreach(pickleTree) }
 //            debug(s"     === SeqLiteral @@@")
@@ -704,7 +662,6 @@ trait TreePicklers extends NameBuffers
           case Bind(name, body) =>
             debug(s"     @@@ Bind($name, body) @@@")
             registerDef(tree.symbol)
-            log(s"     byte: BIND")
             writeByte(BIND)
             debug(s"     tree.symbol: ${tree.symbol}")
             debug(s"     tree.symbol.info: ${tree.symbol.info}")
@@ -713,13 +670,11 @@ trait TreePicklers extends NameBuffers
             debug(s"     === Bind @@@")
           case Alternative(alts) =>
             debug(s"     @@@ Alternative(alts) @@@")
-            log(s"     byte: ALTERNATIVE")
             writeByte(ALTERNATIVE)
             withLength { alts.foreach(pickleTree) }
             debug(s"     === Alternative @@@")
 //          case UnApply(fun, implicits, patterns) =>
 //            debug(s"     @@@ UnApply(fun, implicits, patterns) @@@")
-//            log(s"     byte: UNAPPLY")
 //            writeByte(UNAPPLY)
 //            debug(s"fun: $fun")
 //            implicits foreach { x => debug(s"implicit: $x") }
@@ -728,7 +683,6 @@ trait TreePicklers extends NameBuffers
 //            withLength {
 //              pickleTree(fun)
 //              for (implicitArg <- implicits) {
-//                log(s"     byte: IMPLICITarg")
 //                writeByte(IMPLICITarg)
 //                pickleTree(implicitArg)
 //              }
@@ -738,7 +692,6 @@ trait TreePicklers extends NameBuffers
 //            debug(s"     === UnApply @@@")
           case tree: ValDef =>
             debug(s"     @@@ ValDef @@@")
-            log(s"     byte: VALDEF")
             pickleDef(VALDEF, tree.symbol, tree.tpt, tree.rhs)
             debug(s"     === ValDef @@@")
           case tree: DefDef =>
@@ -746,29 +699,24 @@ trait TreePicklers extends NameBuffers
             def pickleAllParams = {
               pickleParams(tree.tparams)
               for (vparams <- tree.vparamss) {
-                log(s"     byte: PARAMS")
                 writeByte(PARAMS)
                 withLength { pickleParams(vparams) }
               }
             }
-            log(s"     byte: DEFDEF")
             pickleDef(DEFDEF, tree.symbol, tree.tpt, tree.rhs, pickleAllParams)
             debug(s"     === DefDef @@@")
           case tree: TypeDef =>
             debug(s"     @@@ TypeDef @@@")
-            log(s"     byte: TYPEDEF")
             pickleDef(TYPEDEF, tree.symbol, tree.rhs)
             debug(s"     === TypeDef @@@")
           case tree: ClassDef =>
             debug(s"     @@@ TypeDef (ClassDef) @@@")
-            log(s"     byte: TYPEDEF")
             pickleDef(TYPEDEF, tree.symbol, tree.impl)
             debug(s"     === TypeDef @@@")
           case tree: Template =>
             debug(s"     @@@ Template @@@")
             
             registerDef(tree.symbol)
-            log(s"     byte: TEMPLATE")
             writeByte(TEMPLATE)
             val (params, rest) = tree.body partition {
               case stat: TypeDef => stat.symbol.isParameter// TODO - check - originally is Flags.Param
@@ -834,7 +782,6 @@ trait TreePicklers extends NameBuffers
               val cinfo @ ClassInfoType(_, _, _) = tree.symbol.owner.info
 //              val cinfo @ ClassInfo(_, _, _, _, selfInfo) = tree.symbol.owner.info
               if (/*TODO - selfInfo in Scala? (selfInfo ne NoType) ||*/ !tree.self.isEmpty) {
-                log(s"     byte: SELFDEF")
                 writeByte(SELFDEF)
                 pickleName(tree.self.name)
                 withSymbolicRefsTo(tree.symbol.owner) {
@@ -855,17 +802,14 @@ trait TreePicklers extends NameBuffers
             debug(s"     === Template @@@")
           case Import(expr, selectors) =>
             debug(s"     @@@ Import @@@")
-            log(s"     byte: IMPORT")
             writeByte(IMPORT)
             withLength {
               pickleTree(expr)
 //              selectors foreach {
 //                case Pair(Ident(from), Ident(to)) =>
-//                  log(s"     byte: RENAMED")
 //                  writeByte(RENAMED)
 //                  withLength { pickleName(from); pickleName(to) }
 //                case Ident(name) =>
-//                  log(s"     byte: IMPORTED")
 //                  writeByte(IMPORTED)
 //                  pickleName(name)
 //              }
@@ -873,7 +817,6 @@ trait TreePicklers extends NameBuffers
             debug(s"     === Import @@@")
           case PackageDef(pid, stats) =>
             debug(s"     @@@ PackageDef @@@")
-            log(s"     byte: PACKAGE")
             writeByte(PACKAGE)
             withLength { pickleType(pid.tpe); pickleStats(stats) }
             debug(s"     === PackageDef @@@")
@@ -887,7 +830,6 @@ trait TreePicklers extends NameBuffers
       def pickleDef(tag: Int, sym: Symbol, tpt: Tree, rhs: Tree = EmptyTree, pickleParams: => Unit = ()) = {
         assert(symRefs(sym) == NoAddr)
         registerDef(sym)
-        log(s"     byte: $tag")
         writeByte(tag)
         withLength {
           pickleName(sym.name)
@@ -909,13 +851,10 @@ trait TreePicklers extends NameBuffers
         debug(s"===> pickleParam");
         tree match {
           case tree: ValDef  => 
-            log(s"     byte: PARAM");
             pickleDef(PARAM, tree.symbol, tree.tpt)
           case tree: DefDef  => 
-            log(s"     byte: PARAM");
             pickleDef(PARAM, tree.symbol, tree.tpt, tree.rhs)
           case tree: TypeDef => 
-            log(s"     byte: TYPEPARAM");
             pickleDef(TYPEPARAM, tree.symbol, tree.rhs)
         }
         debug(s"<=== pickleParam");
@@ -978,7 +917,6 @@ trait TreePicklers extends NameBuffers
 
       def pickleAnnotation(ann: Annotation) = {
         debug(s"===> pickleAnnotation: $ann");
-        log(s"     byte: ANNOTATION");
         debug(s"     ann.tree: ${ann.tree}");
 //        debug(s"     ann.symbol.typeRef: ${ann.symbol.typeRef}");
         writeByte(ANNOTATION)
