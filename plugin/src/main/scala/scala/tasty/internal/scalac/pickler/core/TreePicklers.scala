@@ -823,7 +823,7 @@ trait TreePicklers extends NameBuffers
               }
               //TODO - primaryCtr pickling
               primaryCtr match {
-                case dd: DefDef => emulatePrimaryCtr(dd)
+                case dd: DefDef => picklePrimaryCtr(dd)
                 case _ =>
               }
               
@@ -879,6 +879,7 @@ trait TreePicklers extends NameBuffers
           throw ex
       }
 
+      //TODO unify Def methods
       def pickleDef(tag: Int, sym: Symbol, tpt: Tree, rhs: Tree = EmptyTree, pickleParams: => Unit = ()) = {
         assert(symRefs(sym) == NoAddr)
         registerDef(sym)
@@ -899,8 +900,8 @@ trait TreePicklers extends NameBuffers
         }
       }
 
-      def emulatePrimaryCtr(tree: DefDef) = {
-        debug(s"     @@@ DefDef (emulatePrimaryCtr) @@@")
+      def picklePrimaryCtr(tree: DefDef) = {
+        debug(s"     @@@ DefDef (picklePrimaryCtr) @@@")
 
         preRegister(tree)
         pickledTrees.put(tree, currentAddr)
@@ -915,7 +916,7 @@ trait TreePicklers extends NameBuffers
         }
 
         pickleDef(DEFDEF, tree.symbol, TypeTree(global.definitions.UnitTpe), EmptyTree, pickleAllParams)
-        debug(s"     === DefDef (emulatePrimaryCtr) @@@")
+        debug(s"     === DefDef (picklePrimaryCtr) @@@")
       }
 
       def emulateValDef(name: Name, modifiers: List[Int])(defParams: => Unit = ())(defTpt: => Unit = ())(defRhs: => Unit = ()) = {
@@ -948,7 +949,6 @@ trait TreePicklers extends NameBuffers
         debug(s"     @@@ ValDef (emulateSupAccValDef) @@@")
         val name = clName.append('$').toTypeName
         var addr: Addr = Addr(0)
-        def getAddrInTpt = addr
         emulateValDef(clName, List(OBJECT, SYNTHETIC))(defParams = ()) {
           //defTpt
           addr = currentAddr
