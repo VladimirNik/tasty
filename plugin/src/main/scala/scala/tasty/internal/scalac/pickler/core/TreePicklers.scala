@@ -108,7 +108,7 @@ trait TreePicklers extends NameBuffers
       forwardSymRefs(sym) = ref :: forwardSymRefs.getOrElse(sym, Nil)
     }
 
-    var debugCond = false //true
+    var debugCond = false
     var logCond = true
   
     def setDebugCond(tr: Tree) = true /*tr match {
@@ -335,10 +335,12 @@ trait TreePicklers extends NameBuffers
           case tpe: ThisType =>
             debug(s"     *** ThisType ***")
             writeByte(THIS)
-            debug(s"   tpe.tref: ${showRaw(tpe.typeOfThis)}")
-            debug(s"   tpe.underlying: ${showRaw(tpe.underlying)}")
+            debug(s"   tpe: ${showRaw(tpe)}")
+            debug(s"   tpe.widen: ${showRaw(tpe.widen)}")
+            debug(s"   tpe.typeOfThis: ${showRaw(tpe.typeOfThis)}")
             
-            pickleType(tpe.typeOfThis)
+            //SingleType(...) -> TypeRef
+            pickleType(tpe.widen)
             debug(s"     --- ThisType ***")
           case tpe: SuperType =>
             debug(s"     *** SuperType ***")
@@ -487,6 +489,14 @@ trait TreePicklers extends NameBuffers
         pickleType(tpe)
         debug(s"     === emulateNew @@@")
       }
+
+      def emulateNewWithType(pickleTpe: => Unit) = {
+        debug(s"     @@@ emulateNewWithType @@@")
+        writeByte(NEW)
+        //don't forget to writeRef if neccessary - pickleType(tpe)
+        pickleTpe
+        debug(s"     === emulateNew @@@")
+      }
       
       def emulateSelect(realName: Name, tpe: Type)(qualPickling: => Unit) = {
         debug(s"     @@@ emulateSelect(qual, $realName) @@@")
@@ -501,13 +511,27 @@ trait TreePicklers extends NameBuffers
         qualPickling //pickleTree(qual)
         debug(s"     === emulateSelect @@@")
       }
-        
+
+      def emulateSelectWithSignature(realName: Name, sig: Signature)(qualPickling: => Unit) = {
+        debug(s"     @@@ emulateSelect(qual, $realName) @@@")
+        writeByte(SELECT)
+        //        val realName = tree.tpe match {
+        //          case tp: NamedType if isShadowedName(tp.name) /*tp.name.isShadowedName*/ => tp.name
+        //          case _ => name
+        //        }
+        if (sig.notAMethod /*Signature.NotAMethod*/ ) pickleName(realName)
+        else pickleNameAndSig(realName, sig)
+        qualPickling //pickleTree(qual)
+        debug(s"     === emulateSelect @@@")
+      }
+      
       def pickleTree(tree: Tree): Unit = try {
         //only for debug purposes (to see the code between val testCodeInNextCases ... and val body ...)
         setDebugCond(tree)
         debug("")
         debug(s"TREE pickleTree: ${tree}")
         
+        //TODO - what to do with pickledTrees
         pickledTrees.put(tree, currentAddr)
         tree match {
           case Ident(name) =>
@@ -711,7 +735,10 @@ trait TreePicklers extends NameBuffers
             debug(s"     === TypeDef @@@")
           case tree: ClassDef =>
             debug(s"     @@@ TypeDef (ClassDef) @@@")
+            debug(s"tree.sym.tpe: ${showRaw(tree.symbol.tpe)}")
+            debug(s"tree.sym.tpe.prefix: ${showRaw(tree.symbol.tpe.prefix)}")
             pickleDef(TYPEDEF, tree.symbol, tree.impl)
+            emulateSupAccValDef(tree.name, tree.symbol.tpe.prefix)
             debug(s"     === TypeDef @@@")
           case tree: Template =>
             debug(s"     @@@ Template @@@")
@@ -781,7 +808,7 @@ trait TreePicklers extends NameBuffers
               //TODO - fix implementation
               val cinfo @ ClassInfoType(_, _, _) = tree.symbol.owner.info
 //              val cinfo @ ClassInfo(_, _, _, _, selfInfo) = tree.symbol.owner.info
-              if (/*TODO - selfInfo in Scala? (selfInfo ne NoType) ||*/ !tree.self.isEmpty) {
+              if (tree.self != noSelfType /*TODO - selfInfo in Scala? (selfInfo ne NoType) ||*/ && !tree.self.isEmpty) {
                 writeByte(SELFDEF)
                 pickleName(tree.self.name)
                 withSymbolicRefsTo(tree.symbol.owner) {
@@ -795,7 +822,12 @@ trait TreePicklers extends NameBuffers
                 }
               }
               //TODO - primaryCtr pickling
-              pickleStats(rest)
+              primaryCtr match {
+                case dd: DefDef => emulatePrimaryCtr(dd)
+                case _ =>
+              }
+              
+              pickleStats(rest.tail)
               //TODO - check - probably constructor is in the rest
 //              pickleStats(tree.constr :: rest)
             }
@@ -817,6 +849,26 @@ trait TreePicklers extends NameBuffers
             debug(s"     === Import @@@")
           case PackageDef(pid, stats) =>
             debug(s"     @@@ PackageDef @@@")
+            debug(s"showRaw(pid): ${showRaw(pid, printKinds = true)}")
+            debug(s"showRaw(pid.tpe): ${showRaw(pid.tpe, printKinds = true)}")
+            debug(s"showRaw(pid.tpe.typeSymbol): ${showRaw(pid.tpe.typeSymbol, printKinds = true)}")
+            debug(s"showRaw(pid.tpe.termSymbol): ${showRaw(pid.tpe.termSymbol, printKinds = true)}")
+            debug(s"showRaw(pid.tpe.typeSymbol.tpe): ${showRaw(pid.tpe.typeSymbol.tpe, printKinds = true)}")
+            debug(s"showRaw(pid.tpe.termSymbol.tpe): ${showRaw(pid.tpe.termSymbol.tpe, printKinds = true)}")
+            debug(s"showRaw(pid.tpe.typeSymbol.tpe == pid.tpe.termSymbol.tpe: ${pid.tpe.typeSymbol.tpe == pid.tpe.termSymbol.tpe}")
+            debug(s"showRaw(pid.tpe.typeSymbol.tpe.typeSymbol): ${showRaw(pid.tpe.typeSymbol.tpe.typeSymbol, printKinds = true)}")
+            debug(s"showRaw(pid.tpe.typeSymbol.tpe.termSymbol): ${showRaw(pid.tpe.typeSymbol.tpe.termSymbol, printKinds = true)}")
+            debug(s"showRaw(pid.symbol): ${showRaw(pid.symbol, printKinds = true)}")
+            debug(s"showRaw(pid.symbol.tpe): ${showRaw(pid.symbol.tpe, printKinds = true)}")
+            debug(s"showRaw(pid.symbol.tpe.typeSymbol.tpe): ${showRaw(pid.symbol.tpe.typeSymbol.tpe, printKinds = true)}")
+            debug(s"showRaw(pid.symbol.tpe.termSymbol): ${showRaw(pid.symbol.tpe.termSymbol, printKinds = true)}")
+            debug(s"showRaw(tree): ${showRaw(tree, printKinds = true)}")
+            debug(s"showRaw(tree.tpe): ${showRaw(tree.tpe, printKinds = true)}")
+            debug(s"showRaw(tree.symbol): ${showRaw(tree.symbol, printKinds = true)}")
+            debug(s"showRaw(tree.symbol.tpe): ${showRaw(tree.symbol.tpe, printKinds = true)}")
+            debug(s"showRaw(tree.symbol.tpe.typeSymbol): ${showRaw(tree.symbol.tpe.typeSymbol, printKinds = true)}")
+            debug(s"showRaw(tree.symbol.tpe.typeSymbol.tpe): ${showRaw(tree.symbol.tpe.typeSymbol.tpe, printKinds = true)}")
+            debug(s"showRaw(tree.symbol.tpe.termSymbol): ${showRaw(tree.symbol.tpe.termSymbol, printKinds = true)}")
             writeByte(PACKAGE)
             withLength { pickleType(pid.tpe); pickleStats(stats) }
             debug(s"     === PackageDef @@@")
@@ -826,7 +878,7 @@ trait TreePicklers extends NameBuffers
           println(s"error when pickling tree $tree")
           throw ex
       }
-
+      
       def pickleDef(tag: Int, sym: Symbol, tpt: Tree, rhs: Tree = EmptyTree, pickleParams: => Unit = ()) = {
         assert(symRefs(sym) == NoAddr)
         registerDef(sym)
@@ -845,6 +897,66 @@ trait TreePicklers extends NameBuffers
           //TODO - check correctness of pickled modifiers
           pickleModifiers(sym)
         }
+      }
+
+      def emulatePrimaryCtr(tree: DefDef) = {
+        debug(s"     @@@ DefDef (emulatePrimaryCtr) @@@")
+
+        preRegister(tree)
+        pickledTrees.put(tree, currentAddr)
+
+        //TODO - common code - remove from pickleTree
+        def pickleAllParams = {
+          pickleParams(tree.tparams)
+          for (vparams <- tree.vparamss) {
+            writeByte(PARAMS)
+            withLength { pickleParams(vparams) }
+          }
+        }
+
+        pickleDef(DEFDEF, tree.symbol, TypeTree(global.definitions.UnitTpe), EmptyTree, pickleAllParams)
+        debug(s"     === DefDef (emulatePrimaryCtr) @@@")
+      }
+
+      def emulateSupAccValDef(clName: Name, tpePrefix: Type) = {
+        //TODO - maybe we should here take address (if this supAccValDef will be used later)
+        debug(s"     @@@ ValDef (emulateSupAccValDef) @@@")
+        val name = clName.append('$').toTypeName
+        //TODO - do we need to register it?
+        //preRegister(tree)
+
+        //TODO - do we need to put into pickledTrees?
+        //pickledTrees.put(tree, currentAddr)
+
+        //assert(symRefs(sym) == NoAddr)
+        //registerDef(sym)
+        writeByte(VALDEF)
+        withLength {
+          pickleName(clName)
+
+          //emulate tpt
+          val addr: Addr = currentAddr
+          writeByte(TYPEREF)
+          pickleName(name)
+          pickleType(tpePrefix)
+
+          //emulate rhs
+          emulateApply(emulateSelectWithSignature(nme.CONSTRUCTOR, Signature(Nil, name)) {
+            emulateNewWithType {
+              writeByte(SHARED)
+              //emulateAddressOfTheTypeForShared
+              writeRef(addr)
+            }
+          })
+
+          //TODO - write modifiers
+          //OBJECT, SYNTHETIC
+          log(s"     byte: pickleModifiers")
+          writeByte(OBJECT)
+          writeByte(SYNTHETIC)
+        }
+
+        debug(s"     === ValDef (emulateSupAccValDef) @@@")
       }
 
       def pickleParam(tree: Tree): Unit = {
