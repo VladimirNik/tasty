@@ -878,7 +878,7 @@ trait TreePicklers extends NameBuffers
           println(s"error when pickling tree $tree")
           throw ex
       }
-      
+
       def pickleDef(tag: Int, sym: Symbol, tpt: Tree, rhs: Tree = EmptyTree, pickleParams: => Unit = ()) = {
         assert(symRefs(sym) == NoAddr)
         registerDef(sym)
@@ -888,9 +888,9 @@ trait TreePicklers extends NameBuffers
           pickleParams
           debug(s"   tpt(scala): ${showRaw(tpt)}")
           tpt match {
-            case tpt: TypeTree => 
+            case tpt: TypeTree =>
               pickleTpt(tpt)
-            case _             => 
+            case _ =>
               pickleTree(tpt)
           }
           pickleTreeUnlessEmpty(rhs)
@@ -918,10 +918,9 @@ trait TreePicklers extends NameBuffers
         debug(s"     === DefDef (emulatePrimaryCtr) @@@")
       }
 
-      def emulateSupAccValDef(clName: Name, tpePrefix: Type) = {
-        //TODO - maybe we should here take address (if this supAccValDef will be used later)
-        debug(s"     @@@ ValDef (emulateSupAccValDef) @@@")
-        val name = clName.append('$').toTypeName
+      def emulateValDef(name: Name, modifiers: List[Int])(defParams: => Unit = ())(defTpt: => Unit = ())(defRhs: => Unit = ()) = {
+        //TODO - maybe we should here take address (if this ValDef will be used later)
+        debug(s"     @@@ ValDef (emulateValDef) @@@")
         //TODO - do we need to register it?
         //preRegister(tree)
 
@@ -932,15 +931,32 @@ trait TreePicklers extends NameBuffers
         //registerDef(sym)
         writeByte(VALDEF)
         withLength {
-          pickleName(clName)
+          pickleName(name)
 
-          //emulate tpt
-          val addr: Addr = currentAddr
+          defParams
+          defTpt
+          defRhs
+
+          log(s"     byte: pickleModifiers")
+          modifiers foreach writeByte
+        }
+        debug(s"     === ValDef (emulateValDef) @@@")
+      }
+
+      def emulateSupAccValDef(clName: Name, tpePrefix: Type) = {
+        //TODO - maybe we should here take address (if this supAccValDef will be used later)
+        debug(s"     @@@ ValDef (emulateSupAccValDef) @@@")
+        val name = clName.append('$').toTypeName
+        var addr: Addr = Addr(0)
+        def getAddrInTpt = addr
+        emulateValDef(clName, List(OBJECT, SYNTHETIC))(defParams = ()) {
+          //defTpt
+          addr = currentAddr
           writeByte(TYPEREF)
           pickleName(name)
           pickleType(tpePrefix)
-
-          //emulate rhs
+        } {
+          //defRhs
           emulateApply(emulateSelectWithSignature(nme.CONSTRUCTOR, Signature(Nil, name)) {
             emulateNewWithType {
               writeByte(SHARED)
@@ -948,15 +964,72 @@ trait TreePicklers extends NameBuffers
               writeRef(addr)
             }
           })
-
-          //TODO - write modifiers
-          //OBJECT, SYNTHETIC
-          log(s"     byte: pickleModifiers")
-          writeByte(OBJECT)
-          writeByte(SYNTHETIC)
         }
-
         debug(s"     === ValDef (emulateSupAccValDef) @@@")
+      }
+
+      def emulateSupAccTypeDef() = {
+//        //TypeDef
+//>>>>>  astTag: TYPEDEF (131)
+//>>>>>  ==> wl
+//>>>>>  pickleName: HelloWorld$
+//
+////Template
+//>>>>>  astTag: TEMPLATE (160)
+//>>>>>  ==> wl
+//
+////parents
+//>>>>>  astTag: APPLY (139)
+//>>>>>  ==> wl
+//>>>>>  astTag: SELECT (113)
+//>>>>>  pickleNameAndSig, name: <init>
+//>>>>>                    params: List()
+//>>>>>                    result: java.lang.Object
+//>>>>>  pickleName(*): Signed(NameRef(6),List(),NameRef(11))
+//>>>>>  astTag: NEW (100)
+//>>>>>  astTag: SHARED (64)
+//>>>>>  writeRef( target: Addr(29) )
+//>>>>>  fillRef( at: Addr(88), target: Addr(100), relative true )
+//>>>>>  <== wl
+//
+////selfDef
+//>>>>>  astTag: SELFDEF (118)
+//>>>>>  pickleName: _
+//>>>>>  astTag: TERMREF (115)
+//>>>>>  pickleName: HelloWorld
+//>>>>>  astTag: SHARED (64)
+//>>>>>  writeRef( target: Addr(58) )
+//
+////DefDef - init
+//>>>>>  astTag: DEFDEF (130)
+//>>>>>  ==> wl
+//>>>>>  pickleName: <init>
+//>>>>>  astTag: PARAMS (134)
+//>>>>>  ==> wl
+//>>>>>  fillRef( at: Addr(116), target: Addr(120), relative true )
+//>>>>>  <== wl
+//>>>>>  astTag: SHARED (64)
+//>>>>>  writeRef( target: Addr(56) )
+//>>>>>       byte: pickleModifiers
+//>>>>>  fillRef( at: Addr(110), target: Addr(125), relative true )
+//>>>>>  <== wl
+//
+////Template
+//>>>>>  fillRef( at: Addr(83), target: Addr(125), relative true )
+//>>>>>  <== wl
+//
+////Modifiers
+//>>>>>       byte: pickleModifiers
+//>>>>>  astTag: OBJECT (19)
+//>>>>>  astTag: SYNTHETIC (22)
+//
+////close TypeDef
+//>>>>>  fillRef( at: Addr(77), target: Addr(127), relative true )
+//>>>>>  <== wl
+//
+////close PackageDef
+//>>>>>  fillRef( at: Addr(1), target: Addr(127), relative true )
+//>>>>>  <== wl
       }
 
       def pickleParam(tree: Tree): Unit = {
