@@ -69,7 +69,40 @@ trait TastyPhase {
           val pickler = new picklers.TastyPickler            
           val treePkl = new picklers.TreePickler(pickler)
           treePkl.pickle(tree :: Nil)
+          
+          //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
+          val pickledInfo = treePkl.logInfo
+          testSame(pickledInfo, unit)
         }
+      }
+    }
+
+    import scala.io.Source
+      import java.io.File
+
+    private def testSame(pickledInScala: String, unit: CompilationUnit) = {
+      var errorDuringFileReading = false
+
+      def loadPickledPattern(file: File): String = {
+        
+        val absPath = file.getAbsolutePath.dropRight(".scala".length()).replaceFirst("sandbox", "tests")
+
+        try {
+          Source.fromFile(absPath).getLines.mkString
+        } catch {
+          case ex: Exception =>
+            errorDuringFileReading = true
+            s"file ${file.getName} can not be read"
+        }
+      }
+      
+      val pickledInDotty = loadPickledPattern(unit.source.file.file)
+
+      if (pickledInScala != pickledInDotty) {
+        if (errorDuringFileReading) warning(s"$pickledInDotty")
+        else warning(s"pickling difference for $unit")
+      } else {
+        inform(s"pickling is correct for $unit")
       }
     }
   }

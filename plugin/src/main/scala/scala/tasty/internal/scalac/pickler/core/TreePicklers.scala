@@ -108,8 +108,8 @@ trait TreePicklers extends NameBuffers
       forwardSymRefs(sym) = ref :: forwardSymRefs.getOrElse(sym, Nil)
     }
 
-    var debugCond = false
-    var logCond = true
+    private var debugCond = false
+    private var logCond = true
   
     def setDebugCond(tr: Tree) = true /*tr match {
       case ValDef(name, _, _) if name.toString() == "testCodeInNextCases" => debugCond = true
@@ -119,8 +119,16 @@ trait TreePicklers extends NameBuffers
   
     def debug(str: String) = if (debugCond) println(str)
     
-    def log(str: String) = if (logCond) println(">>>>>  " + str)
+    private var pickledStr: StringBuffer = new StringBuffer("")
 
+    private def log(str: String) = {
+      pickledStr.append(str)
+      if (logCond) {
+        println(">>>>>  " + str)
+      }
+    }
+    def logInfo = pickledStr.toString()
+    
     private def writeRef(target: Addr) = {
       log(s"writeRef( target: $target )")
       bwriteRef(target)
