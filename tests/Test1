@@ -10,7 +10,7 @@ astTag: TYPEREFpkg (68)
 pickleName(*): Simple(<root>)
 astTag: TYPEDEF (131)
 ==> wl
-pickleName: HelloWorld
+pickleName: Test1
 astTag: TEMPLATE (160)
 ==> wl
 astTag: APPLY (139)
@@ -50,9 +50,9 @@ fillRef( at: Addr(11), target: Addr(50), relative true )
 <== wl
 astTag: VALDEF (129)
 ==> wl
-pickleName: HelloWorld
+pickleName: Test1
 astTag: TYPEREF (117)
-pickleName: HelloWorld$
+pickleName: Test1$
 astTag: THIS (96)
 astTag: TYPEREFpkg (68)
 pickleName(*): Simple(<empty>)
@@ -61,7 +61,7 @@ astTag: APPLY (139)
 astTag: SELECT (113)
 pickleNameAndSig, name: <init>
                   params: List()
-                  result: HelloWorld$
+                  result: Test1$
 pickleName(*): Signed(NameRef(6),List(),NameRef(15))
 astTag: NEW (100)
 astTag: SHARED (64)
@@ -75,7 +75,7 @@ fillRef( at: Addr(51), target: Addr(76), relative true )
 <== wl
 astTag: TYPEDEF (131)
 ==> wl
-pickleName: HelloWorld$
+pickleName: Test1$
 astTag: TEMPLATE (160)
 ==> wl
 astTag: APPLY (139)
@@ -93,7 +93,7 @@ fillRef( at: Addr(88), target: Addr(100), relative true )
 astTag: SELFDEF (118)
 pickleName: _
 astTag: TERMREF (115)
-pickleName: HelloWorld
+pickleName: Test1
 astTag: SHARED (64)
 writeRef( target: Addr(58) )
 astTag: DEFDEF (130)
