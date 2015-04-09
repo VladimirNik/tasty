@@ -40,15 +40,12 @@ trait TastyPhase {
     }
 
     import scala.io.Source
-      import java.io.File
+    import java.io.File
 
     private def testSame(pickledInScala: String, unit: CompilationUnit) = {
       var errorDuringFileReading = false
-
       def loadPickledPattern(file: File): String = {
-
         val absPath = file.getAbsolutePath.dropRight(".scala".length()).replaceFirst("sandbox", "tests")
-
         try {
           Source.fromFile(absPath).getLines.mkString
         } catch {
@@ -57,9 +54,7 @@ trait TastyPhase {
             s"file ${file.getName} can not be read"
         }
       }
-
       val pickledInDotty = loadPickledPattern(unit.source.file.file)
-
       if (pickledInScala != pickledInDotty) {
         if (errorDuringFileReading) warning(s"$pickledInDotty")
         else warning(s"pickling difference for $unit")
