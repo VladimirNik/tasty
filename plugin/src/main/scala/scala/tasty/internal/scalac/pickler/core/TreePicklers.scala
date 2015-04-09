@@ -28,6 +28,7 @@ trait TreePicklers extends NameBuffers
     private val symRefs = new mutable.HashMap[Symbol, Addr]
     private val forwardSymRefs = new mutable.HashMap[Symbol, List[Addr]]
     private val pickledTypes = new java.util.IdentityHashMap[Type, Any] // Value type is really Addr, but that's not compatible with null
+    private val emulatedTypes = new mutable.HashMap[(Name, Type), Addr]
 
     private def withLength(op: => Unit) = {
       log("==> wl")
@@ -170,16 +171,11 @@ trait TreePicklers extends NameBuffers
             pickleType(c.typeValue)
           case EnumTag =>
             writeByte(ENUMconst)
-            c.symbolValue.thisType
-          //          pickleType(c.symbolValue.termRef)
+            pickleType(c.symbolValue.tpe)
         }
       }
 
-      def pickleType(tpe0: Type, richTypes: Boolean = false): Unit = try {
-        //TODO - see stripTypeVar - probably not required
-//        val tpe = tpe0.stripTypeVar
-        //TODO remove val tpe = tpe0
-        val tpe = tpe0
+      def pickleType(tpe: Type, richTypes: Boolean = false): Unit = try {
         val prev = pickledTypes.get(tpe)
         if (prev == null) {
           pickledTypes.put(tpe, currentAddr)
@@ -190,7 +186,7 @@ trait TreePicklers extends NameBuffers
         }
       } catch {
         case ex: AssertionError =>
-          println(s"error when pickling type $tpe0")
+          println(s"error when pickling type $tpe")
           throw ex
       }
 
@@ -207,45 +203,21 @@ trait TreePicklers extends NameBuffers
                 writeByte(if (sym.isType) TYPEREFdirect else TERMREFdirect)
                 pickleSymRef(sym)
               }
-              if (false /* TODO - how to set this condition in scala? - sym is Flags.BindDefinedType */) {
-                registerDef(sym)
-                writeByte(BIND)
-                withLength {
-                  pickleName(sym.name)
-                  pickleType(sym.info)
-                  pickleRef()
-                }
-              } else pickleRef()
+              pickleRef()
             } else {
               tpe.prefix match {
                 case _ =>
-                  writeByte(if (sym.isType /*tpe.isType*/ ) TYPEREF else TERMREF)
-                  pickleName(sym.name /*tpe.name*/ ); pickleType(tpe.prefix)
+                  writeByte(if (sym.isType) TYPEREF else TERMREF)
+                  pickleName(sym.name); pickleType(tpe.prefix)
               }
             }
           case tpe @ SingleType(pre, sym) =>
-            //dotty - TermRef(ThisType(TypeRef(NoPrefix,<root>)),<empty>)
-            //scala - SingleType(ThisType(<root>), <empty>)
-
-            //dotty - TypeRef(NoPrefix,lang) - WithFixedSym
-            //scala:
-            //tpe: ThisType(java.lang)
-            //tpe.tref: SingleType(ThisType(java), java.lang)
-            if (sym.isEmptyPackage) { //my condition
-              writeByte(TERMREF)
-              val sig = Signature(tpe)
-              pickleNameAndSig( /*tpe*/ sym.name, /*tpe.signature*/ sig); pickleType(tpe.prefix)
-            } else if (sym.hasPackageFlag) {
-              //scala - SingleType(ThisType(java), java.lang) - in dotty should be - TypeRef(NoPrefix,lang) - WithFixedSym
-              writeByte(TYPEREFpkg) 
-              //TODO - fix - originally should be:
-              //writeByte(if (sym.isType /*TODO - fix it tpe.isType*/) TYPEREFpkg else TERMREFpkg)
-              pickleName(qualifiedName(sym))
-            }
+            writeByte(TERMREF)
+            val sig = Signature(tpe)
+            pickleNameAndSig(sym.name, sig); pickleType(tpe.prefix)
           case tpe: ThisType =>
             writeByte(THIS)
-            //SingleType(...) -> TypeRef
-            pickleType(tpe.widen)
+            pickleType(tpe.widen) //SingleType(...) -> TypeRef(...)
           case tpe: SuperType =>
             writeByte(SUPERtype)
             withLength { pickleType(tpe.thistpe); pickleType(tpe.supertpe) }
@@ -370,8 +342,11 @@ trait TreePicklers extends NameBuffers
           case tree: ClassDef =>
             pickleDef(TYPEDEF, tree.symbol, tree.impl)
             val clTpe = tree.symbol.tpe
-            val supAccClAddr = emulateSupAccValDef(tree.name, clTpe.prefix)
-            emulateSupAccTypeDef(tree.name, clTpe.prefix, supAccClAddr)
+            emulateSupAccValDef(tree.name, clTpe.prefix)
+            emulatedTypes.get((syntheticName(tree.name), clTpe.prefix)) match {
+              case Some(addr) => emulateSupAccTypeDef(tree.name, clTpe.prefix, addr)
+              case _ => log(s"synthetic typeDef can't be emulated for ${tree.name}")
+            }
           case tree: Template =>
             registerDef(tree.symbol)
             writeByte(TEMPLATE)
@@ -383,7 +358,6 @@ trait TreePicklers extends NameBuffers
             }
             withLength {
               pickleParams(params)
-
               //emulate dotty style of parents representation (for pickling)
               val primaryCtr = treeInfo.firstConstructor(tree.body)
               val ap: Option[Apply] = primaryCtr match {
@@ -397,46 +371,34 @@ trait TreePicklers extends NameBuffers
                 case Some(treeInfo.Applied(_, _, argss)) => argss
                 case _                                   => Nil
               }
-
               def isDefaultAnyRef(tree: Tree) = tree match {
                 case Select(Ident(sc), name) if name == tpnme.AnyRef && sc == nme.scala_ => true
                 case _ => false
               }
-
               //lang.Object => (new lang.Object()).<init> 
               //Apply(Select(New(TypeTree[tpe]), <init>), args)
               tree.parents.zipWithIndex.foreach {
                 case (tr, i) =>
                   //pickleTree
                   emulateApply {
-                    //if in Scala there is default scala.AnyRef in parents - change it to lang.Object
+                    //Scala: scala.AnyRef in parents (default) - change it to lang.Object
                     val isDefaultParentAnyRef = isDefaultAnyRef(tr)
                     val (tpe, constrTpe) = if (isDefaultParentAnyRef) {
                       val objectTpe = global.definitions.ObjectTpe
                       (objectTpe, objectTpe.member(nme.CONSTRUCTOR).tpe)
                     } else (tr.tpe, primaryCtr.tpe)
-                    emulateSelect(nme.CONSTRUCTOR, /* constr tpe goes here or default Object constr tpe */ constrTpe) {
+                    emulateSelect(nme.CONSTRUCTOR, constrTpe) {
                       emulateNew(tpe)
                     };
                     constrArgss(i).foreach(pickleTree)
                   }
                 case _ =>
               }
-
-              //TODO - fix implementation
-              val cinfo @ ClassInfoType(_, _, _) = tree.symbol.owner.info
-//              val cinfo @ ClassInfo(_, _, _, _, selfInfo) = tree.symbol.owner.info
-              if (tree.self != noSelfType /*TODO - selfInfo in Scala? (selfInfo ne NoType) ||*/ && !tree.self.isEmpty) {
+              if (tree.self != noSelfType && !tree.self.isEmpty) {
                 writeByte(SELFDEF)
                 pickleName(tree.self.name)
                 withSymbolicRefsTo(tree.symbol.owner) {
-                //TODO - check what's used in the example
-//                  pickleType {
-//                    cinfo.selfInfo match {
-//                      case sym: Symbol => sym.info
-//                      case tp: Type    => tp
-//                    }
-//                  }
+                  pickleType(tree.self.tpt.tpe)
                 }
               }
               primaryCtr match {
@@ -449,7 +411,7 @@ trait TreePicklers extends NameBuffers
             writeByte(IMPORT)
             withLength {
               pickleTree(expr)
-              //TODO - process selectors
+              //TODO process selectors
             }
           case PackageDef(pid, stats) =>
             writeByte(PACKAGE)
@@ -469,7 +431,6 @@ trait TreePicklers extends NameBuffers
         }
       }
 
-      //TODO unify pickleDef and emulateDef
       def pickleDef(tag: Int, sym: Symbol, tpt: Tree, rhs: Tree = EmptyTree, pickleParams: => Unit = ()) = {
         assert(symRefs(sym) == NoAddr)
         registerDef(sym)
@@ -508,18 +469,11 @@ trait TreePicklers extends NameBuffers
 
       def emulateNewWithType(pickleTpe: => Unit) = {
         writeByte(NEW)
-        //don't forget to writeRef if neccessary - pickleType(tpe)
         pickleTpe
       }
 
-      //TODO - rewrite using emulateSelectWithSignature
-      def emulateSelect(realName: Name, tpe: Type)(qualPickling: => Unit) = {
-        writeByte(SELECT)
-        val sig = Signature(tpe) //tree.tpe.signature
-        if (sig.notAMethod) pickleName(realName)
-        else pickleNameAndSig(realName, sig)
-        qualPickling
-      }
+      def emulateSelect(realName: Name, tpe: Type)(qualPickling: => Unit) = 
+        emulateSelectWithSignature(realName, Signature(tpe))(qualPickling)
 
       def emulateSelectWithSignature(realName: Name, sig: Signature)(qualPickling: => Unit) = {
         writeByte(SELECT)
@@ -527,89 +481,70 @@ trait TreePicklers extends NameBuffers
         else pickleNameAndSig(realName, sig)
         qualPickling
       }
-      
-      //TODO - rename pickleParams
-      def emulateDef(tag: Int, name: Name, modifiers: List[Int])(pickleParams: => Unit = ())(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()) = {
-        //TODO - do we need to put into pickledTrees?
-        //pickledTrees.put(tree, currentAddr)
 
-        //assert(symRefs(sym) == NoAddr)
-        //registerDef(sym)
-
+      def emulateDef(tag: Int, name: Name, modifiers: List[Int])(pickleParameters: => Unit = ())(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()) = {
+        //register def and put tree to pickledTrees?
         writeByte(tag)
         withLength {
           pickleName(name)
-          pickleParams
+          pickleParameters
           pickleTpt
           pickleRhs
-          
-          //TODO - change modifiers processing, currently it's simplified
+          //TODO fix modifiers processing
           log(s"     byte: pickleModifiers")
           modifiers foreach writeByte
         }
       }
-      
-      def emulateValDef(name: Name, modifiers: List[Int])(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()) = {
-        //TODO - maybe we should here take address (if this ValDef will be used later)
-        //TODO - do we need to register it?
-        //preRegister(tree)
 
-        emulateDef(VALDEF, name, modifiers)(pickleParams = ())(pickleTpt)(pickleRhs)
+      def emulateValDef(name: Name, modifiers: List[Int])(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()) = {
+        //preRegister Def?
+        emulateDef(VALDEF, name, modifiers)(pickleParameters = ())(pickleTpt)(pickleRhs)
       }
 
       def emulateType(tag: Int, name: Name, prefix: Type): Addr = {
-        //TODO - tegister type
+        //register type?
         val tAddr = currentAddr
         writeByte(tag)
         pickleName(name)
         pickleType(prefix)
+        emulatedTypes((name, prefix)) = tAddr
         tAddr
       }
-      
-      //returns the address of its tpt
-      def emulateSupAccValDef(clName: Name, tpePrefix: Type): Addr = {
-        //TODO - maybe we should here take address (if this supAccValDef will be used later)
-        val name = clName.append('$').toTypeName
-        
-        //addr of synthetic clName$ type which we emulate
-        var addr: Addr = Addr(0)
+
+      def emulateSupAccValDef(clName: Name, tpePrefix: Type) = {
+        val name = syntheticName(clName).toTypeName
         emulateValDef(clName, List(OBJECT, SYNTHETIC)) {
           //defTpt
-          addr = emulateType(TYPEREF, name, tpePrefix) 
+          //addr of synthetic clName$ type which we emulate
+          emulateType(TYPEREF, name, tpePrefix) 
         } {
           //defRhs
           emulateApply(emulateSelectWithSignature(nme.CONSTRUCTOR, Signature(Nil, name)) {
             emulateNewWithType {
-              writeByte(SHARED)
-              //emulateAddressOfTheTypeForShared
-              writeRef(addr)
+              emulatedTypes.get((name, tpePrefix)) match {
+                case Some(addr) =>
+                  writeByte(SHARED)
+                  writeRef(addr)  
+                case _ => log(s"type ${tpePrefix}.$name wasn't emulated")
+              }
             }
           })
         }
-        addr
       }
 
       def emulateDefDef(name: Name, modifiers: List[Int])(pickleParams: => Unit)(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()) = {
-        //TODO - maybe we should here take address (if this DefDef will be used later)
-        //TODO - do we need to preregister it?
-        //preRegister(tree)
-
+        //preRegister Def?
         emulateDef(DEFDEF, name, modifiers)(pickleParams)(pickleTpt)(pickleRhs)
       }
 
       def emulateTypeDef(name: Name, modifiers: List[Int])(pickleRhs: => Unit = ()) = {
-        //TODO - maybe we should here take address (if this DefDef will be used later)
-        //TODO - do we need to preregister it?
-        //preRegister(tree)
-
-        emulateDef(TYPEDEF, name, modifiers)(pickleParams = ())(pickleTpt = ())(pickleRhs)
+        //preRegister Def?
+        emulateDef(TYPEDEF, name, modifiers)(pickleParameters = ())(pickleTpt = ())(pickleRhs)
       }
-      
-      def emulateTemplate(pickleParents: => Unit)(pickleSelf: => Unit)(picklePrConstr: => Unit) = {
-        //TODO tempate should be registered
-        //registerDef(tree.symbol)
-        writeByte(TEMPLATE)
 
+      def emulateTemplate(pickleParents: => Unit)(pickleSelf: => Unit)(picklePrConstr: => Unit) = {
+        //register Template
+        writeByte(TEMPLATE)
         withLength {
           pickleParents
           pickleSelf
@@ -617,8 +552,10 @@ trait TreePicklers extends NameBuffers
         }
       }
 
+      def syntheticName(name: Name) = name.append('$')
+
       def emulateSupAccTypeDef(clName: Name, clTpePrefix: Type, clAddr: Addr) = {
-        val name = clName.append('$').toTypeName
+        val name = syntheticName(clName)
         emulateTypeDef(name, List(OBJECT, SYNTHETIC)) {
           emulateTemplate {
             //pickleParents - (new lang.Object).<init>
@@ -683,8 +620,7 @@ trait TreePicklers extends NameBuffers
         val privateWithin = sym.privateWithin
         if (privateWithin.exists) {
           writeByte(if (sym.isProtected) PROTECTEDqualified else PRIVATEqualified)
-          //TODO - fix it
-//          pickleType(privateWithin.typeRef)
+          pickleType(privateWithin.tpe)
         }
         if (sym.isPrivate) writeByte(PRIVATE)
         if (sym.isProtected) if (!privateWithin.exists) writeByte(PROTECTED)
@@ -714,7 +650,7 @@ trait TreePicklers extends NameBuffers
 
       def pickleAnnotation(ann: Annotation) = {
         writeByte(ANNOTATION)
-//        withLength { pickleType(ann.symbol.typeRef); pickleTree(ann.tree) }
+        withLength { pickleType(ann.symbol.tpe); pickleTree(ann.tree) }
       }
 
       def updateMapWithDeltas[T](mp: collection.mutable.Map[T, Addr]) =
