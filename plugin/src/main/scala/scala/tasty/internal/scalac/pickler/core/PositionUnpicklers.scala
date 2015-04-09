@@ -1,7 +1,6 @@
 package scala.tasty.internal.scalac.pickler
 package core
 
-//import util.Positions._
 import collection.mutable
 import TastyBuffer.Addr
 import scala.tools.nsc.Global
@@ -20,7 +19,7 @@ trait PositionUnpicklers {
     import PositionUnpickler._
     import reader._
 
-    //TODO - fix - adopt to Scala Position
+    //TODO - adopt to Scala Positions
     def unpickle(): (Position, AddrToPosition) = ??? /*{
       val positions = new mutable.HashMap[Addr, Position] // Dotty deviation: Can't use new AddrToPosition here. TODO: fix this!
       val sourceLength = readNat()

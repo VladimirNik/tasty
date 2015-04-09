@@ -197,7 +197,7 @@ object PickleFormat {
   final val DEFAULTGETTER = 7
   final val SHADOWED = 8
 
-// AST tags
+  // AST tags
 
   final val UNITconst = 2
   final val FALSEconst = 3

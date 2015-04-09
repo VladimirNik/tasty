@@ -8,7 +8,6 @@ trait TastyUtils {
   val global: Global
   import global.{newTermName, Position, NoPosition, Name}
 
-  //TODO - organize NameOps
   implicit def toTermName(str: String) = newTermName(str)
   
   def termName(bs: Array[Byte], offset: Int, len: Int) = newTermName(bs, offset, len)
@@ -20,7 +19,6 @@ trait TastyUtils {
 
   def drop(name: Name)(n: Int): Name = name.subName(n, name.length)
 
-  //TODO - likeTyped transformation removed from revertShadowed
   def revertShadowed(name: Name): Name = (drop(name)(SHADOWED.length))
 
   import global.{TypeName, MethodSymbol, Type, PolyType, MethodType, tpnme}

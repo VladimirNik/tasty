@@ -1,7 +1,6 @@
 package scala.tasty.internal.scalac.pickler
 package core
 
-//import core.Names.TermName
 import collection.mutable
 import scala.tools.nsc.Global
 
@@ -12,7 +11,6 @@ trait TastyNames {
   abstract class TastyName
 
   object TastyName {
-    //TODO try to extend from AnyVal
     case class NameRef(val index: Int) /*extends AnyVal*/
 
     case class Simple(name: TermName) extends TastyName

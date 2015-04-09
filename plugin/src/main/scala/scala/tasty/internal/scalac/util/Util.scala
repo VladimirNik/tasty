@@ -32,6 +32,5 @@ object Util {
     arr1
   }
 
-  //TODO - fix printer for pickling
   def pickling = System.out
 }

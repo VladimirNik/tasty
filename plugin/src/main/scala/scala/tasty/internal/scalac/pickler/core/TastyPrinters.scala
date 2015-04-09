@@ -9,7 +9,7 @@ trait TastyPrinters {
   import TastyName._
   import TastyUnpickler._
 
-  class TastyPrinter(bytes: Array[Byte]) /*(implicit ctx: Context)*/ {
+  class TastyPrinter(bytes: Array[Byte]) {
 
     val unpickler = new TastyUnpickler(bytes)
     import unpickler.{ tastyName, unpickle }

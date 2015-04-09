@@ -8,7 +8,6 @@ import PickleFormat._
 import scala.collection.mutable
 import util.TastyUtils
 
-//TODO - fix - remove TastyUtils from inheritance
 trait NameBuffers extends TastyUtils {
   self: TastyNames =>
 

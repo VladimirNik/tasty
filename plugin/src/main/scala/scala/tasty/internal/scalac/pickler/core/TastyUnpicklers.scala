@@ -98,5 +98,4 @@ trait TastyUnpicklers {
     def unpickle[R](sec: SectionUnpickler[R]): Option[R] =
       for (reader <- sectionReader.get(sec.name)) yield sec.unpickle(reader, tastyName)
   }
-
 }
