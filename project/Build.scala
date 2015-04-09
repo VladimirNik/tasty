@@ -31,15 +31,7 @@ object ScalaHostBuild extends Build {
     id   = "sandbox",
     base = file("sandbox"),
     settings = sharedSettings ++ commonDependencies ++ Seq(
-      usePlugin(plugin),
-      unmanagedJars in Compile <++= baseDirectory map { base =>
-        val dottyJar = file("/home/vova/scala-projects/dotty/dotty/bin/../target/scala-2.11/dotty_2.11-0.1-SNAPSHOT.jar")
-        val dottyTestJar = file("/home/vova/scala-projects/dotty/dotty/bin/../target/scala-2.11/dotty_2.11-0.1-SNAPSHOT-tests.jar")
-        val dottyJars = dottyJar +++ dottyTestJar
-        //val baseDirectories = (base / "libA") +++ (base / "b" / "lib") +++ (base / "libC")
-        //val customJars = (baseDirectories ** "*.jar") +++ (base / "d" / "my.jar")
-        dottyJars.classpath
-      }
+      usePlugin(plugin)
     )
   ) dependsOn(plugin)
 
