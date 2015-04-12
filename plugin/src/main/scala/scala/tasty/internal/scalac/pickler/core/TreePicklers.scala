@@ -341,8 +341,9 @@ trait TreePicklers extends NameBuffers
             pickleDef(TYPEDEF, tree.symbol, tree.rhs)
           case tree: ClassDef =>
             pickleDef(TYPEDEF, tree.symbol, tree.impl)
-            val clTpe = tree.symbol.tpe
-            emulateSupAccValDef(tree.name, clTpe.prefix)
+            val clSym = tree.symbol
+            val clTpe = clSym.tpe
+            emulateSupAccValDef(clSym)
             emulatedTypes.get((syntheticName(tree.name), clTpe.prefix)) match {
               case Some(addr) => emulateSupAccTypeDef(tree.name, clTpe.prefix, addr)
               case _ => log(s"synthetic typeDef can't be emulated for ${tree.name}")
@@ -511,21 +512,23 @@ trait TreePicklers extends NameBuffers
         tAddr
       }
 
-      def emulateSupAccValDef(clName: Name, tpePrefix: Type) = {
+      def emulateSupAccValDef(origClass: Symbol) = {
+        val clName = origClass.name
+        val prefixTpe = origClass.tpe.prefix
+        val fullName = syntheticName(origClass.fullNameAsName('.')).toTypeName
         val name = syntheticName(clName).toTypeName
         emulateValDef(clName, List(OBJECT, SYNTHETIC)) {
           //defTpt
-          //addr of synthetic clName$ type which we emulate
-          emulateType(TYPEREF, name, tpePrefix) 
+          emulateType(TYPEREF, name, prefixTpe) 
         } {
           //defRhs
-          emulateApply(emulateSelectWithSignature(nme.CONSTRUCTOR, Signature(Nil, name)) {
+          emulateApply(emulateSelectWithSignature(nme.CONSTRUCTOR, Signature(Nil, fullName)) {
             emulateNewWithType {
-              emulatedTypes.get((name, tpePrefix)) match {
+              emulatedTypes.get((name, prefixTpe)) match {
                 case Some(addr) =>
                   writeByte(SHARED)
                   writeRef(addr)  
-                case _ => log(s"type ${tpePrefix}.$name wasn't emulated")
+                case _ => log(s"type $fullName wasn't emulated")
               }
             }
           })
