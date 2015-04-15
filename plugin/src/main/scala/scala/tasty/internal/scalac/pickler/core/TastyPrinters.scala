@@ -20,10 +20,11 @@ trait TastyPrinters {
       case Signed(original, params, result) =>
         //TODO - changed from i"..." (dotty) to s"..."
         s"${nameRefToString(original)}@${params.map(nameRefToString)}%,%:${nameRefToString(result)}"
-      case Expanded(original)       => nameRefToString(original) + "/EXPANDED"
-      case ModuleClass(original)    => nameRefToString(original) + "/MODULECLASS"
-      case SuperAccessor(accessed)  => nameRefToString(accessed) + "/SUPERACCESSOR"
-      case DefaultGetter(meth, num) => nameRefToString(meth) + "/DEFAULTGETTER" + num
+      case Expanded(prefix, original) => s"$prefix${global.nme.EXPAND_SEPARATOR_STRING}$original"
+      case ModuleClass(original)      => nameRefToString(original) + "/MODULECLASS"
+      case SuperAccessor(accessed)    => nameRefToString(accessed) + "/SUPERACCESSOR"
+      case DefaultGetter(meth, num)   => nameRefToString(meth) + "/DEFAULTGETTER" + num
+      case Shadowed(original)         => nameRefToString(original) + "/SHADOWED"
     }
 
     def nameRefToString(ref: NameRef): String = nameToString(tastyName(ref))
@@ -108,7 +109,7 @@ trait TastyPrinters {
       }
     }
 
-      //TODO - fix PositionUnpickler for Scala
+      //TODO - fix PositionUnpickler for Scala - use updated version (see Dotty)
 //    class PositionSectionUnpickler extends SectionUnpickler[Unit]("Positions") {
 //      def unpickle(reader: TastyReader, tastyName: TastyName.Table): Unit = {
 //        print(s"${reader.endAddr.index - reader.currentAddr.index}")

@@ -139,8 +139,8 @@ object Texts {
     def apply(): Text = Str("")
 
     /** A concatenation of elements in `xs` and interspersed with
-      *  separator strings `sep`.
-      */
+     *  separator strings `sep`.
+     */
     def apply(xs: Traversable[Text], sep: String = " "): Text = {
       if (sep == "\n") lines(xs)
       else {

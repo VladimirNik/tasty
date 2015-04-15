@@ -38,8 +38,8 @@ trait NameBuffers extends TastyUtils {
     def fullNameIndex(name: Name): NameRef = {
       val pos = name.lastIndexOf('.')
       if (pos > 0)
-        //TODO - take and drop are from TastyUtils
-        nameIndex(Qualified(fullNameIndex(take(name)(pos)), nameIndex(drop(name)(pos + 1))))
+          //TODO - take and drop are from TastyUtils
+          nameIndex(Qualified(fullNameIndex(take(name)(pos)), nameIndex(drop(name)(pos + 1))))
       else
         nameIndex(name)
     }
@@ -69,9 +69,9 @@ trait NameBuffers extends TastyUtils {
       case Signed(original, params, result) =>
         writeByte(SIGNED)
         withLength { writeNameRef(original); writeNameRef(result); params.foreach(writeNameRef) }
-      case Expanded(original) =>
+      case Expanded(prefix, original) =>
         writeByte(EXPANDED)
-        withLength { writeNameRef(original) }
+        withLength { writeNameRef(prefix); writeNameRef(original) }
       case ModuleClass(module) =>
         writeByte(OBJECTCLASS)
         withLength { writeNameRef(module) }

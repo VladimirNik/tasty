@@ -19,7 +19,7 @@ trait PositionUnpicklers {
     import PositionUnpickler._
     import reader._
 
-    //TODO - adopt to Scala Positions
+    //TODO - adopt to Scala Positions (see updated version in Dotty)
     def unpickle(): (Position, AddrToPosition) = ??? /*{
       val positions = new mutable.HashMap[Addr, Position] // Dotty deviation: Can't use new AddrToPosition here. TODO: fix this!
       val sourceLength = readNat()

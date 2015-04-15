@@ -3,40 +3,52 @@ package core
 
 /************************************************************
 Notation:
+
 We use BNF notation. Terminal symbols start with at least two
 consecutive upper case letters. Each terminal is represented as a
 single byte tag. Non-terminals are mixed case. Prefixes of the form
 lower case letter*_ are for explanation of semantic content only, they
 can be dropped without changing the grammar.
+
 Micro-syntax:
+
   LongInt       = Digit* StopDigit        // big endian 2's complement, value fits in a Long w/o overflow
   Int           = LongInt                 // big endian 2's complement, fits in an Int w/o overflow
   Nat           = LongInt                 // non-negative value, fits in an Int without overflow
   Digit         = 0 | ... | 127
   StopDigit     = 128 | ... | 255         // value = digit - 128
+
 Macro-format:
+
   File          = Header majorVersion_Nat minorVersion_Nat UUID
                   nameTable_Length Name* Section*
-  Header        = "5CA1AB1F"
+  Header        = 0x5CA1AB1F
   UUID          = Byte*16                // random UUID
+
   Section       = NameRef Length Bytes
   Length        = Nat                    // length of rest of entry in bytes
+
   Name          = UTF8           Length UTF8-CodePoint*
                   QUALIFIED      Length qualified_NameRef selector_NameRef
                   SIGNED         Length original_NameRef resultSig_NameRef paramSig_NameRef*
                   EXPANDED       Length original_NameRef
-                  MODULECLASS    Length module_NameRef
+                  OBJECTCLASS    Length module_NameRef
                   SUPERACCESSOR  Length accessed_NameRef
                   DEFAULTGETTER  Length method_NameRef paramNumber_Nat
                   SHADOWED       Length original_NameRef
                   MANGLED        Length mangle_NameRef name_NameRef
                   ...
+
   NameRef       = Nat                    // ordinal number of name in name table, starting from 1.
+
 Note: Unqualified names in the name table are strings. The context decides whether a name is
 a type-name or a term-name. The same string can represent both.
+
 Standard-Section: "ASTs" TopLevelStat*
+
   TopLevelStat  = PACKAGE        Length Path TopLevelStat*
                   Stat
+
   Stat          = Term
                   VALDEF         Length NameRef Type rhs_Term? Modifier*
                   DEFDEF         Length NameRef TypeParam* Params* return_Type rhs_Term?
@@ -46,6 +58,7 @@ Standard-Section: "ASTs" TopLevelStat*
   Selector      = IMPORTED              name_NameRef
                   RENAMED        Length from_NameRef to_NameRef
                                  // Imports are for scala.meta, they are not used in the backend
+
   TypeParam     = TYPEPARAM      Length NameRef Type Modifier*
   Params        = PARAMS         Length Param*
   Param         = PARAM          Length NameRef Type rhs_Term? Modifier*  // rhs_Term is present in the case of an aliased class parameter
@@ -53,6 +66,7 @@ Standard-Section: "ASTs" TopLevelStat*
   Parent        = Application
                   Type
   Self          = SELFDEF               selfName_NameRef selfType_Type
+
   Term          = Path
                   Application
                   IDENT                 NameRef Type     // used when ident’s type is not a TermRef
@@ -64,11 +78,11 @@ Standard-Section: "ASTs" TopLevelStat*
                   NAMEDARG       Length paramName_NameRef arg_Term
                   ASSIGN         Length lhs_Term rhs_Term
                   BLOCK          Length expr_Term Stat*
+                  LAMBDA         Length meth_Term target_Type
                   IF             Length cond_Term then_Term else_Term
-                  CLOSURE        Length meth_Term target_Type env_Term*
                   MATCH          Length sel_Term CaseDef*
-                  RETURN         Length meth_ASTRef expr_Term?
                   TRY            Length expr_Term CaseDef* finalizer_Term?
+                  RETURN         Length meth_ASTRef expr_Term?
                   REPEATED       Length elem_Term*
                   BIND           Length boundName_NameRef patType_Type pat_Term
                   ALTERNATIVE    Length alt_Term*
@@ -76,10 +90,12 @@ Standard-Section: "ASTs" TopLevelStat*
                   EMPTYTREE
                   SHARED                term_ASTRef
   Application   = APPLY          Length fn_Term arg_Term*
+
                   TYPEAPPLY      Length fn_Term arg_Type*
   CaseDef       = CASEDEF        Length pat_Term rhs_Tree guard_Tree?
   ImplicitArg   = IMPLICITARG           arg_Term
-  ASTRef        = Nat                             // byte position in AST payload
+  ASTRef        = Nat                               // byte position in AST payload
+
   Path          = Constant
                   TERMREFdirect         sym_ASTRef
                   TERMREFsymbol         sym_ASTRef qual_Type
@@ -88,6 +104,8 @@ Standard-Section: "ASTs" TopLevelStat*
                   THIS                  clsRef_Type
                   SKOLEMtype            refinedType_ASTRef
                   SHARED                path_ASTRef
+
+
   Constant      = UNITconst
                   FALSEconst
                   TRUEconst
@@ -102,6 +120,7 @@ Standard-Section: "ASTs" TopLevelStat*
                   NULLconst
                   CLASSconst            Type
                   ENUMconst             Path
+
   Type          = Path
                   TYPEREFdirect         sym_ASTRef
                   TYPEREFsymbol         sym_ASTRef qual_Type
@@ -115,21 +134,20 @@ Standard-Section: "ASTs" TopLevelStat*
                   ANNOTATED      Length fullAnnotation_Term underlying_Type
                   ANDtype        Length left_Type right_Type
                   ORtype         Length left_Type right_Type
-                  BIND           Length boundName_NameRef bounds_Type selfRef_Type
+                  BIND           Length boundName_NameRef bounds_Type
                                         // for type-variables defined in a type pattern
-                                        // bounds = type bounds, selfRef = reference to type itself.                  
                   BYNAMEtype            underlying_Type
                   POLYtype       Length result_Type NamesTypes      // needed for refinements
                   METHODtype     Length result_Type NamesTypes      // needed for refinements
                   PARAMtype      Length binder_ASTref paramNum_Nat  // needed for refinements
-                  NOTYPE
                   SHARED                type_ASTRef
   NamesTypes    = ParamType*
   NameType      = paramName_NameRef typeOrBounds_ASTRef
+
   Modifier      = PRIVATE
-                  INTERNAL              // package private
+                  INTERNAL                        // package private
                   PROTECTED
-                  PRIVATEqualified     qualifier_Type   // will be dropped
+                  PRIVATEqualified     qualifier_Type       // will be dropped
                   PROTECTEDqualified   qualifier_Type   // will be dropped
                   ABSTRACT
                   FINAL
@@ -139,32 +157,35 @@ Standard-Section: "ASTs" TopLevelStat*
                   LAZY
                   OVERRIDE
                   INLINE                // macro
-                  ABSOVERRIDE           // abstract override
-                  STATIC                // mapped to static Java member
-                  MODULE                // an object or its class
+                  ABSOVERRIDE                     // abstract override
+                  STATIC                            // mapped to static Java member
+                  OBJECT                            // an object or its class
                   TRAIT                 // a trait
-                  LOCAL                 // private[this] or protected[this]
-                  SYNTHETIC             // generated by Scala compiler
-                  ARTIFACT              // to be tagged Java Synthetic
-                  MUTABLE               // a var
-                  LABEL                 // method generated as a label
-                  FIELDaccessor         // getter or setter
-                  CASEaccessor          // getter for case class param
-                  COVARIANT             // type param marked “+”
-                  CONTRAVARIANT         // type param marked “-”
-                  SCALA2X               // Imported from Scala2.x
+                  LOCAL                           // private[this] or protected[this]
+                  SYNTHETIC                     // generated by Scala compiler
+                  ARTIFACT                        // to be tagged Java Synthetic
+                  MUTABLE                         // a var
+                  LABEL                           // method generated as a label
+                  FIELDaccessor               // getter or setter
+                  CASEaccessor              // getter for case class param
+                  COVARIANT                     // type param marked “+”
+                  CONTRAVARIANT             // type param marked “-”
+                  SCALA2X                           // Imported from Scala2.x
                   DEFAULTparameterized  // Method with default params
-                  DEFAULTinit           // variable with “_” initializer
                   INSUPERCALL           // defined in the argument of a constructor supercall
                   Annotation
   Annotation    = ANNOTATION     Length tycon_Type fullAnnotation_Term
+
 Note: Tree tags are grouped into 5 categories that determine what follows, and thus allow to compute the size of the tagged tree in a generic way.
+
   Category 1 (tags 0-63)   :  tag
   Category 2 (tags 64-95)  :  tag Nat
   Category 3 (tags 96-111) :  tag AST
   Category 4 (tags 112-127):  tag Nat AST
   Category 5 (tags 128-255):  tag Length <payload>
+
 Standard Section: "Positions" sourceLength_Nat Assoc*
+
   Assoc         = addr_Delta offset_Delta offset_Delta?
                                             // addr_Delta      :
                                             //    Difference of address to last recorded node.
@@ -178,6 +199,7 @@ Standard Section: "Positions" sourceLength_Nat Assoc*
                                             // Offsets and addresses are difference encoded.
                                             // Nodes which have the same positions as their parents are omitted.
   Delta         = Int                       // Difference between consecutive offsets / tree addresses,
+
 **************************************************************************************/
 
 object PickleFormat {
@@ -197,7 +219,7 @@ object PickleFormat {
   final val DEFAULTGETTER = 7
   final val SHADOWED = 8
 
-  // AST tags
+// AST tags
 
   final val UNITconst = 2
   final val FALSEconst = 3
@@ -246,7 +268,7 @@ object PickleFormat {
   final val DOUBLEconst = 76
   final val STRINGconst = 77
   final val IMPORTED = 78
-  
+
   final val THIS = 96
   final val CLASSconst = 97
   final val ENUMconst = 98

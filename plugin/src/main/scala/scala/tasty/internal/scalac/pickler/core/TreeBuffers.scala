@@ -23,7 +23,7 @@ trait TreeBuffers {
     private var delta: Array[Int] = _
     private var numOffsets = 0
 
-    private[core] val pickledTrees = new java.util.IdentityHashMap[Tree, Any] // Value type is really Addr, but that's not compatible with null  
+    private[core] val pickledTrees = new java.util.IdentityHashMap[Tree, Any] // Value type is really Addr, but that's not compatible with null
 
     def addrOfTree(tree: Tree): Option[Addr] = pickledTrees.get(tree) match {
       case null => None

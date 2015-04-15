@@ -4,8 +4,7 @@ import scala.reflect.ClassTag
 
 object Util {
 
-  /**
-   * The index `i` in `candidates.indices` such that `candidates(i) <= x` and
+  /** The index `i` in `candidates.indices` such that `candidates(i) <= x` and
    *  `candidates(i)` is closest to `x`, determined by binary search, or -1
    *  if `x < candidates(0)`.
    *  @param  hint   If between 0 and `candidates.length` use this

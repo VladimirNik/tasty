@@ -57,7 +57,7 @@ trait TastyUnpicklers {
           val params = until(end)(readNameRef())
           Signed(original, params, result)
         case EXPANDED =>
-          Expanded(readNameRef())
+          Expanded(readNameRef(), readNameRef())
         case OBJECTCLASS =>
           ModuleClass(readNameRef())
         case SUPERACCESSOR =>

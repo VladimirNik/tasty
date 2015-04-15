@@ -25,6 +25,7 @@ astTag: TYPEREFpkg (68)
 pickleName(*): Simple(<root>)
 astTag: TYPEDEF (131)
 ==> wl
+pickleName(sym: Symbol): Test2
 pickleName: Test2
 astTag: TEMPLATE (160)
 ==> wl
@@ -45,6 +46,7 @@ fillRef( at: Addr(28), target: Addr(40), relative true )
 <== wl
 astTag: DEFDEF (130)
 ==> wl
+pickleName(sym: Symbol): <init>
 pickleName: <init>
 astTag: PARAMS (134)
 ==> wl
@@ -65,6 +67,7 @@ fillRef( at: Addr(17), target: Addr(56), relative true )
 <== wl
 astTag: VALDEF (129)
 ==> wl
+pickleName(sym: Symbol): Test2
 pickleName: Test2
 astTag: TYPEREF (117)
 pickleName: Test2$
@@ -90,6 +93,7 @@ fillRef( at: Addr(57), target: Addr(82), relative true )
 <== wl
 astTag: TYPEDEF (131)
 ==> wl
+pickleName(sym: Symbol): Test2$
 pickleName: Test2$
 astTag: TEMPLATE (160)
 ==> wl
@@ -107,28 +111,29 @@ fillRef( at: Addr(94), target: Addr(106), relative true )
 <== wl
 astTag: SELFDEF (118)
 pickleName: _
-astTag: TERMREF (115)
-pickleName: Test2
+astTag: TERMREFsymbol (114)
+writeRef( target: Addr(56) )
 astTag: SHARED (64)
 writeRef( target: Addr(64) )
 astTag: DEFDEF (130)
 ==> wl
+pickleName(sym: Symbol): <init>
 pickleName: <init>
 astTag: PARAMS (134)
 ==> wl
-fillRef( at: Addr(122), target: Addr(126), relative true )
+fillRef( at: Addr(125), target: Addr(129), relative true )
 <== wl
 astTag: SHARED (64)
 writeRef( target: Addr(62) )
      byte: pickleModifiers
-fillRef( at: Addr(116), target: Addr(131), relative true )
+fillRef( at: Addr(119), target: Addr(134), relative true )
 <== wl
-fillRef( at: Addr(89), target: Addr(131), relative true )
+fillRef( at: Addr(89), target: Addr(134), relative true )
 <== wl
      byte: pickleModifiers
 astTag: OBJECT (19)
 astTag: SYNTHETIC (22)
-fillRef( at: Addr(83), target: Addr(133), relative true )
+fillRef( at: Addr(83), target: Addr(136), relative true )
 <== wl
-fillRef( at: Addr(1), target: Addr(133), relative true )
+fillRef( at: Addr(1), target: Addr(136), relative true )
 <== wl

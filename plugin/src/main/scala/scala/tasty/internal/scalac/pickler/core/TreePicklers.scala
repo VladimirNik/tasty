@@ -42,25 +42,16 @@ trait TreePicklers extends NameBuffers
       symRefs.get(sym)
     }
 
-    private var makeSymbolicRefsTo: Symbol = NoSymbol
-
-    /**
-     * All references to members of class `sym` are pickled
-     *  as symbolic references. Used to pickle the self info of a class.
-     *  Without this precaution we get an infinite cycle when unpickling pos/extmethods.scala
-     *  The problem arises when a self type of a trait is a type parameter of the same trait.
-     */
-    private def withSymbolicRefsTo[T](sym: Symbol)(op: => T): T = {
-      val saved = makeSymbolicRefsTo
-      makeSymbolicRefsTo = sym
-      try op
-      finally makeSymbolicRefsTo = saved
-    }
-
     def preRegister(tree: Tree): Unit = tree match {
       case tree: MemberDef =>
         if (!symRefs.contains(tree.symbol)) symRefs(tree.symbol) = NoAddr
       case _ =>
+    }
+
+    private def isLocallyDefined(sym: Symbol) = symRefs.get(sym) match {
+      case Some(label) =>
+        assert(sym.exists); label != NoAddr
+      case None        => false
     }
 
     def registerDef(sym: Symbol): Unit = {
@@ -73,14 +64,21 @@ trait TreePicklers extends NameBuffers
       }
     }
 
-    private def pickleName(name: Name) = {
+    private def pickleName(name: Name): Unit = {
       log(s"pickleName: ${name.toString()}")
       writeNat(nameIndex(name).index)
     }
-    private def pickleName(name: TastyName) = {
+    private def pickleName(name: TastyName): Unit = {
       log(s"pickleName(*): ${name.toString()}")
       writeNat(nameIndex(name).index)
     }
+
+    private def pickleName(sym: Symbol): Unit = {
+      //TODO add <expandedname> processing (see Dotty)
+      log(s"pickleName(sym: Symbol): ${sym.name}")
+      pickleName(sym.name)
+    }
+
     private def pickleNameAndSig(name: Name, sig: Signature) = {
       val Signature(params, result) = sig
       log(s"pickleNameAndSig, name: ${name.toString()}")
@@ -398,9 +396,7 @@ trait TreePicklers extends NameBuffers
               if (tree.self != noSelfType && !tree.self.isEmpty) {
                 writeByte(SELFDEF)
                 pickleName(tree.self.name)
-                withSymbolicRefsTo(tree.symbol.owner) {
-                  pickleType(tree.self.tpt.tpe)
-                }
+                pickleType(tree.self.tpt.tpe)
               }
               primaryCtr match {
                 case dd: DefDef => picklePrimaryCtr(dd)
@@ -437,7 +433,7 @@ trait TreePicklers extends NameBuffers
         registerDef(sym)
         writeByte(tag)
         withLength {
-          pickleName(sym.name)
+          pickleName(sym)
           pickleParams
           tpt match {
             case tpt: TypeTree =>
