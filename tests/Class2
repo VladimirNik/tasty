@@ -10,7 +10,7 @@ astTag: TYPEREFpkg (68)
 pickleName(*): Simple(<root>)
 astTag: TYPEDEF (131)
 ==> wl
-pickleName: Test1
+pickleName: Test2
 astTag: TEMPLATE (160)
 ==> wl
 astTag: APPLY (139)
@@ -41,16 +41,45 @@ pickleName(*): Simple(scala)
      byte: pickleModifiers
 fillRef( at: Addr(34), target: Addr(48), relative true )
 <== wl
-fillRef( at: Addr(17), target: Addr(48), relative true )
+astTag: DEFDEF (130)
+==> wl
+pickleName: x
+astTag: TYPEREF (117)
+pickleName: Int
+astTag: TERMREF (115)
+pickleNameAndSig, name: scala
+                  params: List()
+                  result: 
+pickleName(*): Signed(NameRef(14),List(),NameRef(2))
+astTag: SHARED (64)
+writeRef( target: Addr(7) )
+pickleConstant: Constant(5)
+astTag: INTconst (73)
+     byte: pickleModifiers
+fillRef( at: Addr(49), target: Addr(65), relative true )
+<== wl
+astTag: DEFDEF (130)
+==> wl
+pickleName: y
+astTag: TYPEREF (117)
+pickleName: Int
+astTag: SHARED (64)
+writeRef( target: Addr(46) )
+pickleConstant: Constant(7)
+astTag: INTconst (73)
+     byte: pickleModifiers
+fillRef( at: Addr(66), target: Addr(80), relative true )
+<== wl
+fillRef( at: Addr(17), target: Addr(80), relative true )
 <== wl
      byte: pickleModifiers
-fillRef( at: Addr(11), target: Addr(48), relative true )
+fillRef( at: Addr(11), target: Addr(80), relative true )
 <== wl
 astTag: VALDEF (129)
 ==> wl
-pickleName: Test1
+pickleName: Test2
 astTag: TYPEREF (117)
-pickleName: Test1$
+pickleName: Test2$
 astTag: THIS (96)
 astTag: TYPEREFpkg (68)
 pickleName(*): Simple(<empty>)
@@ -59,21 +88,21 @@ astTag: APPLY (139)
 astTag: SELECT (113)
 pickleNameAndSig, name: <init>
                   params: List()
-                  result: Test1$
-pickleName(*): Signed(NameRef(6),List(),NameRef(15))
+                  result: Test2$
+pickleName(*): Signed(NameRef(6),List(),NameRef(19))
 astTag: NEW (100)
 astTag: SHARED (64)
-writeRef( target: Addr(54) )
-fillRef( at: Addr(60), target: Addr(72), relative true )
+writeRef( target: Addr(86) )
+fillRef( at: Addr(92), target: Addr(104), relative true )
 <== wl
      byte: pickleModifiers
 astTag: OBJECT (19)
 astTag: SYNTHETIC (22)
-fillRef( at: Addr(49), target: Addr(74), relative true )
+fillRef( at: Addr(81), target: Addr(106), relative true )
 <== wl
 astTag: TYPEDEF (131)
 ==> wl
-pickleName: Test1$
+pickleName: Test2$
 astTag: TEMPLATE (160)
 ==> wl
 astTag: APPLY (139)
@@ -86,32 +115,32 @@ pickleName(*): Signed(NameRef(6),List(),NameRef(11))
 astTag: NEW (100)
 astTag: SHARED (64)
 writeRef( target: Addr(29) )
-fillRef( at: Addr(86), target: Addr(98), relative true )
+fillRef( at: Addr(118), target: Addr(130), relative true )
 <== wl
 astTag: SELFDEF (118)
 pickleName: _
 astTag: TERMREFsymbol (114)
-writeRef( target: Addr(48) )
+writeRef( target: Addr(80) )
 astTag: SHARED (64)
-writeRef( target: Addr(56) )
+writeRef( target: Addr(88) )
 astTag: DEFDEF (130)
 ==> wl
 pickleName: <init>
 astTag: PARAMS (134)
 ==> wl
-fillRef( at: Addr(117), target: Addr(121), relative true )
+fillRef( at: Addr(149), target: Addr(153), relative true )
 <== wl
 astTag: SHARED (64)
-writeRef( target: Addr(54) )
+writeRef( target: Addr(86) )
      byte: pickleModifiers
-fillRef( at: Addr(111), target: Addr(126), relative true )
+fillRef( at: Addr(143), target: Addr(158), relative true )
 <== wl
-fillRef( at: Addr(81), target: Addr(126), relative true )
+fillRef( at: Addr(113), target: Addr(158), relative true )
 <== wl
      byte: pickleModifiers
 astTag: OBJECT (19)
 astTag: SYNTHETIC (22)
-fillRef( at: Addr(75), target: Addr(128), relative true )
+fillRef( at: Addr(107), target: Addr(160), relative true )
 <== wl
-fillRef( at: Addr(1), target: Addr(128), relative true )
+fillRef( at: Addr(1), target: Addr(160), relative true )
 <== wl

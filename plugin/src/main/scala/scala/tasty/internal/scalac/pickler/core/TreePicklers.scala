@@ -216,8 +216,13 @@ trait TreePicklers extends NameBuffers
             val sig = Signature(tpe)
             pickleNameAndSig(sym.name, sig); pickleType(tpe.prefix)
           case tpe: ThisType =>
-            writeByte(THIS)
-            pickleType(tpe.widen) //SingleType(...) -> TypeRef(...)
+            if (tpe.sym.hasPackageFlag && !tpe.sym.isEffectiveRoot) {
+              writeByte(TERMREFpkg)
+              pickleName(qualifiedName(tpe.sym))
+            } else {
+              writeByte(THIS)
+              pickleType(tpe.widen) //SingleType(...) -> TypeRef(...)
+            }
           case tpe: SuperType =>
             writeByte(SUPERtype)
             withLength { pickleType(tpe.thistpe); pickleType(tpe.supertpe) }
