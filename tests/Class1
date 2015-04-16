@@ -10,7 +10,6 @@ astTag: TYPEREFpkg (68)
 pickleName(*): Simple(<root>)
 astTag: TYPEDEF (131)
 ==> wl
-pickleName(sym: Symbol): Test1
 pickleName: Test1
 astTag: TEMPLATE (160)
 ==> wl
@@ -31,7 +30,6 @@ fillRef( at: Addr(22), target: Addr(34), relative true )
 <== wl
 astTag: DEFDEF (130)
 ==> wl
-pickleName(sym: Symbol): <init>
 pickleName: <init>
 astTag: PARAMS (134)
 ==> wl
@@ -52,7 +50,6 @@ fillRef( at: Addr(11), target: Addr(50), relative true )
 <== wl
 astTag: VALDEF (129)
 ==> wl
-pickleName(sym: Symbol): Test1
 pickleName: Test1
 astTag: TYPEREF (117)
 pickleName: Test1$
@@ -78,7 +75,6 @@ fillRef( at: Addr(51), target: Addr(76), relative true )
 <== wl
 astTag: TYPEDEF (131)
 ==> wl
-pickleName(sym: Symbol): Test1$
 pickleName: Test1$
 astTag: TEMPLATE (160)
 ==> wl
@@ -102,7 +98,6 @@ astTag: SHARED (64)
 writeRef( target: Addr(58) )
 astTag: DEFDEF (130)
 ==> wl
-pickleName(sym: Symbol): <init>
 pickleName: <init>
 astTag: PARAMS (134)
 ==> wl

@@ -29,6 +29,7 @@ trait TreePicklers extends NameBuffers
     private val forwardSymRefs = new mutable.HashMap[Symbol, List[Addr]]
     private val pickledTypes = new java.util.IdentityHashMap[Type, Any] // Value type is really Addr, but that's not compatible with null
     private val emulatedTypes = new mutable.HashMap[(Name, Type), Addr]
+    val NOTAG = -1
 
     private def withLength(op: => Unit) = {
       log("==> wl")
@@ -75,7 +76,7 @@ trait TreePicklers extends NameBuffers
 
     private def pickleName(sym: Symbol): Unit = {
       //TODO add <expandedname> processing (see Dotty)
-      log(s"pickleName(sym: Symbol): ${sym.name}")
+      //log(s"pickleName(sym: Symbol): ${sym.name}")
       pickleName(sym.name)
     }
 
@@ -104,12 +105,13 @@ trait TreePicklers extends NameBuffers
     private var logCond = true
     private var pickledStr: StringBuffer = new StringBuffer("")
     private def log(str: String) = {
-      pickledStr.append(str)
+      import scala.reflect.internal.Chars.LF
+      pickledStr.append(str + LF)
       if (logCond) {
         println(str)
       }
     }
-    def logInfo = pickledStr.toString()
+    def logInfo = pickledStr.toString().trim().stripLineEnd
 
     private def writeRef(target: Addr) = {
       log(s"writeRef( target: $target )")
@@ -341,9 +343,9 @@ trait TreePicklers extends NameBuffers
             pickleDef(TYPEDEF, tree.symbol, tree.impl)
             val clSym = tree.symbol
             val clTpe = clSym.tpe
-            emulateSupAccValDef(clSym)
+            val supAccValDefSymAddr = emulateSupAccValDef(clSym)
             emulatedTypes.get((syntheticName(tree.name), clTpe.prefix)) match {
-              case Some(addr) => emulateSupAccTypeDef(tree.name, clTpe.prefix, addr)
+              case Some(addr) => emulateSupAccTypeDef(tree.name, clTpe.prefix, addr, supAccValDefSymAddr)
               case _ => log(s"synthetic typeDef can't be emulated for ${tree.name}")
             }
           case tree: Template =>
@@ -479,8 +481,10 @@ trait TreePicklers extends NameBuffers
         qualPickling
       }
 
-      def emulateDef(tag: Int, name: Name, modifiers: List[Int])(pickleParameters: => Unit = ())(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()) = {
+      def emulateDef(tag: Int, name: Name, modifiers: List[Int])(pickleParameters: => Unit = ())(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()): Addr = {
         //register def and put tree to pickledTrees?
+        val defAddr = currentAddr
+
         writeByte(tag)
         withLength {
           pickleName(name)
@@ -491,9 +495,10 @@ trait TreePicklers extends NameBuffers
           log(s"     byte: pickleModifiers")
           modifiers foreach writeByte
         }
+        defAddr
       }
 
-      def emulateValDef(name: Name, modifiers: List[Int])(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()) = {
+      def emulateValDef(name: Name, modifiers: List[Int])(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()): Addr = {
         //preRegister Def?
         emulateDef(VALDEF, name, modifiers)(pickleParameters = ())(pickleTpt)(pickleRhs)
       }
@@ -507,8 +512,16 @@ trait TreePicklers extends NameBuffers
         emulatedTypes((name, prefix)) = tAddr
         tAddr
       }
+      
+      def emulateSymbol(addr: Addr, tag: Int = NOTAG): Unit = {
+        //register symbol?
+        //byte before symbol pickling (if required)
+        if (tag != NOTAG) writeByte(tag)
+        //symbol addr
+        writeRef(addr)
+      }
 
-      def emulateSupAccValDef(origClass: Symbol) = {
+      def emulateSupAccValDef(origClass: Symbol): Addr = {
         val clName = origClass.name
         val prefixTpe = origClass.tpe.prefix
         val fullName = syntheticName(origClass.fullNameAsName('.')).toTypeName
@@ -531,29 +544,32 @@ trait TreePicklers extends NameBuffers
         }
       }
 
-      def emulateDefDef(name: Name, modifiers: List[Int])(pickleParams: => Unit)(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()) = {
+      def emulateDefDef(name: Name, modifiers: List[Int])(pickleParams: => Unit)(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()): Addr = {
         //preRegister Def?
         emulateDef(DEFDEF, name, modifiers)(pickleParams)(pickleTpt)(pickleRhs)
       }
 
-      def emulateTypeDef(name: Name, modifiers: List[Int])(pickleRhs: => Unit = ()) = {
+      def emulateTypeDef(name: Name, modifiers: List[Int])(pickleRhs: => Unit = ()): Addr = {
         //preRegister Def?
         emulateDef(TYPEDEF, name, modifiers)(pickleParameters = ())(pickleTpt = ())(pickleRhs)
       }
 
-      def emulateTemplate(pickleParents: => Unit)(pickleSelf: => Unit)(picklePrConstr: => Unit) = {
+      def emulateTemplate(pickleParents: => Unit)(pickleSelf: => Unit)(picklePrConstr: => Unit): Addr = {
         //register Template
+        val addr = currentAddr
+ 
         writeByte(TEMPLATE)
         withLength {
           pickleParents
           pickleSelf
           picklePrConstr
         }
+        addr
       }
 
       def syntheticName(name: Name) = name.append('$')
 
-      def emulateSupAccTypeDef(clName: Name, clTpePrefix: Type, clAddr: Addr) = {
+      def emulateSupAccTypeDef(clName: Name, clTpePrefix: Type, clAddr: Addr, vdSymAddr: Addr): Addr = {
         val name = syntheticName(clName)
         emulateTypeDef(name, List(OBJECT, SYNTHETIC)) {
           emulateTemplate {
@@ -571,8 +587,9 @@ trait TreePicklers extends NameBuffers
             writeByte(SELFDEF)
             pickleName(nme.WILDCARD)
             //emulate  TermRef(ThisType(TypeRef(NoPrefix,<empty>)),HelloWorld)
-            //         type of val HelloWorld: HelloWorld$ ...
-            emulateType(TERMREF, clName, clTpePrefix)
+            //         type of (val HelloWorld: HelloWorld$ ...).tpe
+            emulateSymbol(vdSymAddr, TERMREFsymbol)
+            pickleType(clTpePrefix)
           } {
             //picklePrConstr
             emulateDefDef(nme.CONSTRUCTOR, Nil) {
