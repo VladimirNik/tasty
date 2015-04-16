@@ -46,8 +46,11 @@ trait TastyPhase {
       var errorDuringFileReading = false
       def loadPickledPattern(file: File): String = {
         val absPath = file.getAbsolutePath.dropRight(".scala".length()).replaceFirst("sandbox", "tests")
+        val testFilePath = absPath + "tasty"
+        generateTestFile(testFilePath, pickledInScala)
         try {
-          Source.fromFile(absPath).getLines.mkString
+          import scala.reflect.internal.Chars.LF
+          Source.fromFile(absPath).getLines.mkString(s"${LF}").trim().stripLineEnd
         } catch {
           case ex: Exception =>
             errorDuringFileReading = true
@@ -57,9 +60,24 @@ trait TastyPhase {
       val pickledInDotty = loadPickledPattern(unit.source.file.file)
       if (pickledInScala != pickledInDotty) {
         if (errorDuringFileReading) warning(s"$pickledInDotty")
-        else warning(s"pickling difference for $unit")
+        else warning(sm"""|pickling difference for $unit :
+                          |${pickledInScala diff pickledInDotty}
+                          |""")
       } else {
         inform(s"pickling is correct for $unit")
+      }
+    }
+
+    def generateTestFile(path: String, logInfo: String) = {
+      import java.io.FileWriter
+      try {
+        val logFile = new File(path);
+        val logFileWriter = new FileWriter(logFile, false); // true to append
+        logFileWriter.write(logInfo);
+        logFileWriter.close();
+      } catch {
+        case ex: Exception =>
+          warning(s"test file: $path can not be generated")
       }
     }
   }
