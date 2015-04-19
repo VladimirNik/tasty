@@ -410,7 +410,14 @@ trait TreePicklers extends NameBuffers
             writeByte(IMPORT)
             withLength {
               pickleTree(expr)
-              //TODO process selectors
+              selectors foreach {
+                case ImportSelector(name: Name, _, rename: Name, _) if name == rename =>
+                  writeByte(RENAMED)
+                  withLength { pickleName(name); pickleName(rename) }
+                case ImportSelector(name, _, _, _) =>
+                  writeByte(IMPORTED)
+                  pickleName(name)
+              }
             }
           case PackageDef(pid, stats) =>
             writeByte(PACKAGE)
