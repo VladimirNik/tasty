@@ -411,7 +411,7 @@ trait TreePicklers extends NameBuffers
             withLength {
               pickleTree(expr)
               selectors foreach {
-                case ImportSelector(name: Name, _, rename: Name, _) if name == rename =>
+                case ImportSelector(name: Name, _, rename: Name, _) if name != rename =>
                   writeByte(RENAMED)
                   withLength { pickleName(name); pickleName(rename) }
                 case ImportSelector(name, _, _, _) =>
