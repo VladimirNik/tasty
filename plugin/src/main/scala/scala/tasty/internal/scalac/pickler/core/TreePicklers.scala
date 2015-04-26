@@ -355,6 +355,7 @@ trait TreePicklers extends NameBuffers
             pickleDef(TYPEDEF, tree.symbol, tree.rhs)
           case tree: ClassDef =>
             pickleDef(TYPEDEF, tree.symbol, tree.impl)
+            /* Emulation of Dotty's superaccessors
             val clSym = tree.symbol
             val clTpe = clSym.tpe
             val supAccValDefSymAddr = emulateSupAccValDef(clSym)
@@ -362,6 +363,7 @@ trait TreePicklers extends NameBuffers
               case Some(addr) => emulateSupAccTypeDef(tree.name, clTpe.prefix, addr, supAccValDefSymAddr)
               case _ => log(s"synthetic typeDef can't be emulated for ${tree.name}")
             }
+            */
           case tree: Template =>
             registerDef(tree.symbol)
             writeByte(TEMPLATE)

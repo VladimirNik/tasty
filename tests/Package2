@@ -44,73 +44,7 @@ fillRef( at: Addr(21), target: Addr(52), relative true )
      byte: pickleModifiers
 fillRef( at: Addr(15), target: Addr(52), relative true )
 <== wl
-astTag: VALDEF (129)
-==> wl
-pickleName: Test
-astTag: TYPEREF (117)
-pickleName: Test$
-astTag: TERMREFpkg (67)
-pickleName(*): Qualified(NameRef(9),NameRef(10))
-astTag: APPLY (139)
-==> wl
-astTag: SELECT (113)
-pickleNameAndSig, name: <init>
-                  params: List()
-                  result: aaa.bbb.ccc.ddd.eee.fff.Test$
-pickleName(*): Signed(NameRef(13),List(),NameRef(23))
-astTag: NEW (100)
-astTag: SHARED (64)
-writeRef( target: Addr(58) )
-fillRef( at: Addr(63), target: Addr(75), relative true )
+fillRef( at: Addr(8), target: Addr(52), relative true )
 <== wl
-     byte: pickleModifiers
-astTag: OBJECT (19)
-astTag: SYNTHETIC (22)
-fillRef( at: Addr(53), target: Addr(77), relative true )
-<== wl
-astTag: TYPEDEF (131)
-==> wl
-pickleName: Test$
-astTag: TEMPLATE (160)
-==> wl
-astTag: APPLY (139)
-==> wl
-astTag: SELECT (113)
-pickleNameAndSig, name: <init>
-                  params: List()
-                  result: java.lang.Object
-pickleName(*): Signed(NameRef(13),List(),NameRef(18))
-astTag: NEW (100)
-astTag: SHARED (64)
-writeRef( target: Addr(33) )
-fillRef( at: Addr(89), target: Addr(101), relative true )
-<== wl
-astTag: SELFDEF (118)
-pickleName: _
-astTag: TERMREFsymbol (114)
-writeRef( target: Addr(52) )
-astTag: SHARED (64)
-writeRef( target: Addr(60) )
-astTag: DEFDEF (130)
-==> wl
-pickleName: <init>
-astTag: PARAMS (134)
-==> wl
-fillRef( at: Addr(120), target: Addr(124), relative true )
-<== wl
-astTag: SHARED (64)
-writeRef( target: Addr(58) )
-     byte: pickleModifiers
-fillRef( at: Addr(114), target: Addr(129), relative true )
-<== wl
-fillRef( at: Addr(84), target: Addr(129), relative true )
-<== wl
-     byte: pickleModifiers
-astTag: OBJECT (19)
-astTag: SYNTHETIC (22)
-fillRef( at: Addr(78), target: Addr(131), relative true )
-<== wl
-fillRef( at: Addr(8), target: Addr(131), relative true )
-<== wl
-fillRef( at: Addr(1), target: Addr(131), relative true )
+fillRef( at: Addr(1), target: Addr(52), relative true )
 <== wl
