@@ -354,7 +354,7 @@ trait TreePicklers extends NameBuffers
           case tree: TypeDef =>
             pickleDef(TYPEDEF, tree.symbol, tree.rhs)
           case tree: ClassDef =>
-            pickleDef(TYPEDEF, tree.symbol, tree.impl)
+            pickleDef(TYPEDEF, tree.symbol, tree.impl, removeAbstract = tree.symbol.isTrait)
             /* Emulation of Dotty's superaccessors
             val clSym = tree.symbol
             val clTpe = clSym.tpe
@@ -377,6 +377,8 @@ trait TreePicklers extends NameBuffers
               pickleParams(params)
               //emulate dotty style of parents representation (for pickling)
               val primaryCtr = treeInfo.firstConstructor(tree.body)
+              val isTrait = tree.symbol.owner.isTrait
+              
               val ap: Option[Apply] = primaryCtr match {
                 case DefDef(_, _, _, _, _, Block(ctBody, _)) =>
                   ctBody collectFirst {
@@ -395,7 +397,7 @@ trait TreePicklers extends NameBuffers
               //lang.Object => (new lang.Object()).<init> 
               //Apply(Select(New(TypeTree[tpe]), <init>), args)
               tree.parents.zipWithIndex.foreach {
-                case (tr, i) =>
+                case (tr, i) if !isTrait =>
                   //pickleTree
                   emulateApply {
                     //Scala: scala.AnyRef in parents (default) - change it to lang.Object
@@ -409,7 +411,9 @@ trait TreePicklers extends NameBuffers
                     };
                     constrArgss(i).foreach(pickleTree)
                   }
-                case _ =>
+                case (tr, _) if isTrait => 
+                  val parent = if (isDefaultAnyRef(tr)) TypeTree(global.definitions.ObjectTpe) else tr
+                  pickleTree(parent)
               }
               if (tree.self != noSelfType && !tree.self.isEmpty) {
                 writeByte(SELFDEF)
@@ -418,9 +422,14 @@ trait TreePicklers extends NameBuffers
               }
               primaryCtr match {
                 case dd: DefDef => picklePrimaryCtr(dd)
+                //emulate constructor for `trait x` (no constructor in tree)
+                case _ if isTrait => emulateEmptyPrimaryCtr()
                 case _ =>
               }
-              pickleStats(rest.tail)
+              rest match {
+                case constr :: tail => pickleStats(tail)
+                case _ =>
+              }
             }
           case Import(expr, selectors) =>
             writeByte(IMPORT)
@@ -438,6 +447,7 @@ trait TreePicklers extends NameBuffers
           case PackageDef(pid, stats) =>
             writeByte(PACKAGE)
             withLength { pickleType(pid.tpe); pickleStats(stats) }
+          case EmptyTree =>
         }
       } catch {
         case ex: AssertionError =>
@@ -445,15 +455,19 @@ trait TreePicklers extends NameBuffers
           throw ex
       }
 
-      def pickleAllParams(tree: DefDef) = {
-        pickleParams(tree.tparams)
-        for (vparams <- tree.vparamss) {
+      def pickleAllParams(tree: DefDef): Unit =
+        pickleDefParams(tree.tparams, tree.vparamss)
+
+      def pickleDefParams(tparams: List[Tree], vparamss: List[List[Tree]]): Unit = {
+        pickleParams(tparams)
+        for (vparams <- vparamss) {
           writeByte(PARAMS)
           withLength { pickleParams(vparams) }
         }
       }
 
-      def pickleDef(tag: Int, sym: Symbol, tpt: Tree, rhs: Tree = EmptyTree, pickleParams: => Unit = ()) = {
+      //TODO generalize removeAbstract for all mods
+      def pickleDef(tag: Int, sym: Symbol, tpt: Tree, rhs: Tree = EmptyTree, pickleParams: => Unit = (), removeAbstract: Boolean = false) = {
         assert(symRefs(sym) == NoAddr)
         registerDef(sym)
         writeByte(tag)
@@ -467,7 +481,7 @@ trait TreePicklers extends NameBuffers
               pickleTree(tpt)
           }
           pickleTreeUnlessEmpty(rhs)
-          pickleModifiers(sym)
+          pickleModifiers(sym, removeAbstract)
         }
       }
 
@@ -567,10 +581,26 @@ trait TreePicklers extends NameBuffers
         }
       }
 
-      def emulateDefDef(name: Name, modifiers: List[Int])(pickleParams: => Unit)(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()): Addr = {
+      def emulateDefDef(name: Name, modifiers: List[Int] = Nil)(pickleParams: => Unit)(pickleTpt: => Unit = ())(pickleRhs: => Unit = ()): Addr = {
         //preRegister Def?
         emulateDef(DEFDEF, name, modifiers)(pickleParams)(pickleTpt)(pickleRhs)
       }
+
+      def emulatePrimaryCtr(pickleCtrParams: => Unit)(rhs: => Tree = EmptyTree) = {
+        emulateDefDef(nme.CONSTRUCTOR) {
+          //params
+          pickleCtrParams
+        } {
+          //tpe
+          pickleType(global.definitions.UnitTpe)
+        } {
+          //rhs
+          pickleTree(rhs)
+        }
+      }
+
+      def emulateEmptyPrimaryCtr() =
+        emulatePrimaryCtr(pickleDefParams(Nil, List(Nil)))(rhs = EmptyTree)
 
       def emulateTypeDef(name: Name, modifiers: List[Int])(pickleRhs: => Unit = ()): Addr = {
         //preRegister Def?
@@ -653,7 +683,7 @@ trait TreePicklers extends NameBuffers
         stats.foreach(stat => if (!stat.isEmpty) pickleTree(stat))
       }
 
-      def pickleModifiers(sym: Symbol): Unit = {
+      def pickleModifiers(sym: Symbol, removeAbstract: Boolean = false): Unit = {
         log(s"     byte: pickleModifiers")
         val flags = sym.flags
         val privateWithin = sym.privateWithin
@@ -679,7 +709,7 @@ trait TreePicklers extends NameBuffers
           if (sym.isCaseAccessor) writeByte(CASEaccessor)
         } else {
           if (sym.isSealed) writeByte(SEALED)
-          if (sym.isAbstract) writeByte(ABSTRACT)
+          if (!removeAbstract && sym.isAbstract) writeByte(ABSTRACT)
           if (sym.isTrait) writeByte(TRAIT)
           if (sym.isCovariant) writeByte(COVARIANT)
           if (sym.isContravariant) writeByte(CONTRAVARIANT)

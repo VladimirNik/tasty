@@ -1,0 +1,35 @@
+astTag: PACKAGE (128)
+==> wl
+astTag: TERMREFpkg (67)
+pickleName(*): Simple(<empty>)
+astTag: TYPEDEF (131)
+==> wl
+pickleName: X
+astTag: TEMPLATE (160)
+==> wl
+astTag: TYPEREF (117)
+pickleName: Object
+astTag: TERMREFpkg (67)
+pickleName(*): Qualified(NameRef(4),NameRef(5))
+astTag: DEFDEF (130)
+==> wl
+pickleName: <init>
+astTag: PARAMS (134)
+==> wl
+fillRef( at: Addr(29), target: Addr(33), relative true )
+<== wl
+astTag: TYPEREF (117)
+pickleName: Unit
+astTag: TERMREFpkg (67)
+pickleName(*): Simple(scala)
+     byte: pickleModifiers
+fillRef( at: Addr(23), target: Addr(37), relative true )
+<== wl
+fillRef( at: Addr(14), target: Addr(37), relative true )
+<== wl
+     byte: pickleModifiers
+astTag: TRAIT (20)
+fillRef( at: Addr(8), target: Addr(38), relative true )
+<== wl
+fillRef( at: Addr(1), target: Addr(38), relative true )
+<== wl
