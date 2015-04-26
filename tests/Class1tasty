@@ -1,0 +1,119 @@
+astTag: PACKAGE (128)
+==> wl
+astTag: TERMREF (115)
+pickleNameAndSig, name: <empty>
+                  params: List()
+                  result: 
+pickleName(*): Signed(NameRef(1),List(),NameRef(2))
+astTag: THIS (96)
+astTag: TYPEREFpkg (68)
+pickleName(*): Simple(<root>)
+astTag: TYPEDEF (131)
+==> wl
+pickleName: Test1
+astTag: TEMPLATE (160)
+==> wl
+astTag: APPLY (139)
+==> wl
+astTag: SELECT (113)
+pickleNameAndSig, name: <init>
+                  params: List()
+                  result: java.lang.Object
+pickleName(*): Signed(NameRef(6),List(),NameRef(11))
+astTag: NEW (100)
+astTag: TYPEREF (117)
+pickleName: Object
+astTag: THIS (96)
+astTag: TYPEREFpkg (68)
+pickleName(*): Qualified(NameRef(7),NameRef(8))
+fillRef( at: Addr(22), target: Addr(34), relative true )
+<== wl
+astTag: DEFDEF (130)
+==> wl
+pickleName: <init>
+astTag: PARAMS (134)
+==> wl
+fillRef( at: Addr(41), target: Addr(45), relative true )
+<== wl
+astTag: TYPEREF (117)
+pickleName: Unit
+astTag: THIS (96)
+astTag: TYPEREFpkg (68)
+pickleName(*): Simple(scala)
+     byte: pickleModifiers
+fillRef( at: Addr(35), target: Addr(50), relative true )
+<== wl
+fillRef( at: Addr(17), target: Addr(50), relative true )
+<== wl
+     byte: pickleModifiers
+fillRef( at: Addr(11), target: Addr(50), relative true )
+<== wl
+astTag: VALDEF (129)
+==> wl
+pickleName: Test1
+astTag: TYPEREF (117)
+pickleName: Test1$
+astTag: THIS (96)
+astTag: TYPEREFpkg (68)
+pickleName(*): Simple(<empty>)
+astTag: APPLY (139)
+==> wl
+astTag: SELECT (113)
+pickleNameAndSig, name: <init>
+                  params: List()
+                  result: Test1$
+pickleName(*): Signed(NameRef(6),List(),NameRef(15))
+astTag: NEW (100)
+astTag: SHARED (64)
+writeRef( target: Addr(56) )
+fillRef( at: Addr(62), target: Addr(74), relative true )
+<== wl
+     byte: pickleModifiers
+astTag: OBJECT (19)
+astTag: SYNTHETIC (22)
+fillRef( at: Addr(51), target: Addr(76), relative true )
+<== wl
+astTag: TYPEDEF (131)
+==> wl
+pickleName: Test1$
+astTag: TEMPLATE (160)
+==> wl
+astTag: APPLY (139)
+==> wl
+astTag: SELECT (113)
+pickleNameAndSig, name: <init>
+                  params: List()
+                  result: java.lang.Object
+pickleName(*): Signed(NameRef(6),List(),NameRef(11))
+astTag: NEW (100)
+astTag: SHARED (64)
+writeRef( target: Addr(29) )
+fillRef( at: Addr(88), target: Addr(100), relative true )
+<== wl
+astTag: SELFDEF (118)
+pickleName: _
+astTag: TERMREFsymbol (114)
+writeRef( target: Addr(50) )
+astTag: SHARED (64)
+writeRef( target: Addr(58) )
+astTag: DEFDEF (130)
+==> wl
+pickleName: <init>
+astTag: PARAMS (134)
+==> wl
+fillRef( at: Addr(119), target: Addr(123), relative true )
+<== wl
+astTag: SHARED (64)
+writeRef( target: Addr(56) )
+     byte: pickleModifiers
+fillRef( at: Addr(113), target: Addr(128), relative true )
+<== wl
+fillRef( at: Addr(83), target: Addr(128), relative true )
+<== wl
+     byte: pickleModifiers
+astTag: OBJECT (19)
+astTag: SYNTHETIC (22)
+fillRef( at: Addr(77), target: Addr(130), relative true )
+<== wl
+fillRef( at: Addr(1), target: Addr(130), relative true )
+<== wl
