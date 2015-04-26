@@ -1,13 +1,7 @@
 astTag: PACKAGE (128)
 ==> wl
-astTag: TERMREF (115)
-pickleNameAndSig, name: <empty>
-                  params: List()
-                  result: 
-pickleName(*): Signed(NameRef(1),List(),NameRef(2))
-astTag: THIS (96)
-astTag: TYPEREFpkg (68)
-pickleName(*): Simple(<root>)
+astTag: TERMREFpkg (67)
+pickleName(*): Simple(<empty>)
 astTag: TYPEDEF (131)
 ==> wl
 pickleName: Test1
@@ -19,34 +13,32 @@ astTag: SELECT (113)
 pickleNameAndSig, name: <init>
                   params: List()
                   result: java.lang.Object
-pickleName(*): Signed(NameRef(6),List(),NameRef(11))
+pickleName(*): Signed(NameRef(3),List(),NameRef(8))
 astTag: NEW (100)
 astTag: TYPEREF (117)
 pickleName: Object
-astTag: THIS (96)
-astTag: TYPEREFpkg (68)
-pickleName(*): Qualified(NameRef(7),NameRef(8))
-fillRef( at: Addr(22), target: Addr(34), relative true )
+astTag: TERMREFpkg (67)
+pickleName(*): Qualified(NameRef(4),NameRef(5))
+fillRef( at: Addr(19), target: Addr(30), relative true )
 <== wl
 astTag: DEFDEF (130)
 ==> wl
 pickleName: <init>
 astTag: PARAMS (134)
 ==> wl
-fillRef( at: Addr(41), target: Addr(45), relative true )
+fillRef( at: Addr(37), target: Addr(41), relative true )
 <== wl
 astTag: TYPEREF (117)
 pickleName: Unit
-astTag: THIS (96)
-astTag: TYPEREFpkg (68)
+astTag: TERMREFpkg (67)
 pickleName(*): Simple(scala)
      byte: pickleModifiers
-fillRef( at: Addr(35), target: Addr(50), relative true )
+fillRef( at: Addr(31), target: Addr(45), relative true )
 <== wl
-fillRef( at: Addr(17), target: Addr(50), relative true )
+fillRef( at: Addr(14), target: Addr(45), relative true )
 <== wl
      byte: pickleModifiers
-fillRef( at: Addr(11), target: Addr(50), relative true )
+fillRef( at: Addr(8), target: Addr(45), relative true )
 <== wl
 astTag: VALDEF (129)
 ==> wl
@@ -62,16 +54,16 @@ astTag: SELECT (113)
 pickleNameAndSig, name: <init>
                   params: List()
                   result: Test1$
-pickleName(*): Signed(NameRef(6),List(),NameRef(15))
+pickleName(*): Signed(NameRef(3),List(),NameRef(12))
 astTag: NEW (100)
 astTag: SHARED (64)
-writeRef( target: Addr(56) )
-fillRef( at: Addr(62), target: Addr(74), relative true )
+writeRef( target: Addr(51) )
+fillRef( at: Addr(57), target: Addr(69), relative true )
 <== wl
      byte: pickleModifiers
 astTag: OBJECT (19)
 astTag: SYNTHETIC (22)
-fillRef( at: Addr(51), target: Addr(76), relative true )
+fillRef( at: Addr(46), target: Addr(71), relative true )
 <== wl
 astTag: TYPEDEF (131)
 ==> wl
@@ -84,36 +76,36 @@ astTag: SELECT (113)
 pickleNameAndSig, name: <init>
                   params: List()
                   result: java.lang.Object
-pickleName(*): Signed(NameRef(6),List(),NameRef(11))
+pickleName(*): Signed(NameRef(3),List(),NameRef(8))
 astTag: NEW (100)
 astTag: SHARED (64)
-writeRef( target: Addr(29) )
-fillRef( at: Addr(88), target: Addr(100), relative true )
+writeRef( target: Addr(26) )
+fillRef( at: Addr(83), target: Addr(95), relative true )
 <== wl
 astTag: SELFDEF (118)
 pickleName: _
 astTag: TERMREFsymbol (114)
-writeRef( target: Addr(50) )
+writeRef( target: Addr(45) )
 astTag: SHARED (64)
-writeRef( target: Addr(58) )
+writeRef( target: Addr(53) )
 astTag: DEFDEF (130)
 ==> wl
 pickleName: <init>
 astTag: PARAMS (134)
 ==> wl
-fillRef( at: Addr(119), target: Addr(123), relative true )
+fillRef( at: Addr(114), target: Addr(118), relative true )
 <== wl
 astTag: SHARED (64)
-writeRef( target: Addr(56) )
+writeRef( target: Addr(51) )
      byte: pickleModifiers
-fillRef( at: Addr(113), target: Addr(128), relative true )
+fillRef( at: Addr(108), target: Addr(123), relative true )
 <== wl
-fillRef( at: Addr(83), target: Addr(128), relative true )
+fillRef( at: Addr(78), target: Addr(123), relative true )
 <== wl
      byte: pickleModifiers
 astTag: OBJECT (19)
 astTag: SYNTHETIC (22)
-fillRef( at: Addr(77), target: Addr(130), relative true )
+fillRef( at: Addr(72), target: Addr(125), relative true )
 <== wl
-fillRef( at: Addr(1), target: Addr(130), relative true )
+fillRef( at: Addr(1), target: Addr(125), relative true )
 <== wl

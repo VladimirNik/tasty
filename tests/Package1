@@ -1,28 +1,7 @@
 astTag: PACKAGE (128)
 ==> wl
-astTag: TERMREF (115)
-pickleNameAndSig, name: ddd
-                  params: List()
-                  result: 
-pickleName(*): Signed(NameRef(1),List(),NameRef(2))
-astTag: TERMREF (115)
-pickleNameAndSig, name: ccc
-                  params: List()
-                  result: 
-pickleName(*): Signed(NameRef(4),List(),NameRef(2))
-astTag: TERMREF (115)
-pickleNameAndSig, name: bbb
-                  params: List()
-                  result: 
-pickleName(*): Signed(NameRef(6),List(),NameRef(2))
-astTag: TERMREF (115)
-pickleNameAndSig, name: aaa
-                  params: List()
-                  result: 
-pickleName(*): Signed(NameRef(8),List(),NameRef(2))
-astTag: THIS (96)
-astTag: TYPEREFpkg (68)
-pickleName(*): Simple(<root>)
+astTag: TERMREFpkg (67)
+pickleName(*): Qualified(NameRef(5),NameRef(6))
 astTag: TYPEDEF (131)
 ==> wl
 pickleName: Test2
@@ -34,59 +13,56 @@ astTag: SELECT (113)
 pickleNameAndSig, name: <init>
                   params: List()
                   result: java.lang.Object
-pickleName(*): Signed(NameRef(12),List(),NameRef(17))
+pickleName(*): Signed(NameRef(9),List(),NameRef(14))
 astTag: NEW (100)
 astTag: TYPEREF (117)
 pickleName: Object
-astTag: THIS (96)
-astTag: TYPEREFpkg (68)
-pickleName(*): Qualified(NameRef(13),NameRef(14))
-fillRef( at: Addr(28), target: Addr(40), relative true )
+astTag: TERMREFpkg (67)
+pickleName(*): Qualified(NameRef(10),NameRef(11))
+fillRef( at: Addr(19), target: Addr(30), relative true )
 <== wl
 astTag: DEFDEF (130)
 ==> wl
 pickleName: <init>
 astTag: PARAMS (134)
 ==> wl
-fillRef( at: Addr(47), target: Addr(51), relative true )
+fillRef( at: Addr(37), target: Addr(41), relative true )
 <== wl
 astTag: TYPEREF (117)
 pickleName: Unit
-astTag: THIS (96)
-astTag: TYPEREFpkg (68)
+astTag: TERMREFpkg (67)
 pickleName(*): Simple(scala)
      byte: pickleModifiers
-fillRef( at: Addr(41), target: Addr(56), relative true )
+fillRef( at: Addr(31), target: Addr(45), relative true )
 <== wl
-fillRef( at: Addr(23), target: Addr(56), relative true )
+fillRef( at: Addr(14), target: Addr(45), relative true )
 <== wl
      byte: pickleModifiers
-fillRef( at: Addr(17), target: Addr(56), relative true )
+fillRef( at: Addr(8), target: Addr(45), relative true )
 <== wl
 astTag: VALDEF (129)
 ==> wl
 pickleName: Test2
 astTag: TYPEREF (117)
 pickleName: Test2$
-astTag: THIS (96)
-astTag: TYPEREFpkg (68)
-pickleName(*): Qualified(NameRef(23),NameRef(1))
+astTag: TERMREFpkg (67)
+pickleName(*): Qualified(NameRef(5),NameRef(6))
 astTag: APPLY (139)
 ==> wl
 astTag: SELECT (113)
 pickleNameAndSig, name: <init>
                   params: List()
                   result: aaa.bbb.ccc.ddd.Test2$
-pickleName(*): Signed(NameRef(12),List(),NameRef(25))
+pickleName(*): Signed(NameRef(9),List(),NameRef(19))
 astTag: NEW (100)
 astTag: SHARED (64)
-writeRef( target: Addr(62) )
-fillRef( at: Addr(68), target: Addr(80), relative true )
+writeRef( target: Addr(51) )
+fillRef( at: Addr(56), target: Addr(68), relative true )
 <== wl
      byte: pickleModifiers
 astTag: OBJECT (19)
 astTag: SYNTHETIC (22)
-fillRef( at: Addr(57), target: Addr(82), relative true )
+fillRef( at: Addr(46), target: Addr(70), relative true )
 <== wl
 astTag: TYPEDEF (131)
 ==> wl
@@ -99,36 +75,36 @@ astTag: SELECT (113)
 pickleNameAndSig, name: <init>
                   params: List()
                   result: java.lang.Object
-pickleName(*): Signed(NameRef(12),List(),NameRef(17))
+pickleName(*): Signed(NameRef(9),List(),NameRef(14))
 astTag: NEW (100)
 astTag: SHARED (64)
-writeRef( target: Addr(35) )
-fillRef( at: Addr(94), target: Addr(106), relative true )
+writeRef( target: Addr(26) )
+fillRef( at: Addr(82), target: Addr(94), relative true )
 <== wl
 astTag: SELFDEF (118)
 pickleName: _
 astTag: TERMREFsymbol (114)
-writeRef( target: Addr(56) )
+writeRef( target: Addr(45) )
 astTag: SHARED (64)
-writeRef( target: Addr(64) )
+writeRef( target: Addr(53) )
 astTag: DEFDEF (130)
 ==> wl
 pickleName: <init>
 astTag: PARAMS (134)
 ==> wl
-fillRef( at: Addr(125), target: Addr(129), relative true )
+fillRef( at: Addr(113), target: Addr(117), relative true )
 <== wl
 astTag: SHARED (64)
-writeRef( target: Addr(62) )
+writeRef( target: Addr(51) )
      byte: pickleModifiers
-fillRef( at: Addr(119), target: Addr(134), relative true )
+fillRef( at: Addr(107), target: Addr(122), relative true )
 <== wl
-fillRef( at: Addr(89), target: Addr(134), relative true )
+fillRef( at: Addr(77), target: Addr(122), relative true )
 <== wl
      byte: pickleModifiers
 astTag: OBJECT (19)
 astTag: SYNTHETIC (22)
-fillRef( at: Addr(83), target: Addr(136), relative true )
+fillRef( at: Addr(71), target: Addr(124), relative true )
 <== wl
-fillRef( at: Addr(1), target: Addr(136), relative true )
+fillRef( at: Addr(1), target: Addr(124), relative true )
 <== wl

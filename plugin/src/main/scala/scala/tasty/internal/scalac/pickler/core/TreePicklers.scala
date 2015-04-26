@@ -212,12 +212,21 @@ trait TreePicklers extends NameBuffers
               }
             }
           case tpe @ SingleType(pre, sym) =>
-            writeByte(TERMREF)
-            val sig = Signature(tpe)
-            pickleNameAndSig(sym.name, sig); pickleType(tpe.prefix)
+            if (sym.hasPackageFlag) {
+              picklePackageRef(sym)
+            } else {
+              writeByte(TERMREF)
+              val sig = Signature(tpe)
+              pickleNameAndSig(sym.name, sig); pickleType(tpe.prefix)
+            }
           case tpe: ThisType =>
-            writeByte(THIS)
-            pickleType(tpe.widen) //SingleType(...) -> TypeRef(...)
+            if (tpe.sym.hasPackageFlag && !tpe.sym.isEffectiveRoot) {
+              writeByte(TERMREFpkg)
+              pickleName(qualifiedName(tpe.sym))
+            } else {
+              writeByte(THIS)
+              pickleType(tpe.widen) //SingleType(...) -> TypeRef(...)
+            }
           case tpe: SuperType =>
             writeByte(SUPERtype)
             withLength { pickleType(tpe.thistpe); pickleType(tpe.supertpe) }
@@ -236,6 +245,11 @@ trait TreePicklers extends NameBuffers
         case ex: AssertionError =>
           println(s"error while pickling type $tpe")
           throw ex
+      }
+
+      def picklePackageRef(pkg: Symbol): Unit = {
+        writeByte(TERMREFpkg)
+        pickleName(qualifiedName(pkg))
       }
 
       def pickleMethodic(result: Type, names: List[Name], types: List[Type]) = {
