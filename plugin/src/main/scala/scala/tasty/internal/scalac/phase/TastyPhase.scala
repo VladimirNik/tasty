@@ -60,9 +60,7 @@ trait TastyPhase {
       val pickledInDotty = loadPickledPattern(unit.source.file.file)
       if (pickledInScala != pickledInDotty) {
         if (errorDuringFileReading) warning(s"$pickledInDotty")
-        else warning(sm"""|pickling difference for $unit :
-                          |${pickledInScala diff pickledInDotty}
-                          |""")
+        else warning(s"pickling difference for $unit")
       } else {
         inform(s"pickling is correct for $unit")
       }

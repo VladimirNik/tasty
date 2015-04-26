@@ -104,7 +104,7 @@ trait TreePicklers extends NameBuffers
       forwardSymRefs(sym) = ref :: forwardSymRefs.getOrElse(sym, Nil)
     }
 
-    private var logCond = true
+    private var logCond = false
     private var pickledStr: StringBuffer = new StringBuffer("")
     private def log(str: String) = {
       import scala.reflect.internal.Chars.LF
