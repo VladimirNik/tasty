@@ -77,7 +77,9 @@ trait TreePicklers extends NameBuffers
     private def pickleName(sym: Symbol): Unit = {
       //TODO add <expandedname> processing (see Dotty)
       //log(s"pickleName(sym: Symbol): ${sym.name}")
-      pickleName(sym.name)
+      if (sym.isMixinConstructor)
+        pickleName(nme.CONSTRUCTOR)
+      else pickleName(sym.name)
     }
 
     private def pickleNameAndSig(name: Name, sig: Signature) = {
