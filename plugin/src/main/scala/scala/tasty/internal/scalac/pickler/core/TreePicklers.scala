@@ -197,21 +197,22 @@ trait TreePicklers extends NameBuffers
           case ConstantType(value) =>
             pickleConstant(value)
           case tpe @ TypeRef(pre, sym, args) =>
-            if (sym.hasPackageFlag) {
-              writeByte(if (sym.isType) TYPEREFpkg else TERMREFpkg)
-              pickleName(qualifiedName(sym))
-            } else if (tpe.prefix == NoPrefix) {
-              def pickleRef() = {
-                writeByte(if (sym.isType) TYPEREFdirect else TERMREFdirect)
-                pickleSymRef(sym)
-              }
-              pickleRef()
-            } else {
-              tpe.prefix match {
-                case _ =>
-                  writeByte(if (sym.isType) TYPEREF else TERMREF)
-                  pickleName(sym.name); pickleType(tpe.prefix)
-              }
+            tpe match {
+              case _ if sym.hasPackageFlag =>
+                writeByte(if (sym.isType) TYPEREFpkg else TERMREFpkg)
+                pickleName(qualifiedName(sym))
+              case _ if pre == NoPrefix =>
+                def pickleRef() = {
+                  writeByte(if (sym.isType) TYPEREFdirect else TERMREFdirect)
+                  pickleSymRef(sym)
+                }
+                pickleRef()
+              case _ if isLocallyDefined(sym) =>
+                writeByte(if (sym.isType) TYPEREFsymbol else TERMREFsymbol)
+                pickleSymRef(sym); pickleType(pre)
+              case _ =>
+                writeByte(if (sym.isType) TYPEREF else TERMREF)
+                pickleName(sym.name); pickleType(pre)
             }
           case tpe @ SingleType(pre, sym) =>
             if (sym.hasPackageFlag) {
@@ -394,6 +395,7 @@ trait TreePicklers extends NameBuffers
               }
               def isDefaultAnyRef(tree: Tree) = tree match {
                 case Select(Ident(sc), name) if name == tpnme.AnyRef && sc == nme.scala_ => true
+                case TypeTree() => tree.tpe =:= global.definitions.AnyRefTpe 
                 case _ => false
               }
               //lang.Object => (new lang.Object()).<init> 
