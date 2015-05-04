@@ -10,32 +10,50 @@ import scala.tasty.internal.scalac.pickler.core.TreePicklers
 trait TastyPhase {
   self: Plugin =>
 
+//  object GenCodeComponent extends NscPluginComponent {
+//    val global: self.global.type = self.global
+//    import global._
+//
+//    override val runsAfter = List("icode")//List("jvm")
+//    override val runsRightAfter = Some("icode")
+//    override val runsBefore = List("jvm")
+//    val phaseName = "jvm2"
+//    override def description = "pickle tasty trees"
+//
+//    override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
+//      override def apply(unit: CompilationUnit) {
+//        System.out.println("jvm2: Invocation after jvm !!!")
+//      }
+//    }
+//  }
+//    
   object TastyComponent extends NscPluginComponent {
     val global: self.global.type = self.global
     import global._
 
     override val runsAfter = List("typer")
-    override val runsRightAfter = None
+    override val runsRightAfter = Some("typer")
     val phaseName = "tasty"
     override def description = "pickle tasty trees"
 
     override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
       override def apply(unit: CompilationUnit) {
-        val tree = unit.body
-
-        if (!unit.isJava) {
-          val tree = unit.body
-          val picklers = new {
-            val global: self.global.type = self.global
-          } with TreePicklers
-          val pickler = new picklers.TastyPickler            
-          val treePkl = new picklers.TreePickler(pickler)
-          treePkl.pickle(tree :: Nil)
-          
-          //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
-          val pickledInfo = treePkl.logInfo
-          testSame(pickledInfo, unit)
-        }
+        System.out.println("tasty: first phase !!!")
+//        val tree = unit.body
+//
+//        if (!unit.isJava) {
+//          val tree = unit.body
+//          val picklers = new {
+//            val global: self.global.type = self.global
+//          } with TreePicklers
+//          val pickler = new picklers.TastyPickler            
+//          val treePkl = new picklers.TreePickler(pickler)
+//          treePkl.pickle(tree :: Nil)
+//          
+//          //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
+//          val pickledInfo = treePkl.logInfo
+//          testSame(pickledInfo, unit)
+//        }
       }
     }
 
