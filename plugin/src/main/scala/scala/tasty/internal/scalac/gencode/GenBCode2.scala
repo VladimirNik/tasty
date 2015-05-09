@@ -11,19 +11,21 @@ import scala.tools.asm
 import scala.tools.asm.tree.ClassNode
 import scala.tools.nsc.backend.jvm.opt.LocalOpt
 
-trait GenC {
-  val global: Global
-  import global._
-
-  abstract class GenBCode2 extends GenBCode {
+  abstract class GenBCode2(override val global: Global) extends scala.tools.nsc.Global$genBCode$(global) { //GenBCode {
     import global._
-
+//    import scala.tools.nsc.Global$genBCode$.global._
+    println("!!! init GenBCode2 ...")
     import bTypes._
     import coreBTypes._
 
-    override val phaseName = "jvm"
+    def myTest = println("!!! myTest GenBCode2 ...")
+    
+    override val phaseName = {"jvm-b"}
 
-    override def newPhase(prev: Phase) = new BCodePhase2(prev)
+    override def newPhase(prev: Phase) = {
+      println("--- BCodePhase2 invocation ---")
+      new BCodePhase2(prev)
+    }
 
     final class PlainClassBuilder(cunit: CompilationUnit) extends SyncAndTryBuilder(cunit)
 
@@ -353,7 +355,7 @@ trait GenC {
       }
 
       override def apply(cunit: CompilationUnit): Unit = {
-
+        println("!!! APPLYING NEW PHASE !!!")
         def gen(tree: Tree) {
           tree match {
             case EmptyTree            => ()
@@ -370,4 +372,3 @@ trait GenC {
     } // end of class BCodePhase
 
   } // end of class GenBCode
-}
