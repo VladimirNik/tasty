@@ -6,35 +6,71 @@ import scala.tools.nsc.{ Global, Phase, SubComponent }
 import scala.tools.nsc.plugins.{ Plugin => NscPlugin, PluginComponent => NscPluginComponent }
 import scala.reflect.io.AbstractFile
 import scala.tasty.internal.scalac.pickler.core.TreePicklers
+import scala.tasty.internal.scalac.util.TastyUtils
+import scala.tasty.internal.scalac.util.TastyGenUtils
 
 trait TastyPhase {
-  self: Plugin =>
+  self =>
 
-  object TastyComponent extends NscPluginComponent {
+  val global: Global
+ 
+  val picklersInstance = new {
     val global: self.global.type = self.global
-    import global._
+  } with TreePicklers
+
+  import scala.collection.mutable.{ Map => MMap }
+  private var picklers: MMap[global.CompilationUnit, MMap[global.ClassSymbol, picklersInstance.TastyPickler]] = MMap()
+
+  def addPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol, pickler: picklersInstance.TastyPickler) =
+    picklers get unit match {
+      case Some(picklersMap) => picklersMap += (classSymbol -> pickler)
+      case None              => picklers += (unit -> MMap(classSymbol -> pickler))
+    }
+
+  def findPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol): Option[picklersInstance.TastyPickler] =
+    picklers(unit) get (classSymbol)
+
+  object TastyComponent extends {
+    val global: self.global.type = self.global
+  } with NscPluginComponent with TastyGenUtils {
 
     override val runsAfter = List("typer")
     override val runsRightAfter = Some("typer")
     val phaseName = "tasty"
     override def description = "pickle tasty trees"
+    
+    import global._
+    
+    final val TASTYATTR = "TASTY"
 
     override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
-      override def apply(unit: CompilationUnit) {
+
+      private val beforePickling = new scala.collection.mutable.HashMap[ClassSymbol, String]
+
+      /** Drop any elements of this list that are linked module classes of other elements in the list */
+      private def dropCompanionModuleClasses(clss: List[ClassSymbol]): List[ClassSymbol] = {
+        val companionModuleClasses =
+          clss.filterNot(_.isModule).map(_.linkedClassOfClass) /*.filterNot(_.isAbsent)*/
+        clss.filterNot(companionModuleClasses.contains)
+      }
+
+      override def apply(unit: CompilationUnit): Unit = {
         val tree = unit.body
 
         if (!unit.isJava) {
-          val tree = unit.body
-          val picklers = new {
-            val global: self.global.type = self.global
-          } with TreePicklers
-          val pickler = new picklers.TastyPickler            
-          val treePkl = new picklers.TreePickler(pickler)
-          treePkl.pickle(tree :: Nil)
-          
-          //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
-          val pickledInfo = treePkl.logInfo
-          testSame(pickledInfo, unit)
+          for {
+            cls <- dropCompanionModuleClasses(topLevelClasses(unit.body))
+            tree <- sliceTopLevel(unit.body, cls)
+          } {
+            val pickler = new picklersInstance.TastyPickler
+            addPickler(unit, cls, pickler)
+            val treePkl = new picklersInstance.TreePickler(pickler)
+            treePkl.pickle(tree :: Nil)
+
+            //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
+            //val pickledInfo = treePkl.logInfo
+            //testSame(pickledInfo, unit)
+          }
         }
       }
     }

@@ -6,12 +6,14 @@ import scala.tools.nsc.backend._
 import scala.tools.nsc.backend.jvm._
 import scala.collection.mutable
 import scala.reflect.internal.util.Statistics
-
 import scala.tools.asm
 import scala.tools.asm.tree.ClassNode
 import scala.tools.nsc.backend.jvm.opt.LocalOpt
 
-  abstract class TastyGenBCode(override val global: Global) extends scala.tools.nsc.Global$genBCode$(global) {
+trait TastyGenPhase {
+  self: scala.tasty.internal.scalac.Plugin =>
+
+  abstract class TastyGenBCode(override val global: self.global.type) extends scala.tools.nsc.Global$genBCode$(global) {
     import global._
     import bTypes._
     import coreBTypes._
@@ -36,21 +38,21 @@ import scala.tools.nsc.backend.jvm.opt.LocalOpt
 
       /* ---------------- q1 ---------------- */
 
-//      case class Item1(arrivalPos: Int, cd: ClassDef, cunit: CompilationUnit) {
-//        def isPoison = { arrivalPos == Int.MaxValue }
-//      }
+      //      case class Item1(arrivalPos: Int, cd: ClassDef, cunit: CompilationUnit) {
+      //        def isPoison = { arrivalPos == Int.MaxValue }
+      //      }
       private val poison1 = Item1(Int.MaxValue, null, null)
       private val q1 = new java.util.LinkedList[Item1]
 
       /* ---------------- q2 ---------------- */
 
-//      case class Item2(arrivalPos: Int,
-//                       mirror: asm.tree.ClassNode,
-//                       plain: asm.tree.ClassNode,
-//                       bean: asm.tree.ClassNode,
-//                       outFolder: scala.tools.nsc.io.AbstractFile) {
-//        def isPoison = { arrivalPos == Int.MaxValue }
-//      }
+      //      case class Item2(arrivalPos: Int,
+      //                       mirror: asm.tree.ClassNode,
+      //                       plain: asm.tree.ClassNode,
+      //                       bean: asm.tree.ClassNode,
+      //                       outFolder: scala.tools.nsc.io.AbstractFile) {
+      //        def isPoison = { arrivalPos == Int.MaxValue }
+      //      }
 
       private val poison2 = Item2(Int.MaxValue, null, null, null, null)
       private val q2 = new _root_.java.util.LinkedList[Item2]
@@ -64,18 +66,18 @@ import scala.tools.nsc.backend.jvm.opt.LocalOpt
      *  @param jclassName  internal name of the class
      *  @param jclassBytes bytecode emitted for the class SubItem3 represents
      */
-//      case class SubItem3(
-//        jclassName: String,
-//        jclassBytes: Array[Byte])
-//
-//      case class Item3(arrivalPos: Int,
-//                       mirror: SubItem3,
-//                       plain: SubItem3,
-//                       bean: SubItem3,
-//                       outFolder: scala.tools.nsc.io.AbstractFile) {
-//
-//        def isPoison = { arrivalPos == Int.MaxValue }
-//      }
+      //      case class SubItem3(
+      //        jclassName: String,
+      //        jclassBytes: Array[Byte])
+      //
+      //      case class Item3(arrivalPos: Int,
+      //                       mirror: SubItem3,
+      //                       plain: SubItem3,
+      //                       bean: SubItem3,
+      //                       outFolder: scala.tools.nsc.io.AbstractFile) {
+      //
+      //        def isPoison = { arrivalPos == Int.MaxValue }
+      //      }
       private val i3comparator = new java.util.Comparator[Item3] {
         override def compare(a: Item3, b: Item3) = {
           if (a.arrivalPos < b.arrivalPos) -1
@@ -148,8 +150,16 @@ import scala.tools.nsc.backend.jvm.opt.LocalOpt
           pcb.genPlainClass(cd)
           val outF = if (needsOutFolder) getOutFolder(claszSymbol, pcb.thisName, cunit) else null;
           val plainC = pcb.cnode
-          
-          println("==> INSERT HERE REQUIRED CODE <==")
+
+          import scala.tools.asm.CustomAttr
+          if (claszSymbol.isClass) // @DarkDimius is this test needed here?
+            for (pickler <- findPickler(cunit, claszSymbol.asClass)) {
+              val binary = pickler.assembleParts()
+              println(s"unit: $cunit, cls: $claszSymbol")
+              println(s"binary.length: ${binary.length}\n")
+              val dataAttr = new CustomAttr(TastyComponent.TASTYATTR, binary)
+              plainC.visitAttribute(dataAttr)
+            }
 
           // -------------- bean info class, if needed --------------
           val beanC =
@@ -366,3 +376,4 @@ import scala.tools.nsc.backend.jvm.opt.LocalOpt
     } // end of class BCodePhase
 
   } // end of class GenBCode
+}

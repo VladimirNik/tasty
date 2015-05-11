@@ -10,15 +10,16 @@ import scala.tools.nsc.Phase
 import scala.tools.nsc.backend.jvm.GenBCode
 import scala.tools.nsc.typechecker.Analyzer
 import scala.tools.nsc.transform.Erasure
+import scala.tasty.internal.scalac.gencode.TastyGenPhase
 
-class Plugin(val global: Global) extends NscPlugin with TastyPhase{
+class Plugin(val global: Global) extends NscPlugin with TastyPhase with TastyGenPhase{
   val name = "tasty"
   val description = """Pickles Scala trees (tasty format).
   For more information visit https://github.com/VladimirNik/tasty"""
 
   object tastyGenBCode extends {
     override val global: Plugin.this.global.type = Plugin.this.global
-  } with scala.tasty.internal.scalac.gencode.TastyGenBCode(global) //with scala.tools.nsc.Global$genBCode$(global) with scala.tasty.internal.scalac.gencode.GenBCode2
+  } with TastyGenBCode(global) //with scala.tools.nsc.Global$genBCode$(global) with scala.tasty.internal.scalac.gencode.GenBCode2
 
   val genBCodeField = classOf[Global].getDeclaredField("genBCode$module")
   genBCodeField.setAccessible(true)
