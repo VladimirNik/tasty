@@ -13,17 +13,12 @@ import scala.tools.nsc.backend.jvm.opt.LocalOpt
 
   abstract class GenBCode2(override val global: Global) extends scala.tools.nsc.Global$genBCode$(global) { //GenBCode {
     import global._
-//    import scala.tools.nsc.Global$genBCode$.global._
-    println("!!! init GenBCode2 ...")
     import bTypes._
     import coreBTypes._
 
-    def myTest = println("!!! myTest GenBCode2 ...")
-    
-    override val phaseName = {"jvm"}
+    override val phaseName = "jvm"
 
     override def newPhase(prev: Phase) = {
-      println("--- BCodePhase2 invocation ---")
       new BCodePhase2(prev)
     }
 
@@ -355,7 +350,6 @@ import scala.tools.nsc.backend.jvm.opt.LocalOpt
       }
 
       override def apply(cunit: CompilationUnit): Unit = {
-        println("!!! APPLYING NEW PHASE !!!")
         def gen(tree: Tree) {
           tree match {
             case EmptyTree            => ()

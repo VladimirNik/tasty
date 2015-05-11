@@ -10,23 +10,6 @@ import scala.tasty.internal.scalac.pickler.core.TreePicklers
 trait TastyPhase {
   self: Plugin =>
 
-//  object GenCodeComponent extends NscPluginComponent {
-//    val global: self.global.type = self.global
-//    import global._
-//
-//    override val runsAfter = List("icode")//List("jvm")
-//    override val runsRightAfter = Some("icode")
-//    override val runsBefore = List("jvm")
-//    val phaseName = "jvm2"
-//    override def description = "pickle tasty trees"
-//
-//    override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
-//      override def apply(unit: CompilationUnit) {
-//        System.out.println("jvm2: Invocation after jvm !!!")
-//      }
-//    }
-//  }
-//    
   object TastyComponent extends NscPluginComponent {
     val global: self.global.type = self.global
     import global._
