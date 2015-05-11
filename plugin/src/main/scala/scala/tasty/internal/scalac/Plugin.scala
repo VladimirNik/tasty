@@ -11,14 +11,14 @@ import scala.tools.nsc.backend.jvm.GenBCode
 import scala.tools.nsc.typechecker.Analyzer
 import scala.tools.nsc.transform.Erasure
 
-class Plugin(val global: Global) extends NscPlugin { //with TastyPhase{
+class Plugin(val global: Global) extends NscPlugin with TastyPhase{
   val name = "tasty"
   val description = """Pickles Scala trees (tasty format).
   For more information visit https://github.com/VladimirNik/tasty"""
 
   object tastyGenBCode extends {
     override val global: Plugin.this.global.type = Plugin.this.global
-  } with scala.tasty.internal.scalac.gencode.GenBCode2(global) //with scala.tools.nsc.Global$genBCode$(global) with scala.tasty.internal.scalac.gencode.GenBCode2
+  } with scala.tasty.internal.scalac.gencode.TastyGenBCode(global) //with scala.tools.nsc.Global$genBCode$(global) with scala.tasty.internal.scalac.gencode.GenBCode2
 
   val genBCodeField = classOf[Global].getDeclaredField("genBCode$module")
   genBCodeField.setAccessible(true)
@@ -28,7 +28,6 @@ class Plugin(val global: Global) extends NscPlugin { //with TastyPhase{
   val phasesSetMapGetter = classOf[Global].getDeclaredMethod("phasesSet")
   val phasesDescMapGetter = classOf[Global].getDeclaredMethod("phasesDescMap")
   val phasesDescMap = phasesDescMapGetter.invoke(global).asInstanceOf[mutable.Map[SubComponent, String]]
-  phasesDescMap(PluginComponent) = "let our powers combine"
   val phasesSet = phasesSetMapGetter.invoke(global).asInstanceOf[mutable.Set[SubComponent]]
   if (phasesSet.exists(_.phaseName.contains("jvm"))) { // `scalac -help` doesn't instantiate standard phases
     def subcomponentNamed(name: String) = phasesSet.find(_.phaseName == name).head
@@ -41,20 +40,5 @@ class Plugin(val global: Global) extends NscPlugin { //with TastyPhase{
   }
   ()
 
-  val components = List[NscPluginComponent](/*TastyComponent, */ PluginComponent)
-
-  object PluginComponent extends NscPluginComponent {
-    val global = Plugin.this.global
-    import global._
-
-    override val runsBefore = List("jvm")
-    override val runsAfter = List("dce")
-    val phaseName = "tastygeneration"
-
-    override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
-      override def apply(unit: CompilationUnit) {
-        println("!!! Phase is running !!!")
-      }
-    }
-  }
+  val components = List[NscPluginComponent](TastyComponent)
 }

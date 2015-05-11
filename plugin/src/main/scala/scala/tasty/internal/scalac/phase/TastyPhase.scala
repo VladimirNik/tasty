@@ -21,22 +21,21 @@ trait TastyPhase {
 
     override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
       override def apply(unit: CompilationUnit) {
-        System.out.println("tasty: first phase !!!")
-//        val tree = unit.body
-//
-//        if (!unit.isJava) {
-//          val tree = unit.body
-//          val picklers = new {
-//            val global: self.global.type = self.global
-//          } with TreePicklers
-//          val pickler = new picklers.TastyPickler            
-//          val treePkl = new picklers.TreePickler(pickler)
-//          treePkl.pickle(tree :: Nil)
-//          
-//          //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
-//          val pickledInfo = treePkl.logInfo
-//          testSame(pickledInfo, unit)
-//        }
+        val tree = unit.body
+
+        if (!unit.isJava) {
+          val tree = unit.body
+          val picklers = new {
+            val global: self.global.type = self.global
+          } with TreePicklers
+          val pickler = new picklers.TastyPickler            
+          val treePkl = new picklers.TreePickler(pickler)
+          treePkl.pickle(tree :: Nil)
+          
+          //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
+          val pickledInfo = treePkl.logInfo
+          testSame(pickledInfo, unit)
+        }
       }
     }
 

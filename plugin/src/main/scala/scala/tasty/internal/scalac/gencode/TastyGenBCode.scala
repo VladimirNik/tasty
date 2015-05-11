@@ -11,7 +11,7 @@ import scala.tools.asm
 import scala.tools.asm.tree.ClassNode
 import scala.tools.nsc.backend.jvm.opt.LocalOpt
 
-  abstract class GenBCode2(override val global: Global) extends scala.tools.nsc.Global$genBCode$(global) { //GenBCode {
+  abstract class TastyGenBCode(override val global: Global) extends scala.tools.nsc.Global$genBCode$(global) {
     import global._
     import bTypes._
     import coreBTypes._
