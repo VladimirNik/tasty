@@ -20,7 +20,7 @@ import scala.tools.nsc.backend.jvm.opt.LocalOpt
 
     def myTest = println("!!! myTest GenBCode2 ...")
     
-    override val phaseName = {"jvm-b"}
+    override val phaseName = {"jvm"}
 
     override def newPhase(prev: Phase) = {
       println("--- BCodePhase2 invocation ---")

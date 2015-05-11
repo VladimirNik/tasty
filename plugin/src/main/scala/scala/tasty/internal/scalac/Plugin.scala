@@ -182,8 +182,40 @@ class Plugin(val global: Global) extends NscPlugin { //with TastyPhase{
   
   /*** replace ***/
   genBCodeField.set(global, value)
-//  val r = genBCodeField.get(global)
+  //  val r = genBCodeField.get(global)
   /*** replace ***/
+
+  // replace Global.analyzer to customize namer and typer (step 2 of 3)
+  // luckily for us compiler plugins are instantiated quite early
+  // so by now internal phases have only left a trace in phasesSet and in phasesDescMap
+  // also up until now noone has really used the standard analyzer, so we're almost all set
+  // except for the standard `object typer extends analyzer.Typer(<some default context>)`
+  // that is a member of Global and hence has been pre-initialized now
+  // good news is that it's only used in later phases or as a host for less important activities (error reporting, printing, etc)
+  val phasesSetMapGetter = classOf[Global].getDeclaredMethod("phasesSet")
+  val phasesDescMapGetter = classOf[Global].getDeclaredMethod("phasesDescMap")
+  val phasesDescMap = phasesDescMapGetter.invoke(global).asInstanceOf[mutable.Map[SubComponent, String]]
+  phasesDescMap(PluginComponent) = "let our powers combine"
+  val phasesSet = phasesSetMapGetter.invoke(global).asInstanceOf[mutable.Set[SubComponent]]
+  if (phasesSet.exists(_.phaseName.contains("jvm"))) { // `scalac -help` doesn't instantiate standard phases
+    def subcomponentNamed(name: String) = phasesSet.find(_.phaseName == name).head
+    val oldScs @ List(oldJVM) = List(subcomponentNamed("jvm"))
+    println
+    println(s"oldScs: $oldScs")
+    println
+    val newScs = List(value.asInstanceOf[SubComponent])
+    def hijackDescription(pt: SubComponent, sc: SubComponent) = phasesDescMap(sc) = phasesDescMap(pt) + " in paradise"
+    oldScs zip newScs foreach { case (pt, sc) => hijackDescription(pt, sc) }
+    phasesSet --= oldScs
+    phasesSet ++= newScs
+    println("!!! YES it's here !!!")
+  } else println("!!! NO it's not here !!!")
+  println(s"phasesSet: ${phasesSet}")
+  
+  
+  
+  
+  
 //  println(s"VAL (r): $r")
 //  global.genBCode
   //  // replace Global.analyzer to customize namer and typer (step 2 of 3)
@@ -291,17 +323,6 @@ class Plugin(val global: Global) extends NscPlugin { //with TastyPhase{
         //global.genBCode
         val genBCodeField = classOf[Global].getDeclaredField("genBCode$module")
         genBCodeField.setAccessible(true)
-
-        class T {
-          val a = "a"
-        }
-        class X extends T
-        class Y extends X {
-          override val a = "b"
-        }
-        object j extends Y
-        j.asInstanceOf[T].a
-        j.asInstanceOf[Y].a
         
         //read value of genBCodeField
         val v2 = genBCodeField.get(global)
@@ -334,18 +355,18 @@ class Plugin(val global: Global) extends NscPlugin { //with TastyPhase{
 
     override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
       override def apply(unit: CompilationUnit) {
-//        println("!!! Phase after JVM is running !!!")
-//
-//        val genBCodeField = classOf[Global].getDeclaredField("genBCode$module")
-//        genBCodeField.setAccessible(true)
-//
-//        //read value of genBCodeField
-//        val v2 = genBCodeField.get(global)
-//        println(s"VAL (v2 - after jvm): $v2")
-//        println(s"v2.isGenBCode2: ${v2.isInstanceOf[scala.tasty.internal.scalac.gencode.GenBCode2]}")
-//        println(s"value == v2: ${value == v2}")
-//        println
-//        ensureInitialized()
+        println("!!! Phase after JVM is running !!!")
+
+        val genBCodeField = classOf[Global].getDeclaredField("genBCode$module")
+        genBCodeField.setAccessible(true)
+
+        //read value of genBCodeField
+        val v2 = genBCodeField.get(global)
+        println(s"VAL (v2 - after jvm): $v2")
+        println(s"v2.isGenBCode2: ${v2.isInstanceOf[scala.tasty.internal.scalac.gencode.GenBCode2]}")
+        println(s"value == v2: ${value == v2}")
+        println
+        ensureInitialized()
       }
     }
 
