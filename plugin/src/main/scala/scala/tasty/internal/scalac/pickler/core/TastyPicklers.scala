@@ -51,5 +51,19 @@ trait TastyPicklers {
       assert(all.length == totalSize && all.bytes.length == totalSize, s"totalSize = $totalSize, all.length = ${all.length}, all.bytes.length = ${all.bytes.length}")
       all.bytes
     }
+
+    /**
+     * Addresses in TASTY file of trees, stored by pickling.
+     * Note that trees are checked for reference equality,
+     * so one can reliably use this function only directly after `pickler`
+     */
+    var addrOfTree: global.Tree => Option[Addr] = (_ => None)
+
+    /**
+     * Addresses in TASTY file of symbols, stored by pickling.
+     * Note that trees are checked for reference equality,
+     * so one can reliably use this function only dirrectly after `pickler`
+     */
+    var addrOfSym: global.Symbol => Option[Addr] = (_ => None)
   }
 }

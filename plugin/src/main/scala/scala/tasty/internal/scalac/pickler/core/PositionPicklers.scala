@@ -43,7 +43,7 @@ trait PositionPicklers extends TastyUtils {
   import PositionPickler._
 
   class PositionPickler(pickler: TastyPickler, addrOfTree: Tree => Option[Addr]) {
-    val buf = new TastyBuffer(100000)
+    val buf = new TastyBuffer(5000)
     pickler.newSection("Positions", buf)
     import buf._
 

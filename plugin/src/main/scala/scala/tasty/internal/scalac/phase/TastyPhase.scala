@@ -67,6 +67,16 @@ trait TastyPhase {
             val treePkl = new picklersInstance.TreePickler(pickler)
             treePkl.pickle(tree :: Nil)
 
+            pickler.addrOfTree = treePkl.buf.addrOfTree
+            pickler.addrOfSym = treePkl.addrOfSym
+            if (picklersInstance.exists(tree.pos)) {
+              println(s"Pickle positions for $unit")
+              println(s"pos: ${tree.pos}")
+              println
+              new picklersInstance.PositionPickler(pickler, treePkl.buf.addrOfTree).picklePositions(tree :: Nil, tree.pos)
+            } else {
+              println("No positions exists for pickling")
+            }
             //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
             //val pickledInfo = treePkl.logInfo
             //testSame(pickledInfo, unit)
