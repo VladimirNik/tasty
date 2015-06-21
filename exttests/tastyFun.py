@@ -25,7 +25,7 @@ def checkTasty( testName, testClass, fromTastyName ):
     data = ''
 
   #commands to run
-  cleanCommand = 'cd ' + testPath + ' && rm -rf *.class'
+  cleanCommand = 'cd ' + testPath + " && find . -type f -name '*.class' -delete"
   scalacCommand = '/home/vova/scala/scala-2.11.5/bin/scalac -Ybackend:GenBCode ' +\
   '-Xplugin:' + projectPath + 'plugin/target/scala-2.11/tasty_2.11.5-0.1.0-SNAPSHOT.jar ' + testClass #Test.scala - should be added folder to find
   fromTastyCommand = 'java -Xmx768m -Xms768m ' +\
@@ -33,7 +33,7 @@ def checkTasty( testName, testClass, fromTastyName ):
   '-classpath /home/vova/scala-projects/my-dotty/dotty/bin/../target/scala-2.11/dotty_2.11-0.1-SNAPSHOT.jar:/home/vova/scala-projects/my-dotty/dotty/bin/../target/scala-2.11/dotty_2.11-0.1-SNAPSHOT-tests.jar -Dscala.usejavacp=true dotty.tools.dotc.FromTasty ' +\
   '-Xprint:front ' + fromTastyName #Test - it should be added to classpath
 
-  runCommand = cleanCommand + '&&' + scalacCommand + '&&' + fromTastyCommand
+  runCommand = cleanCommand + '&&' + scalacCommand + '&&' + fromTastyCommand + '&&' + cleanCommand
 
   import subprocess
   proc = subprocess.Popen([runCommand],
