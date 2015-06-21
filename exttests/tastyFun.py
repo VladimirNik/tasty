@@ -55,13 +55,6 @@ def checkTasty( testName, testClass, fromTastyName ):
   #print out
   #print data
 
-checkTasty('test1', 'Class1.scala', 'Class1')
-checkTasty('trait1', 'Trait1.scala', 'X')
-checkTasty('trait2', 'Trait2.scala', 'X2')
-checkTasty('package1', 'Package1.scala', 'aaa.bbb.ccc.ddd.Test2')
-checkTasty('package2', 'Package2.scala', 'aaa.bbb.ccc.ddd.eee.fff.Test')
-checkTasty('traitInh1', 'TraitInh1.scala', 'TrInh2')
-
 #TODO
 #separate files - create module - funcs and invocation
 #repackage the plugin before running
