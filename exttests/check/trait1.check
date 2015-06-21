@@ -1,0 +1,3 @@
+package <empty> {
+  <trait> trait X() extends Object {}
+}

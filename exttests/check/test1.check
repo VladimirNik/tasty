@@ -1,0 +1,3 @@
+package <empty> {
+  class Class1() extends Object() {}
+}

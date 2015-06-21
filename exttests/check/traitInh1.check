@@ -1,0 +1,3 @@
+package <empty> {
+  <trait> trait TrInh2() extends Object with TrInh1 {}
+}
