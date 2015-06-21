@@ -34,8 +34,8 @@ trait TastyPhase {
     val global: self.global.type = self.global
   } with NscPluginComponent with TastyGenUtils {
 
-    override val runsAfter = List("typer")
-    override val runsRightAfter = Some("typer")
+    override val runsAfter = List("superaccessors")
+    override val runsRightAfter = Some("superaccessors")
     val phaseName = "tasty"
     override def description = "pickle tasty trees"
     
@@ -75,10 +75,11 @@ trait TastyPhase {
               println
               new picklersInstance.PositionPickler(pickler, treePkl.buf.addrOfTree).picklePositions(tree :: Nil, tree.pos)
             } else {
-              println("No positions exists for pickling")
+              println("No positions exist for pickling")
             }
             //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
-            //val pickledInfo = treePkl.logInfo
+            val pickledInfo = treePkl.logInfo
+            //generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
             //testSame(pickledInfo, unit)
           }
         }

@@ -67,56 +67,5 @@ class Plugin(val global: Global) extends NscPlugin with TastyPhase with TastyGen
   runsAfterEMField.setAccessible(true)
   runsAfterEMField.set(global.extensionMethods, newRunsAfterEM)
 
-  val components = List[NscPluginComponent](TastyComponent, AfterPatmatComponent, AfterSAComponent)
-
-  object AfterSAComponent extends {
-    val runsAfter = List("superaccessors")
-    val global: this.global.type = this.global
-  } with NscPluginComponent {
-    override val runsRightAfter = Some("superaccessors")
-    val phaseName = "after-superaccessors"
-    override def description = "pickle tasty trees"
-
-    import global._
-
-    override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
-      override def apply(unit: CompilationUnit): Unit = {
-        println("Run after superaccessors!")
-      }
-    }
-  }
-
-  object AfterPatmatComponent extends {
-    val runsAfter = List("patmat")
-    val global: this.global.type = this.global
-  } with NscPluginComponent {
-    override val runsRightAfter = Some("patmat")
-    val phaseName = "after-patmat"
-    override def description = "pickle tasty trees"
-
-    import global._
-
-    override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
-      override def apply(unit: CompilationUnit): Unit = {
-        println("Run after patmat!")
-      }
-    }
-  }
-
-  object AfterTyperComponent extends {
-    val runsAfter = List("typer")
-    val global: this.global.type = this.global
-  } with NscPluginComponent {
-    override val runsRightAfter = Some("typer")
-    val phaseName = "after-typer"
-    override def description = "pickle tasty trees"
-
-    import global._
-
-    override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
-      override def apply(unit: CompilationUnit): Unit = {
-        println("Run after typer!")
-      }
-    }
-  }
+  val components = List[NscPluginComponent](TastyComponent)
 }
