@@ -1,6 +1,20 @@
 #!/usr/bin/python
 
-from tastyFun import checkTasty
+from tastyFun import checkTasty, projectPath
+
+moveCommand = "cd " + projectPath
+sbtCommand = "sbt 'project tasty' package"
+packageCommand = moveCommand + ' && ' + sbtCommand
+
+import subprocess
+proc = subprocess.Popen([packageCommand],
+  stdin = subprocess.PIPE,
+  stdout = subprocess.PIPE,
+  stderr = subprocess.PIPE,
+  shell = True
+)
+(out, err) = proc.communicate()
+print out
 
 checkTasty('test1', 'Class1.scala', 'Class1')
 checkTasty('trait1', 'Trait1.scala', 'X')
