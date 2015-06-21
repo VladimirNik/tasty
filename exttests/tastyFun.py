@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 #FromTasty should be in classpath (TODO as a param)
 projectPath = '/home/vova/scala-projects/new-tasty/tasty/'
 exttestsFolder = projectPath + 'exttests/'
