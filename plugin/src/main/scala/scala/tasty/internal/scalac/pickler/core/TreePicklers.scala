@@ -701,7 +701,7 @@ trait TreePicklers extends NameBuffers
         if (sym.isCase) writeByte(CASE)
         if (sym.isOverride) writeByte(OVERRIDE)
         if (sym.isModule) writeByte(OBJECT)
-        if (sym.isLocalToBlock) writeByte(LOCAL)
+        if (sym.isPrivateLocal || sym.isProtectedLocal) writeByte(LOCAL)
         if (sym.isSynthetic) writeByte(SYNTHETIC)
         if (sym.isArtifact) writeByte(ARTIFACT)
         if (sym.isTerm) {
