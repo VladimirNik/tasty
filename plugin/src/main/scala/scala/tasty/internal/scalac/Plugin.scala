@@ -41,31 +41,22 @@ class Plugin(val global: Global) extends NscPlugin with TastyPhase with TastyGen
   }
   ()
 
+  def changePhasesOrder(runsAfterPhase: String, phaseClass: Class[_], fieldToModify: Object) = {
+    val newRunsAfter = List(runsAfterPhase)
+    val runsAfterField = phaseClass.getDeclaredField("runsAfter")
+    runsAfterField.setAccessible(true)
+    runsAfterField.set(fieldToModify, newRunsAfter)
+  }
+
   //update the order of phases
-  //superaccessors
-  //println(s"declared fields: ${classOf[Global].getDeclaredFields map {_.getName.trim } filter { _.contains("super") } toList }")
-  //val superaccsField = classOf[Global].getDeclaredField("superAccessors$module")
-  //superaccsField.setAccessible(true)
-  //val superaccs = superaccsField.get(global)
-  val newRunsAfterSup = List("typer")
-  //println(s"declared fields: ${classOf[scala.tools.nsc.Global$superAccessors$].getDeclaredFields map {_.getName.trim } /*filter { _.contains("runsAfter") }*/ toList }")
-  val runsAfterSupField = classOf[scala.tools.nsc.Global$superAccessors$].getDeclaredField("runsAfter")
-  runsAfterSupField.setAccessible(true)
-  runsAfterSupField.set(/*superaccs*/ global.superAccessors, newRunsAfterSup)
+  //typer, superaccessors
+  changePhasesOrder("typer", classOf[scala.tools.nsc.Global$superAccessors$], global.superAccessors)
   
-  //patmat
-  val newRunsAfterPat = List("superaccessors")
-  //println(s"declared fields: ${classOf[scala.tools.nsc.Global$superAccessors$].getDeclaredFields map {_.getName.trim } /*filter { _.contains("runsAfter") }*/ toList }")
-  val runsAfterPatField = classOf[scala.tools.nsc.Global$patmat$].getDeclaredField("runsAfter")
-  runsAfterPatField.setAccessible(true)
-  runsAfterPatField.set(global.patmat, newRunsAfterPat)
+  //superaccessors, patmat
+  changePhasesOrder("superaccessors", classOf[scala.tools.nsc.Global$patmat$], global.patmat)
   
-  //extensionMethods
-    val newRunsAfterEM = List("patmat")
-  //println(s"declared fields: ${classOf[scala.tools.nsc.Global$superAccessors$].getDeclaredFields map {_.getName.trim } /*filter { _.contains("runsAfter") }*/ toList }")
-  val runsAfterEMField = classOf[scala.tools.nsc.Global$extensionMethods$].getDeclaredField("runsAfter")
-  runsAfterEMField.setAccessible(true)
-  runsAfterEMField.set(global.extensionMethods, newRunsAfterEM)
+  //patmat, extensionMethods
+  changePhasesOrder("patmat", classOf[scala.tools.nsc.Global$extensionMethods$], global.extensionMethods)
 
   val components = List[NscPluginComponent](TastyComponent)
 }
