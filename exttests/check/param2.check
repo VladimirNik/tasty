@@ -1,0 +1,8 @@
+package <empty> {
+  class Test() extends Object() { 
+    def testDef(y: T): T = {
+      y
+      y
+    }
+  }
+}

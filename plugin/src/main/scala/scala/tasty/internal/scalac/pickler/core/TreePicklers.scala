@@ -15,7 +15,8 @@ trait TreePicklers extends NameBuffers
   with TastyUnpicklers
   with TreeBuffers
   with PositionUnpicklers
-  with PositionPicklers {
+  with PositionPicklers 
+  with TastyTypes {
   val global: Global
 
   import global._
@@ -28,6 +29,7 @@ trait TreePicklers extends NameBuffers
     private val symRefs = new mutable.HashMap[Symbol, Addr]
     private val forwardSymRefs = new mutable.HashMap[Symbol, List[Addr]]
     private val pickledTypes = new java.util.IdentityHashMap[Type, Any] // Value type is really Addr, but that's not compatible with null
+    private val genTypes = new java.util.IdentityHashMap[Symbol, Type] // Map to get generated types (Dotty counterparts)
     private val emulatedTypes = new mutable.HashMap[(Name, Type), Addr]
     val NOTAG = -1
 
@@ -201,12 +203,6 @@ trait TreePicklers extends NameBuffers
               case _ if sym.hasPackageFlag =>
                 writeByte(if (sym.isType) TYPEREFpkg else TERMREFpkg)
                 pickleName(qualifiedName(sym))
-              case _ if pre == NoPrefix =>
-                def pickleRef() = {
-                  writeByte(if (sym.isType) TYPEREFdirect else TERMREFdirect)
-                  pickleSymRef(sym)
-                }
-                pickleRef()
               case _ if isLocallyDefined(sym) =>
                 writeByte(if (sym.isType) TYPEREFsymbol else TERMREFsymbol)
                 pickleSymRef(sym); pickleType(pre)
@@ -214,6 +210,12 @@ trait TreePicklers extends NameBuffers
                 writeByte(if (sym.isType) TYPEREF else TERMREF)
                 pickleName(sym.name); pickleType(pre)
             }
+          case tpe @ TermRef(sym) =>
+            def pickleRef() = {
+              writeByte(if (sym.isType) TYPEREFdirect else TERMREFdirect)
+              pickleSymRef(sym)
+            }
+            pickleRef()
           case tpe @ SingleType(pre, sym) =>
             if (sym.hasPackageFlag) {
               picklePackageRef(sym)
@@ -273,9 +275,23 @@ trait TreePicklers extends NameBuffers
         pickledTrees.put(tree, currentAddr)
         tree match {
           case Ident(name) =>
-            writeByte(IDENT)
-            pickleName(name)
-            pickleType(tree.tpe)
+            val sym = tree.symbol
+            tree.tpe match {
+              case tp if sym != null && sym.isTerm =>
+                //construct type similar to Dotty TermRef (or get it if type is already generated)
+                val genTp = if (genTypes.containsKey(sym)) { 
+                  genTypes.get(sym) 
+                } else {
+                    val tp = TermRef(tree.symbol)
+                    genTypes.put(sym, tp)
+                    tp
+                  }
+                pickleType(genTp, richTypes = false)
+              case _ =>
+                writeByte(IDENT)
+                pickleName(name)
+                pickleType(tree.tpe)
+            }
           case This(_) =>
             pickleType(tree.tpe)
           case Select(qual, name) =>
