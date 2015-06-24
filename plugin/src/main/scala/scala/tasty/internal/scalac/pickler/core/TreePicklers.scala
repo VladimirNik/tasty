@@ -383,6 +383,7 @@ trait TreePicklers extends NameBuffers
               case _ => log(s"synthetic typeDef can't be emulated for ${tree.name}")
             }
             */
+          case tree: ModuleDef => //TODO fix
           case tree: Template =>
             registerDef(tree.symbol)
             writeByte(TEMPLATE)
@@ -425,7 +426,22 @@ trait TreePicklers extends NameBuffers
                     val (tpe, constrTpe) = if (isDefaultParentAnyRef) {
                       val objectTpe = global.definitions.ObjectTpe
                       (objectTpe, objectTpe.member(nme.CONSTRUCTOR).tpe)
-                    } else (tr.tpe, primaryCtr.tpe)
+                    } else (tr.tpe, tr.tpe.member(nme.CONSTRUCTOR).tpe)
+                    //TODO - fix signature for constructor with params (see Test)
+//                    log(s"primaryCtr: $primaryCtr")
+//                    log(s"showRaw(primaryCtr): ${showRaw(primaryCtr)}")
+//                    log(s"primaryCtr.symbol: ${primaryCtr.symbol}")
+//                    log(s"showRaw(primaryCtr.symbol): ${showRaw(primaryCtr.symbol)}")
+//                    log(s"primaryCtr.symbol: ${primaryCtr.symbol.tpe}")
+//                    log(s"showRaw(primaryCtr.symbol): ${showRaw(primaryCtr.symbol.tpe)}")
+//                    log(s"tpe: ${constrTpe}")
+//                    log(s"showRaw(tpe): ${global.showRaw(constrTpe)}")
+//                    log(s"tr: ${tr}")
+//                    log(s"showRaw(tr): ${global.showRaw(tr)}")
+//                    log(s"tr.tpe: ${tr.tpe}")
+//                    log(s"showRaw(tr.tpe): ${global.showRaw(tr.tpe)}")
+//                    log(s"tr.symbol: ${tr.symbol}")
+//                    log(s"showRaw(tr.symbol): ${global.showRaw(tr.symbol)}")
                     emulateSelect(nme.CONSTRUCTOR, constrTpe) {
                       emulateNew(tpe)
                     };
