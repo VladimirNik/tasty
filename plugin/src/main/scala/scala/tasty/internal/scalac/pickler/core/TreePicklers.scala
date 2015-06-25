@@ -471,6 +471,7 @@ trait TreePicklers extends NameBuffers
             writeByte(PACKAGE)
             withLength { pickleType(pid.tpe); pickleStats(stats) }
           case EmptyTree =>
+          case Throw(expr) => //TODO fix
         }
       } catch {
         case ex: AssertionError =>

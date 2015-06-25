@@ -1,0 +1,19 @@
+package <empty> {
+  class Test(y: Int, yy: String)(implicit zx: Double) extends T(5) with 
+    TestTrait
+   with TestTrait2 { 
+    private[this] val y: Int
+    private[this] val yy: String
+    private[this] implicit val zx: Double
+    class B() extends Object() { 
+      def ggg(y: String): String = y
+    }
+    private[this] val r : String = "ttt"
+    <accessor> def r: String = this.r 
+    private[this] val t : String = "rrr"
+    <accessor> def t: String = this.t 
+    private[this] val bbb : Test.this.B = new Test.this.B()
+    <accessor> def bbb: Test.this.B = this.bbb 
+    this.bbb.ggg(this.r)
+  }
+}
