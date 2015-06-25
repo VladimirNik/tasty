@@ -397,6 +397,7 @@ trait TreePicklers extends NameBuffers
               pickleParams(params)
               //emulate dotty style of parents representation (for pickling)
               val primaryCtr = treeInfo.firstConstructor(tree.body)
+              //if currently processing Def is trait
               val isTrait = tree.symbol.owner.isTrait
               
               val ap: Option[Apply] = primaryCtr match {
@@ -418,7 +419,8 @@ trait TreePicklers extends NameBuffers
               //lang.Object => (new lang.Object()).<init> 
               //Apply(Select(New(TypeTree[tpe]), <init>), args)
               tree.parents.zipWithIndex.foreach {
-                case (tr, i) if !isTrait =>
+                //emulate Apply if currently processing Def is not a trait and currently processing parent is not a trait
+                case (tr, i) if !tr.symbol.isTrait && !isTrait =>
                   //pickleTree
                   emulateApply {
                     //Scala: scala.AnyRef in parents (default) - change it to lang.Object
@@ -427,27 +429,12 @@ trait TreePicklers extends NameBuffers
                       val objectTpe = global.definitions.ObjectTpe
                       (objectTpe, objectTpe.member(nme.CONSTRUCTOR).tpe)
                     } else (tr.tpe, tr.tpe.member(nme.CONSTRUCTOR).tpe)
-                    //TODO - fix signature for constructor with params (see Test)
-//                    log(s"primaryCtr: $primaryCtr")
-//                    log(s"showRaw(primaryCtr): ${showRaw(primaryCtr)}")
-//                    log(s"primaryCtr.symbol: ${primaryCtr.symbol}")
-//                    log(s"showRaw(primaryCtr.symbol): ${showRaw(primaryCtr.symbol)}")
-//                    log(s"primaryCtr.symbol: ${primaryCtr.symbol.tpe}")
-//                    log(s"showRaw(primaryCtr.symbol): ${showRaw(primaryCtr.symbol.tpe)}")
-//                    log(s"tpe: ${constrTpe}")
-//                    log(s"showRaw(tpe): ${global.showRaw(constrTpe)}")
-//                    log(s"tr: ${tr}")
-//                    log(s"showRaw(tr): ${global.showRaw(tr)}")
-//                    log(s"tr.tpe: ${tr.tpe}")
-//                    log(s"showRaw(tr.tpe): ${global.showRaw(tr.tpe)}")
-//                    log(s"tr.symbol: ${tr.symbol}")
-//                    log(s"showRaw(tr.symbol): ${global.showRaw(tr.symbol)}")
                     emulateSelect(nme.CONSTRUCTOR, constrTpe) {
                       emulateNew(tpe)
                     };
                     constrArgss(i).foreach(pickleTree)
                   }
-                case (tr, _) if isTrait => 
+                case (tr, _) /*if tr.symbol.isTrait*/ => 
                   val parent = if (isDefaultAnyRef(tr)) TypeTree(global.definitions.ObjectTpe) else tr
                   pickleTree(parent)
               }
