@@ -45,7 +45,7 @@ def checkTasty( testName, testClass, fromTastyName ):
   (out, err) = proc.communicate()
 
   #print result
-  if data != '' and data in out:
+  if data != '' and data in out and not 'error' in out:
     okStr = 'Test: ' + testName + ' completed'
     print '\033[1;32m' + okStr + '\033[1;m'
   else:
