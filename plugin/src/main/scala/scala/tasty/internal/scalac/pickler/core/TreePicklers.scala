@@ -58,6 +58,9 @@ trait TreePicklers extends NameBuffers
     }
 
     def registerDef(sym: Symbol): Unit = {
+      //log("!!! registerDef")
+      //log(s"sym: $sym")
+      //log(s"symRefs: $symRefs")
       symRefs(sym) = currentAddr
       forwardSymRefs.get(sym) match {
         case Some(refs) =>
@@ -92,12 +95,33 @@ trait TreePicklers extends NameBuffers
       pickleName(TastyName.Signed(nameIndex(name), params.map(fullNameIndex), fullNameIndex(result)))
     }
 
-    private def pickleSymRef(sym: Symbol)/*(implicit ctx: Context)*/ = symRefs.get(sym) match {
-      case Some(label) =>
-        if (label != NoAddr) writeRef(label) else pickleForwardSymRef(sym)
-      case None =>
-        println(s"pickling reference to as yet undefined $sym in ${sym.owner}", sym.pos)
-        pickleForwardSymRef(sym)
+    private def pickleSymRef(sym: Symbol) /*(implicit ctx: Context)*/ = {
+      val res = symRefs.get(sym)
+      //log("!!! pickleSym")
+      //log(s"res: $res")
+      //log(s"sym: $sym")
+      //log(s"symRefs: $symRefs")
+//      if (sym.toString.contains("value y")) {
+//        val sR = symRefs.find(_.toString.contains("value y"))
+//        sR match {
+//          case Some(sym2) =>
+//            log(s"sym: ${sym}")
+//            log(s"sym2: ${sym2._1}")
+//            log(s"sym.owner: ${sym.owner}")
+//            log(s"sym2.owner: ${sym2._1.owner}")
+//            log(s"sym == sym2: ${sym == sym2._1}")
+//            log(s"sym.eq(sym2): ${sym eq sym2._1}")
+//            log(s"sym.equals(sym2): ${sym equals sym2._1}")
+//          case None =>
+//        }
+//      }
+      res match {
+        case Some(label) =>
+          if (label != NoAddr) writeRef(label) else pickleForwardSymRef(sym)
+        case None =>
+          println(s"pickling reference to as yet undefined $sym in ${sym.owner}", sym.pos)
+          pickleForwardSymRef(sym)
+      }
     }
 
     private def pickleForwardSymRef(sym: Symbol)/*(implicit ctx: Context)*/ = {
@@ -383,7 +407,18 @@ trait TreePicklers extends NameBuffers
               case _ => log(s"synthetic typeDef can't be emulated for ${tree.name}")
             }
             */
-          case tree: ModuleDef => //TODO fix
+          case tree: ModuleDef =>
+            //TODO fix
+            val modClSym = tree.symbol.moduleClass
+            val synthName = syntheticName(modClSym.name)
+//            log("!! ModuleDef")
+//            log(s"sym: ${showRaw(modClSym, printKinds = true)}")
+//            log(s"synthName: $synthName")
+            val modSym = tree.symbol
+            val supAccValDefSymAddr = emulateSupAccValDef(modSym)
+            //check constructor type
+            pickleDef(TYPEDEF, tree.symbol, tree.impl, name = synthName)
+          //emulate ValDef
           case tree: Template =>
             registerDef(tree.symbol)
             writeByte(TEMPLATE)
@@ -491,12 +526,17 @@ trait TreePicklers extends NameBuffers
       }
 
       //TODO generalize removeAbstract for all mods
-      def pickleDef(tag: Int, sym: Symbol, tpt: Tree, rhs: Tree = EmptyTree, pickleParams: => Unit = (), removeAbstract: Boolean = false) = {
+      def pickleDef(tag: Int, sym: Symbol, tpt: Tree, rhs: Tree = EmptyTree, pickleParams: => Unit = (), 
+          removeAbstract: Boolean = false, name: Name = nme.EMPTY) = {
         assert(symRefs(sym) == NoAddr)
         registerDef(sym)
         writeByte(tag)
         withLength {
-          pickleName(sym)
+          if (name != nme.EMPTY) {
+            pickleName(name)
+          } else {
+            pickleName(sym)
+          }
           pickleParams
           tpt match {
             case tpt: TypeTree =>
