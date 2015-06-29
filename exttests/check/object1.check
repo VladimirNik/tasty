@@ -1,0 +1,9 @@
+package <empty> {
+  class Test() extends Object() { 
+    final lazy module val x: Test.this.x$ = new Test.this.x$()
+    final module class x$() extends Object() { 
+      def ddd: Int = 5
+    }
+    this.x.ddd
+  }
+}
