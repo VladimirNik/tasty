@@ -234,6 +234,10 @@ trait TreePicklers extends NameBuffers
                 writeByte(if (sym.isType) TYPEREF else TERMREF)
                 pickleName(sym.name); pickleType(pre)
             }
+          //TODO make common with TypeRef
+          case tpe @ ModuleType(pre, sym, name) =>
+            writeByte(TYPEREF)
+            pickleName(name); pickleType(pre)
           case tpe @ TermRef(sym) =>
             def pickleRef() = {
               writeByte(if (sym.isType) TYPEREFdirect else TERMREFdirect)
@@ -303,6 +307,7 @@ trait TreePicklers extends NameBuffers
             tree.tpe match {
               case tp if sym != null && sym.isTerm =>
                 //construct type similar to Dotty TermRef (or get it if type is already generated)
+                //TODO - add as a method
                 val genTp = if (genTypes.containsKey(sym)) { 
                   genTypes.get(sym) 
                 } else {
@@ -415,8 +420,16 @@ trait TreePicklers extends NameBuffers
 //            log(s"sym: ${showRaw(modClSym, printKinds = true)}")
 //            log(s"synthName: $synthName")
             val modSym = tree.symbol
-            val supAccValDefSymAddr = emulateSupAccValDef(modSym)
-            //check constructor type
+            //TODO - add as a method
+            val genTp = if (genTypes.containsKey(modClSym)) {
+              genTypes.get(modClSym)
+            } else {
+              val tp = ModuleType(modClSym.tpe.prefix, modClSym, synthName)
+              genTypes.put(modClSym, tp)
+              tp
+            }
+            emulateModuleValDef(modSym, genTp)
+            //TODO - check constructor type
             pickleDef(TYPEDEF, tree.symbol, tree.impl, name = synthName)
           //emulate ValDef
           case tree: Template =>
@@ -622,6 +635,22 @@ trait TreePicklers extends NameBuffers
         writeRef(addr)
       }
 
+      def emulateModuleValDef(modSym: Symbol, modType: Type): Addr = {
+        val clName = modSym.name
+        val fullName = syntheticName(modSym.fullNameAsName('.')).toTypeName
+        emulateValDef(clName, List(OBJECT, SYNTHETIC)) {
+          //defTpt
+          pickleType(modType)
+        } {
+          //defRhs
+          emulateApply(emulateSelectWithSignature(nme.CONSTRUCTOR, Signature(Nil, fullName)) {
+            emulateNewWithType {
+              pickleType(modType)
+            }
+          })
+        }
+      }
+      
       def emulateSupAccValDef(origClass: Symbol): Addr = {
         val clName = origClass.name
         val prefixTpe = origClass.tpe.prefix
