@@ -1,6 +1,6 @@
-package scala.tasty.internal.scalac
-package pickler
+package scala.tasty.internal.scalac.dotc
 package core
+package tasty
 
 import scala.collection.mutable
 import TastyFormat._

@@ -1,6 +1,6 @@
-package scala.tasty.internal.scalac
-package pickler
+package scala.tasty.internal.scalac.dotc
 package core
+package tasty
 
 import util.Util.{bestFit, dble}
 import TastyBuffer.{Addr, AddrWidth}
