@@ -5,7 +5,7 @@ package phase
 import scala.tools.nsc.{ Global, Phase, SubComponent }
 import scala.tools.nsc.plugins.{ Plugin => NscPlugin, PluginComponent => NscPluginComponent }
 import scala.reflect.io.AbstractFile
-import scala.tasty.internal.scalac.pickler.core.TreePicklers
+//import scala.tasty.internal.scalac.pickler.core.TreePicklers
 import scala.tasty.internal.scalac.util.TastyUtils
 import scala.tasty.internal.scalac.util.TastyGenUtils
 
@@ -14,21 +14,21 @@ trait TastyPhase {
 
   val global: Global
  
-  val picklersInstance = new {
-    val global: self.global.type = self.global
-  } with TreePicklers
-
-  import scala.collection.mutable.{ Map => MMap }
-  private var picklers: MMap[global.CompilationUnit, MMap[global.ClassSymbol, picklersInstance.TastyPickler]] = MMap()
-
-  def addPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol, pickler: picklersInstance.TastyPickler) =
-    picklers get unit match {
-      case Some(picklersMap) => picklersMap += (classSymbol -> pickler)
-      case None              => picklers += (unit -> MMap(classSymbol -> pickler))
-    }
-
-  def findPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol): Option[picklersInstance.TastyPickler] =
-    picklers(unit) get (classSymbol)
+//  val picklersInstance = new {
+//    val global: self.global.type = self.global
+//  } with TreePicklers
+//
+//  import scala.collection.mutable.{ Map => MMap }
+//  private var picklers: MMap[global.CompilationUnit, MMap[global.ClassSymbol, picklersInstance.TastyPickler]] = MMap()
+//
+//  def addPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol, pickler: picklersInstance.TastyPickler) =
+//    picklers get unit match {
+//      case Some(picklersMap) => picklersMap += (classSymbol -> pickler)
+//      case None              => picklers += (unit -> MMap(classSymbol -> pickler))
+//    }
+//
+//  def findPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol): Option[picklersInstance.TastyPickler] =
+//    picklers(unit) get (classSymbol)
 
   object TastyComponent extends {
     val global: self.global.type = self.global
@@ -57,32 +57,32 @@ trait TastyPhase {
       override def apply(unit: CompilationUnit): Unit = {
         val tree = unit.body
 
-        if (!unit.isJava) {
-          for {
-            cls <- dropCompanionModuleClasses(topLevelClasses(unit.body))
-            tree <- sliceTopLevel(unit.body, cls)
-          } {
-            val pickler = new picklersInstance.TastyPickler
-            addPickler(unit, cls, pickler)
-            val treePkl = new picklersInstance.TreePickler(pickler)
-            treePkl.pickle(tree :: Nil)
-
-            pickler.addrOfTree = treePkl.buf.addrOfTree
-            pickler.addrOfSym = treePkl.addrOfSym
-            if (picklersInstance.exists(tree.pos)) {
-              println(s"Pickle positions for $unit")
-              println(s"pos: ${tree.pos}")
-              println
-              new picklersInstance.PositionPickler(pickler, treePkl.buf.addrOfTree).picklePositions(tree :: Nil, tree.pos)
-            } else {
-              println("No positions exist for pickling")
-            }
-            //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
-            val pickledInfo = treePkl.logInfo
-            //generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
-            //testSame(pickledInfo, unit)
-          }
-        }
+//        if (!unit.isJava) {
+//          for {
+//            cls <- dropCompanionModuleClasses(topLevelClasses(unit.body))
+//            tree <- sliceTopLevel(unit.body, cls)
+//          } {
+//            val pickler = new picklersInstance.TastyPickler
+//            addPickler(unit, cls, pickler)
+//            val treePkl = new picklersInstance.TreePickler(pickler)
+//            treePkl.pickle(tree :: Nil)
+//
+//            pickler.addrOfTree = treePkl.buf.addrOfTree
+//            pickler.addrOfSym = treePkl.addrOfSym
+//            if (picklersInstance.exists(tree.pos)) {
+//              println(s"Pickle positions for $unit")
+//              println(s"pos: ${tree.pos}")
+//              println
+//              new picklersInstance.PositionPickler(pickler, treePkl.buf.addrOfTree).picklePositions(tree :: Nil, tree.pos)
+//            } else {
+//              println("No positions exist for pickling")
+//            }
+//            //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
+//            val pickledInfo = treePkl.logInfo
+//            generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
+//            //testSame(pickledInfo, unit)
+//          }
+//        }
       }
     }
 

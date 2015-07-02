@@ -152,14 +152,15 @@ trait TastyGenPhase {
           val plainC = pcb.cnode
 
           import scala.tools.asm.CustomAttr
-          if (claszSymbol.isClass) // @DarkDimius is this test needed here?
-            for (pickler <- findPickler(cunit, claszSymbol.asClass)) {
-              val binary = pickler.assembleParts()
-              println(s"unit: $cunit, cls: $claszSymbol")
-              println(s"binary.length: ${binary.length}\n")
-              val dataAttr = new CustomAttr(TastyComponent.TASTYATTR, binary)
-              plainC.visitAttribute(dataAttr)
-            }
+          //TODO uncomment after model creation
+//          if (claszSymbol.isClass) // @DarkDimius is this test needed here?
+//            for (pickler <- findPickler(cunit, claszSymbol.asClass)) {
+//              val binary = pickler.assembleParts()
+//              println(s"unit: $cunit, cls: $claszSymbol")
+//              println(s"binary.length: ${binary.length}\n")
+//              val dataAttr = new CustomAttr(TastyComponent.TASTYATTR, binary)
+//              plainC.visitAttribute(dataAttr)
+//            }
 
           // -------------- bean info class, if needed --------------
           val beanC =
