@@ -24,9 +24,12 @@ import reporting._
 import collection.mutable
 import collection.immutable.BitSet
 import printing._
-import config.{Settings, ScalaSettings, Platform, JavaPlatform}
+import config.Settings
 import language.implicitConversions
 import DenotTransformers.DenotTransformer
+import scala.tools.nsc.settings.ScalaSettings
+import scala.tools.nsc.backend.JavaPlatform
+import scala.tools.nsc.backend.Platform
 object Contexts {
 
   /** A context is passed basically everywhere in dotc.

@@ -1,4 +1,5 @@
-package scala.tasty.internal.scalac.dotc
+package scala.tasty.internal.scalac
+package dotc
 package core
 
 import Periods._
@@ -22,7 +23,7 @@ import ast.tpd.Tree
 import ast.TreeTypeMap
 import Denotations.{ Denotation, SingleDenotation, MultiDenotation }
 import collection.mutable
-import io.AbstractFile
+import tools.io.AbstractFile
 import language.implicitConversions
 import util.{NoSource, DotClass}
 
