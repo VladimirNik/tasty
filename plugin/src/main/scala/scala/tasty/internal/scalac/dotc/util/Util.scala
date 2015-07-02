@@ -1,4 +1,5 @@
-package scala.tasty.internal.scalac.util
+package scala.tasty.internal.scalac.dotc
+package util
 
 import scala.reflect.ClassTag
 
@@ -30,6 +31,4 @@ object Util {
     Array.copy(arr, 0, arr1, 0, arr.length)
     arr1
   }
-
-  def pickling = System.out
 }
