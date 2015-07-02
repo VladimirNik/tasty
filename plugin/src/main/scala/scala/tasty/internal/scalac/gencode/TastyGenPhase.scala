@@ -190,13 +190,23 @@ trait TastyGenPhase {
      *          - converting the plain ClassNode to byte array and placing it on queue-3
      */
       class Worker2 {
-        lazy val localOpt = new LocalOpt(settings)
+        def runGlobalOptimizations(): Unit = {
+          import scala.collection.convert.decorateAsScala._
+          q2.asScala foreach {
+            case Item2(_, _, plain, _, _) =>
+              // skip mirror / bean: wd don't inline into tem, and they are not used in the plain class
+              if (plain != null) callGraph.addClass(plain)
+          }
+          bTypes.inliner.runInliner()
+        }
 
         def localOptimizations(classNode: ClassNode): Unit = {
           BackendStats.timed(BackendStats.methodOptTimer)(localOpt.methodOptimizations(classNode))
         }
 
         def run() {
+          if (settings.YoptInlinerEnabled) runGlobalOptimizations()
+
           while (true) {
             val item = q2.poll
             if (item.isPoison) {
@@ -243,24 +253,33 @@ trait TastyGenPhase {
 
       //var arrivalPos = 0
 
-      /*
-     *  A run of the BCodePhase phase comprises:
-     *
-     *    (a) set-up steps (most notably supporting maps in `BCodeTypes`,
-     *        but also "the" writer where class files in byte-array form go)
-     *
-     *    (b) building of ASM ClassNodes, their optimization and serialization.
-     *
-     *    (c) tear down (closing the classfile-writer and clearing maps)
-     *
-     */
+      /**
+       * The `run` method is overridden because the backend has a different data flow than the default
+       * phase: the backend does not transform compilation units one by one, but on all units in the
+       * same run. This allows cross-unit optimizations and running some stages of the backend
+       * concurrently on multiple units.
+       *
+       *  A run of the BCodePhase phase comprises:
+       *
+       *    (a) set-up steps (most notably supporting maps in `BCodeTypes`,
+       *        but also "the" writer where class files in byte-array form go)
+       *
+       *    (b) building of ASM ClassNodes, their optimization and serialization.
+       *
+       *    (c) tear down (closing the classfile-writer and clearing maps)
+       *
+       */
       override def run() {
         val bcodeStart = Statistics.startTimer(BackendStats.bcodeTimer)
 
         val initStart = Statistics.startTimer(BackendStats.bcodeInitTimer)
         arrivalPos = 0 // just in case
         scalaPrimitives.init()
-        bTypes.intializeCoreBTypes()
+        bTypes.initializeCoreBTypes()
+        bTypes.javaDefinedClasses.clear()
+        bTypes.javaDefinedClasses ++= currentRun.symSource collect {
+          case (sym, _) if sym.isJavaDefined => sym.javaBinaryName.toString
+        }
         Statistics.stopTimer(BackendStats.bcodeInitTimer, initStart)
 
         // initBytecodeWriter invokes fullName, thus we have to run it before the typer-dependent thread is activated.
@@ -372,8 +391,7 @@ trait TastyGenPhase {
 
         gen(cunit.body)
       }
-
-    } // end of class BCodePhase
+    } // end of class BCodePhase2
 
   } // end of class GenBCode
 }
