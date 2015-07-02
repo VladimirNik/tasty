@@ -1,4 +1,5 @@
-package scala.tasty.internal.scalac.dotc
+package scala.tasty.internal.scalac
+package dotc
 package core
 
 import SymDenotations.{ SymDenotation, ClassDenotation, NoDenotation, NotDefinedHereDenotation }
@@ -12,10 +13,9 @@ import Periods._
 import Flags._
 import DenotTransformers._
 import Decorators._
-import dotc.transform.Erasure
 import printing.Texts._
 import printing.Printer
-import io.AbstractFile
+import tools.io.AbstractFile
 import config.Config
 import typer.Mode
 import util.common._

@@ -200,7 +200,7 @@ object Names {
   private final val fillFactor = 0.7
 
   /** Memory to store all names sequentially. */
-  private[dotty] var chrs: Array[Char] = new Array[Char](InitialNameSize)
+  private[core] var chrs: Array[Char] = new Array[Char](InitialNameSize)
 
   /** The number of characters filled. */
   private var nc = 0

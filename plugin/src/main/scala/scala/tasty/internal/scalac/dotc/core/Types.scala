@@ -21,7 +21,6 @@ import ast.tpd._
 import ast.TreeTypeMap
 import printing.Texts._
 import ast.untpd
-import dotty.tools.dotc.transform.Erasure
 import printing.Printer
 import Hashable._
 import Uniques._

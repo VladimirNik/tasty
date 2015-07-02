@@ -17,7 +17,6 @@ import ast.Trees._
 import ast.untpd
 import util.{FreshNameCreator, SimpleMap, SourceFile, NoSource}
 import typer._
-import Implicits.ContextualImplicits
 import config.Settings._
 import config.Config
 import reporting._
@@ -27,9 +26,7 @@ import printing._
 import config.Settings
 import language.implicitConversions
 import DenotTransformers.DenotTransformer
-import scala.tools.nsc.settings.ScalaSettings
-import scala.tools.nsc.backend.JavaPlatform
-import scala.tools.nsc.backend.Platform
+import config.ScalaSettings
 object Contexts {
 
   /** A context is passed basically everywhere in dotc.
@@ -59,7 +56,6 @@ object Contexts {
                             with Symbols
                             with SymDenotations
                             with Reporting
-                            with NamerContextOps
                             with Cloneable { thiscontext =>
     implicit def ctx: Context = this
 
@@ -112,11 +108,6 @@ object Contexts {
     def sstate: SettingsState = _sstate
 
     /** The current tree */
-    private[this] var _compilationUnit: CompilationUnit = _
-    protected def compilationUnit_=(compilationUnit: CompilationUnit) = _compilationUnit = compilationUnit
-    def compilationUnit: CompilationUnit = _compilationUnit
-
-    /** The current tree */
     private[this] var _tree: Tree[_ >: Untyped] = _
     protected def tree_=(tree: Tree[_ >: Untyped]) = _tree = tree
     def tree: Tree[_ >: Untyped] = _tree
@@ -126,21 +117,15 @@ object Contexts {
     protected def scope_=(scope: Scope) = _scope = scope
     def scope: Scope = _scope
 
-    /** The current type assigner or typer */
-    private[this] var _typeAssigner: TypeAssigner = _
-    protected def typeAssigner_=(typeAssigner: TypeAssigner) = _typeAssigner = typeAssigner
-    def typeAssigner: TypeAssigner = _typeAssigner
-    def typer: Typer = _typeAssigner.asInstanceOf[Typer]
-
     /** The currently active import info */
     private[this] var _importInfo: ImportInfo = _
     protected def importInfo_=(importInfo: ImportInfo) = _importInfo = importInfo
     def importInfo: ImportInfo = _importInfo
 
     /** The current compiler-run specific Info */
-    private[this] var _runInfo: RunInfo = _
-    protected def runInfo_=(runInfo: RunInfo) = _runInfo = runInfo
-    def runInfo: RunInfo = _runInfo
+//    private[this] var _runInfo: RunInfo = _
+//    protected def runInfo_=(runInfo: RunInfo) = _runInfo = runInfo
+//    def runInfo: RunInfo = _runInfo
 
     /** An optional diagostics buffer than is used by some checking code
      *  to provide more information in the buffer if it exists.
@@ -174,36 +159,6 @@ object Contexts {
      *  after Config.LogPendingFindMemberThreshold is reached.
      */
     private[core] var pendingMemberSearches: List[Name] = Nil
-
-    /** The new implicit references that are introduced by this scope */
-    private var implicitsCache: ContextualImplicits = null
-    def implicits: ContextualImplicits = {
-      if (implicitsCache == null )
-        implicitsCache = {
-          val implicitRefs: List[TermRef] =
-            if (isClassDefContext)
-              try owner.thisType.implicitMembers
-              catch {
-                case ex: CyclicReference => Nil
-              }
-            else if (isImportContext) importInfo.importedImplicits
-            else if (isNonEmptyScopeContext) scope.implicitDecls
-            else Nil
-          val outerImplicits =
-            if (isImportContext && importInfo.hiddenRoot.exists)
-              outer.implicits exclude importInfo.hiddenRoot
-            else
-              outer.implicits
-          if (implicitRefs.isEmpty) outerImplicits
-          else new ContextualImplicits(implicitRefs, outerImplicits)(this)
-        }
-      implicitsCache
-    }
-
-    /** The history of implicit searches that are currently active */
-    private var _searchHistory: SearchHistory = null
-    protected def searchHistory_= (searchHistory: SearchHistory) = _searchHistory = searchHistory
-    def searchHistory: SearchHistory = _searchHistory
 
     /** Those fields are used to cache phases created in withPhase.
       * phasedCtx is first phase with altered phase ever requested.
@@ -340,8 +295,7 @@ object Contexts {
     /** The current source file; will be derived from current
      *  compilation unit.
      */
-    def source: SourceFile =
-      if (compilationUnit == null) NoSource else compilationUnit.source
+    def source: SourceFile = NoSource
 
     /** Does current phase use an erased types interpretation? */
     def erasedTypes: Boolean = phase.erasedTypes
@@ -375,7 +329,6 @@ object Contexts {
 
     protected def init(outer: Context): this.type = {
       this.outer = outer
-      this.implicitsCache = null
       this.phasedCtx = this
       this.phasedCtxs = null
       setCreationTrace()
@@ -413,17 +366,13 @@ object Contexts {
     def setPrinterFn(printer: Context => Printer): this.type = { this.printerFn = printer; this }
     def setOwner(owner: Symbol): this.type = { assert(owner != NoSymbol); this.owner = owner; this }
     def setSettings(sstate: SettingsState): this.type = { this.sstate = sstate; this }
-    def setCompilationUnit(compilationUnit: CompilationUnit): this.type = { this.compilationUnit = compilationUnit; this }
     def setTree(tree: Tree[_ >: Untyped]): this.type = { this.tree = tree; this }
     def setScope(scope: Scope): this.type = { this.scope = scope; this }
     def setNewScope: this.type = { this.scope = newScope; this }
-    def setTypeAssigner(typeAssigner: TypeAssigner): this.type = { this.typeAssigner = typeAssigner; this }
-    def setTyper(typer: Typer): this.type = { this.scope = typer.scope; setTypeAssigner(typer) }
     def setImportInfo(importInfo: ImportInfo): this.type = { this.importInfo = importInfo; this }
-    def setRunInfo(runInfo: RunInfo): this.type = { this.runInfo = runInfo; this }
+//    def setRunInfo(runInfo: RunInfo): this.type = { this.runInfo = runInfo; this }
     def setDiagnostics(diagnostics: Option[StringBuilder]): this.type = { this.diagnostics = diagnostics; this }
     def setTypeComparerFn(tcfn: Context => TypeComparer): this.type = { this.typeComparer = tcfn(this); this }
-    def setSearchHistory(searchHistory: SearchHistory): this.type = { this.searchHistory = searchHistory; this }
     def setMoreProperties(moreProperties: Map[String, Any]): this.type = { this.moreProperties = moreProperties; this }
 
     def setProperty(prop: (String, Any)): this.type = setMoreProperties(moreProperties + prop)
@@ -461,23 +410,19 @@ object Contexts {
     outer = NoContext
     period = InitialPeriod
     mode = Mode.None
-    typerState = new TyperState(new ThrowingReporter(new ConsoleReporter()(this)))
     printerFn = new RefinedPrinter(_)
     owner = NoSymbol
     sstate = settings.defaultState
     tree = untpd.EmptyTree
-    typeAssigner = TypeAssigner
-    runInfo = new RunInfo(this)
+//    runInfo = new RunInfo(this)
     diagnostics = None
     moreProperties = Map.empty
     typeComparer = new TypeComparer(this)
-    searchHistory = new SearchHistory(0, Map())
     gadt = new GADTMap(SimpleMap.Empty)
   }
 
   object NoContext extends Context {
     lazy val base = unsupported("base")
-    override val implicits: ContextualImplicits = new ContextualImplicits(Nil, null)(this)
   }
 
   /** A context base defines state and associated methods that exist once per
@@ -497,7 +442,7 @@ object Contexts {
     val loaders = new SymbolLoaders
 
     /** The platform */
-    val platform: Platform = new JavaPlatform
+//    val platform: Platform = new JavaPlatform
 
     /** The standard fresh name creator */
     val freshNames = new FreshNameCreator.Default
@@ -506,7 +451,7 @@ object Contexts {
     def freshName(prefix: Name): String = freshName(prefix.toString)
 
     /** The loader that loads the members of _root_ */
-    def rootLoader(root: TermSymbol)(implicit ctx: Context): SymbolLoader = platform.rootLoader(root)
+//    def rootLoader(root: TermSymbol)(implicit ctx: Context): SymbolLoader = platform.rootLoader(root)
 
     // Set up some phases to get started */
     usePhases(List(SomePhase))
@@ -625,10 +570,10 @@ object Contexts {
     val theBase = new ContextBase // !!! DEBUG, so that we can use a minimal context for reporting even in code that normally cannot access a context
   }
 
-  /** Info that changes on each compiler run */
-  class RunInfo(initctx: Context) extends ImplicitRunInfo with ConstraintRunInfo {
-    implicit val ctx: Context = initctx
-  }
+//  /** Info that changes on each compiler run */
+//  class RunInfo(initctx: Context) extends ImplicitRunInfo with ConstraintRunInfo {
+//    implicit val ctx: Context = initctx
+//  }
 
   class GADTMap(initBounds: SimpleMap[Symbol, TypeBounds]) {
     private var myBounds = initBounds

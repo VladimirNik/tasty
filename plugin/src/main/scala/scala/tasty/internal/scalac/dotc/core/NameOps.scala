@@ -6,7 +6,7 @@ import scala.annotation.switch
 import scala.io.Codec
 import Names._, StdNames._, Contexts._, Symbols._, Flags._
 import Decorators.StringDecorator
-import dotty.tools.dotc.util.Chars
+import util.Chars
 import Chars.isOperatorPart
 
 object NameOps {

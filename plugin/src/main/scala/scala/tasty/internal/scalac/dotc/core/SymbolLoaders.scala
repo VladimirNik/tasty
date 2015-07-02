@@ -8,12 +8,12 @@ package core
 
 import java.io.IOException
 import scala.compat.Platform.currentTime
-import dotty.tools.io.{ ClassPath, AbstractFile }
+import scala.tasty.internal.scalac.tools.io.{ AbstractFile }
 import Contexts._, Symbols._, Flags._, SymDenotations._, Types._, Scopes._, util.Positions._, Names._
 import StdNames._, NameOps._
 import Decorators.{StringDecorator, StringInterpolators}
-import classfile.ClassfileParser
 import scala.util.control.NonFatal
+import scala.tools.nsc.util.ClassPath
 
 object SymbolLoaders {
   /** A marker trait for a completer that replaces the original
@@ -55,35 +55,35 @@ class SymbolLoaders {
     enterNew(owner, module.moduleClass, completer, scope)
   }
 
-  /** Enter package with given `name` into scope of `owner`
-   *  and give them `completer` as type.
-   */
-  def enterPackage(owner: Symbol, pkg: ClassPath)(implicit ctx: Context): Symbol = {
-    val pname = pkg.name.toTermName
-    val preExisting = owner.info.decls lookup pname
-    if (preExisting != NoSymbol) {
-      // Some jars (often, obfuscated ones) include a package and
-      // object with the same name. Rather than render them unusable,
-      // offer a setting to resolve the conflict one way or the other.
-      // This was motivated by the desire to use YourKit probes, which
-      // require yjp.jar at runtime. See SI-2089.
-      if (ctx.settings.termConflict.isDefault)
-        throw new TypeError(
-          sm"""$owner contains object and package with same name: $pname
-              |one of them needs to be removed from classpath""")
-      else if (ctx.settings.termConflict.value == "package") {
-        ctx.warning(
-          s"Resolving package/object name conflict in favor of package ${preExisting.fullName}. The object will be inaccessible.")
-        owner.asClass.delete(preExisting)
-      } else {
-        ctx.warning(
-          s"Resolving package/object name conflict in favor of object ${preExisting.fullName}.  The package will be inaccessible.")
-        return NoSymbol
-      }
-    }
-    ctx.newModuleSymbol(owner, pname, PackageCreationFlags, PackageCreationFlags,
-      (module, modcls) => new PackageLoader(module, pkg)).entered
-  }
+//  /** Enter package with given `name` into scope of `owner`
+//   *  and give them `completer` as type.
+//   */
+//  def enterPackage(owner: Symbol, pkg: ClassPath)(implicit ctx: Context): Symbol = {
+//    val pname = pkg.name.toTermName
+//    val preExisting = owner.info.decls lookup pname
+//    if (preExisting != NoSymbol) {
+//      // Some jars (often, obfuscated ones) include a package and
+//      // object with the same name. Rather than render them unusable,
+//      // offer a setting to resolve the conflict one way or the other.
+//      // This was motivated by the desire to use YourKit probes, which
+//      // require yjp.jar at runtime. See SI-2089.
+//      if (ctx.settings.termConflict.isDefault)
+//        throw new TypeError(
+//          sm"""$owner contains object and package with same name: $pname
+//              |one of them needs to be removed from classpath""")
+//      else if (ctx.settings.termConflict.value == "package") {
+//        ctx.warning(
+//          s"Resolving package/object name conflict in favor of package ${preExisting.fullName}. The object will be inaccessible.")
+//        owner.asClass.delete(preExisting)
+//      } else {
+//        ctx.warning(
+//          s"Resolving package/object name conflict in favor of object ${preExisting.fullName}.  The package will be inaccessible.")
+//        return NoSymbol
+//      }
+//    }
+//    ctx.newModuleSymbol(owner, pname, PackageCreationFlags, PackageCreationFlags,
+//      (module, modcls) => new PackageLoader(module, pkg)).entered
+//  }
 
   /** Enter class and module with given `name` into scope of `owner`
    *  and give them `completer` as type.
@@ -122,20 +122,20 @@ class SymbolLoaders {
     name == "package" &&
       (owner.fullName.toString == "scala" || owner.fullName.toString == "scala.reflect")
 
-  /** Initialize toplevel class and module symbols in `owner` from class path representation `classRep`
-   */
-  def initializeFromClassPath(owner: Symbol, classRep: ClassPath#ClassRep)(implicit ctx: Context): Unit = {
-    ((classRep.binary, classRep.source): @unchecked) match {
-      case (Some(bin), Some(src)) if needCompile(bin, src) && !binaryOnly(owner, classRep.name) =>
-        if (ctx.settings.verbose.value) ctx.inform("[symloader] picked up newer source file for " + src.path)
-        enterToplevelsFromSource(owner, classRep.name, src)
-      case (None, Some(src)) =>
-        if (ctx.settings.verbose.value) ctx.inform("[symloader] no class, picked up source file for " + src.path)
-        enterToplevelsFromSource(owner, classRep.name, src)
-      case (Some(bin), _) =>
-        enterClassAndModule(owner, classRep.name, ctx.platform.newClassLoader(bin))
-    }
-  }
+//  /** Initialize toplevel class and module symbols in `owner` from class path representation `classRep`
+//   */
+//  def initializeFromClassPath(owner: Symbol, classRep: ClassPath#ClassRep)(implicit ctx: Context): Unit = {
+//    ((classRep.binary, classRep.source): @unchecked) match {
+//      case (Some(bin), Some(src)) if needCompile(bin, src) && !binaryOnly(owner, classRep.name) =>
+//        if (ctx.settings.verbose.value) ctx.inform("[symloader] picked up newer source file for " + src.path)
+//        enterToplevelsFromSource(owner, classRep.name, src)
+//      case (None, Some(src)) =>
+//        if (ctx.settings.verbose.value) ctx.inform("[symloader] no class, picked up source file for " + src.path)
+//        enterToplevelsFromSource(owner, classRep.name, src)
+//      case (Some(bin), _) =>
+//        enterClassAndModule(owner, classRep.name, ctx.platform.newClassLoader(bin))
+//    }
+//  }
 
   def needCompile(bin: AbstractFile, src: AbstractFile) =
     src.lastModified >= bin.lastModified

@@ -10,7 +10,6 @@ import language.higherKinds
 import collection.IndexedSeqOptimized
 import collection.immutable.IndexedSeq
 import collection.mutable.ListBuffer
-import parsing.Tokens.Token
 import printing.Printer
 import util.{Stats, Attachment, DotClass}
 import annotation.unchecked.uncheckedVariance
@@ -65,8 +64,6 @@ object Trees {
     def hasFlags = flags != EmptyFlags
     def hasAnnotations = annotations.nonEmpty
     def hasPrivateWithin = privateWithin != tpnme.EMPTY
-
-    def tokenPos: Seq[(Token, Position)] = ???
   }
 
   private var nextId = 0 // for debugging

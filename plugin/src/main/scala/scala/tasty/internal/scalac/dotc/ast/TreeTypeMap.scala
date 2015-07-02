@@ -6,7 +6,7 @@ import core._
 import Types._, Contexts._, Constants._, Names._, Flags._
 import SymDenotations._, Symbols._, Annotations._, Trees._, Symbols._
 import Denotations._, Decorators._
-import dotty.tools.dotc.transform.SymUtils._
+import transform.SymUtils._
 
 /** A map that applies three functions and a substitution together to a tree and
  *  makes sure they are coordinated so that the result is well-typed. The functions are
@@ -32,7 +32,8 @@ import dotty.tools.dotc.transform.SymUtils._
  *  set, we would get a data race assertion error.
  */
 final class TreeTypeMap(
-  val typeMap: Type => Type = IdentityTypeMap,
+  //TODO - check
+  val typeMap: Type => Type = IdentityTypeMap.apply(_),
   val treeMap: tpd.Tree => tpd.Tree = identity _,
   val oldOwners: List[Symbol] = Nil,
   val newOwners: List[Symbol] = Nil,
