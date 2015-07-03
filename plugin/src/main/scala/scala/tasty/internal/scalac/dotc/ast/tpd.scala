@@ -2,8 +2,8 @@ package scala.tasty.internal.scalac
 package dotc
 package ast
 
-import dotty.tools.dotc.transform.ExplicitOuter
-import dotty.tools.dotc.typer.ProtoTypes.FunProtoTyped
+//import dotty.tools.dotc.transform.ExplicitOuter
+//import dotty.tools.dotc.typer.ProtoTypes.FunProtoTyped
 import transform.SymUtils._
 import core._
 import util.Positions._, Types._, Contexts._, Constants._, Names._, Flags._
@@ -342,9 +342,10 @@ object tpd extends Trees.Instance[Type] with TypedTreeInfo {
     ref(NamedType(sym.owner.thisType, sym.name, sym.denot))
 
   private def followOuterLinks(t: Tree)(implicit ctx: Context) = t match {
-    case t: This if ctx.erasedTypes && !(t.symbol == ctx.owner.enclosingClass || t.symbol.isStaticOwner) =>
-      // after erasure outer paths should be respected
-      new ExplicitOuter.OuterOps(ctx).path(t.tpe.widen.classSymbol)
+    //TODO - we work before erasure
+//    case t: This if ctx.erasedTypes && !(t.symbol == ctx.owner.enclosingClass || t.symbol.isStaticOwner) =>
+//       //after erasure outer paths should be respected
+//      new ExplicitOuter.OuterOps(ctx).path(t.tpe.widen.classSymbol)
     case t =>
       t
   }
@@ -801,56 +802,6 @@ object tpd extends Trees.Instance[Type] with TypedTreeInfo {
       ctx.warning(i"conversion from ${tree.tpe.widen} to ${numericCls.typeRef} will always fail at runtime.")
       Throw(New(defn.ClassCastExceptionClass.typeRef, Nil)) withPos tree.pos
     }
-  }
-
-  def applyOverloaded(receiver: Tree, method: TermName, args: List[Tree], targs: List[Type], expectedType: Type, isAnnotConstructor: Boolean = false)(implicit ctx: Context): Tree = {
-    val typer = ctx.typer
-    val proto = new FunProtoTyped(args, expectedType, typer)
-    val alts = receiver.tpe.member(method).alternatives.map(_.termRef)
-
-    val alternatives = ctx.typer.resolveOverloaded(alts, proto, Nil)
-    assert(alternatives.size == 1) // this is parsed from bytecode tree. there's nothing user can do about it
-
-    val prefixTpe =
-      if (method eq nme.CONSTRUCTOR)
-        receiver.tpe.normalizedPrefix // <init> methods are part of the enclosing scope
-      else
-        receiver.tpe
-
-    val selected = alternatives.head
-    val fun = receiver
-      .select(TermRef.withSig(prefixTpe, selected.termSymbol.asTerm))
-      .appliedToTypes(targs)
-
-    def adaptLastArg(lastParam: Tree, expectedType: Type) = {
-      if (isAnnotConstructor && !(lastParam.tpe <:< expectedType)) {
-        val defn = ctx.definitions
-        val prefix = args.take(selected.widen.paramTypess.head.size - 1)
-        expectedType match {
-          case defn.ArrayType(el) =>
-            lastParam.tpe match {
-              case defn.ArrayType(el2) if el2 <:< el =>
-                // we have a JavaSeqLiteral with a more precise type
-                // we cannot construct a tree as JavaSeqLiteral infered to precise type
-                // if we add typed than it would be both type-correct and
-                // will pass Ycheck
-                prefix ::: List(tpd.Typed(lastParam, TypeTree(defn.ArrayType(el))))
-              case _ =>
-                ???
-            }
-          case _ => args
-        }
-      } else args
-    }
-
-    val callArgs: List[Tree] = if (args.isEmpty) Nil else {
-      val expectedType = selected.widen.paramTypess.head.last
-      val lastParam = args.last
-      adaptLastArg(lastParam, expectedType)
-    }
-
-    val apply = untpd.Apply(fun, callArgs)
-    new typer.ApplyToTyped(apply, fun, selected, callArgs, expectedType).result.asInstanceOf[Tree] // needed to handle varargs
   }
 
   @tailrec

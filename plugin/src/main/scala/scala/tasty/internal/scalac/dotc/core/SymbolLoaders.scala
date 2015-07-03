@@ -142,33 +142,34 @@ class SymbolLoaders {
 
   /** Load contents of a package
    */
-  class PackageLoader(_sourceModule: TermSymbol, classpath: ClassPath)
-      extends SymbolLoader {
-    override def sourceModule(implicit ctx: Context) = _sourceModule
-    def description = "package loader " + classpath.name
-
-    private[core] val currentDecls: MutableScope = newScope
-
-    def doComplete(root: SymDenotation)(implicit ctx: Context): Unit = {
-      assert(root is PackageClass, root)
-        def maybeModuleClass(classRep: ClassPath#ClassRep) = classRep.name.last == '$'
-      val pre = root.owner.thisType
-      root.info = ClassInfo(pre, root.symbol.asClass, Nil, currentDecls, pre select sourceModule)
-      if (!sourceModule.isCompleted)
-        sourceModule.completer.complete(sourceModule)
-      if (!root.isRoot) {
-        for (classRep <- classpath.classes)
-          if (!maybeModuleClass(classRep))
-            initializeFromClassPath(root.symbol, classRep)
-        for (classRep <- classpath.classes)
-          if (maybeModuleClass(classRep) && !root.unforcedDecls.lookup(classRep.name.toTypeName).exists)
-            initializeFromClassPath(root.symbol, classRep)
-      }
-      if (!root.isEmptyPackage)
-        for (pkg <- classpath.packages)
-          enterPackage(root.symbol, pkg)
-    }
-  }
+    //TODO - fix
+//  class PackageLoader(_sourceModule: TermSymbol, classpath: ClassPath)
+//      extends SymbolLoader {
+//    override def sourceModule(implicit ctx: Context) = _sourceModule
+//    def description = "package loader " + classpath.name
+//
+//    private[core] val currentDecls: MutableScope = newScope
+//
+//    def doComplete(root: SymDenotation)(implicit ctx: Context): Unit = {
+//      assert(root is PackageClass, root)
+//        def maybeModuleClass(classRep: ClassPath#ClassRep) = classRep.name.last == '$'
+//      val pre = root.owner.thisType
+//      root.info = ClassInfo(pre, root.symbol.asClass, Nil, currentDecls, pre select sourceModule)
+//      if (!sourceModule.isCompleted)
+//        sourceModule.completer.complete(sourceModule)
+//      if (!root.isRoot) {
+//        for (classRep <- classpath.classes)
+//          if (!maybeModuleClass(classRep))
+//            initializeFromClassPath(root.symbol, classRep)
+//        for (classRep <- classpath.classes)
+//          if (maybeModuleClass(classRep) && !root.unforcedDecls.lookup(classRep.name.toTypeName).exists)
+//            initializeFromClassPath(root.symbol, classRep)
+//      }
+//      if (!root.isEmptyPackage)
+//        for (pkg <- classpath.packages)
+//          enterPackage(root.symbol, pkg)
+//    }
+//  }
 }
 
 /** A lazy type that completes itself by calling parameter doComplete.
@@ -221,43 +222,43 @@ abstract class SymbolLoader extends LazyType {
   }
 }
 
-class ClassfileLoader(val classfile: AbstractFile) extends SymbolLoader {
-
-  override def sourceFileOrNull: AbstractFile = classfile
-
-  def description = "class file " + classfile.toString
-
-  def rootDenots(rootDenot: ClassDenotation)(implicit ctx: Context): (ClassDenotation, ClassDenotation) = {
-    val linkedDenot = rootDenot.scalacLinkedClass.denot match {
-      case d: ClassDenotation => d
-      case d =>
-        // this can happen if the companion if shadowed by a val or type
-        // in a package object; in this case, we make up some dummy denotation
-        // as a stand in for loading.
-        // An example for this situation is scala.reflect.Manifest, which exists
-        // as a class in scala.reflect and as a val in scala.reflect.package.
-        if (rootDenot is ModuleClass)
-          ctx.newClassSymbol(
-            rootDenot.owner, rootDenot.name.stripModuleClassSuffix.asTypeName, Synthetic,
-              _ => NoType).classDenot
-        else
-          ctx.newModuleSymbol(
-            rootDenot.owner, rootDenot.name.toTermName, Synthetic, Synthetic,
-            (module, _) => new NoCompleter() withDecls newScope withSourceModule (_ => module))
-            .moduleClass.denot.asClass
-    }
-    if (rootDenot is ModuleClass) (linkedDenot, rootDenot)
-    else (rootDenot, linkedDenot)
-  }
-
-  override def doComplete(root: SymDenotation)(implicit ctx: Context): Unit =
-    load(root)
-
-  def load(root: SymDenotation)(implicit ctx: Context): Option[ClassfileParser.Embedded] = {
-    val (classRoot, moduleRoot) = rootDenots(root.asClass)
-    new ClassfileParser(classfile, classRoot, moduleRoot)(ctx).run()
-  }
-}
+//class ClassfileLoader(val classfile: AbstractFile) extends SymbolLoader {
+//
+//  override def sourceFileOrNull: AbstractFile = classfile
+//
+//  def description = "class file " + classfile.toString
+//
+//  def rootDenots(rootDenot: ClassDenotation)(implicit ctx: Context): (ClassDenotation, ClassDenotation) = {
+//    val linkedDenot = rootDenot.scalacLinkedClass.denot match {
+//      case d: ClassDenotation => d
+//      case d =>
+//        // this can happen if the companion if shadowed by a val or type
+//        // in a package object; in this case, we make up some dummy denotation
+//        // as a stand in for loading.
+//        // An example for this situation is scala.reflect.Manifest, which exists
+//        // as a class in scala.reflect and as a val in scala.reflect.package.
+//        if (rootDenot is ModuleClass)
+//          ctx.newClassSymbol(
+//            rootDenot.owner, rootDenot.name.stripModuleClassSuffix.asTypeName, Synthetic,
+//              _ => NoType).classDenot
+//        else
+//          ctx.newModuleSymbol(
+//            rootDenot.owner, rootDenot.name.toTermName, Synthetic, Synthetic,
+//            (module, _) => new NoCompleter() withDecls newScope withSourceModule (_ => module))
+//            .moduleClass.denot.asClass
+//    }
+//    if (rootDenot is ModuleClass) (linkedDenot, rootDenot)
+//    else (rootDenot, linkedDenot)
+//  }
+//
+//  override def doComplete(root: SymDenotation)(implicit ctx: Context): Unit =
+//    load(root)
+//
+//  def load(root: SymDenotation)(implicit ctx: Context): Option[ClassfileParser.Embedded] = {
+//    val (classRoot, moduleRoot) = rootDenots(root.asClass)
+//    new ClassfileParser(classfile, classRoot, moduleRoot)(ctx).run()
+//  }
+//}
 
 class SourcefileLoader(val srcfile: AbstractFile) extends SymbolLoader {
   def description = "source file " + srcfile.toString

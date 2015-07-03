@@ -3,8 +3,8 @@ package core
 
 import Symbols._, Types._, Contexts._, Flags._, Names._, StdNames._, Decorators._, Flags.JavaDefined
 import Uniques.unique
-import dotc.transform.ExplicitOuter._
-import dotc.transform.ValueClasses._
+//import dotc.transform.ExplicitOuter._
+import transform.ValueClasses._
 import typer.Mode
 import util.DotClass
 
@@ -161,25 +161,26 @@ object TypeErasure {
    *   - For all other symbols       : the semi-erasure of their types, with
    *                                   isJava, isConstructor set according to symbol.
    */
-  def transformInfo(sym: Symbol, tp: Type)(implicit ctx: Context): Type = {
-    val isJava = sym is JavaDefined
-    val semiEraseVCs = !isJava && !sym.isCompanionMethod
-    val erase = erasureFn(isJava, semiEraseVCs, sym.isConstructor, wildcardOK = false)
-
-    def eraseParamBounds(tp: PolyType): Type =
-      tp.derivedPolyType(
-        tp.paramNames, tp.paramNames map (Function.const(TypeBounds.upper(defn.ObjectType))), tp.resultType)
-
-    if (defn.isPolymorphicAfterErasure(sym)) eraseParamBounds(sym.info.asInstanceOf[PolyType])
-    else if (sym.isAbstractType) TypeAlias(WildcardType)
-    else if (sym.isConstructor) outer.addParam(sym.owner.asClass, erase(tp)(erasureCtx))
-    else erase.eraseInfo(tp, sym)(erasureCtx) match {
-      case einfo: MethodType if sym.isGetter && einfo.resultType.isRef(defn.UnitClass) =>
-        MethodType(Nil, defn.BoxedUnitClass.typeRef)
-      case einfo =>
-        einfo
-    }
-  }
+  //TODO - fix
+//  def transformInfo(sym: Symbol, tp: Type)(implicit ctx: Context): Type = {
+//    val isJava = sym is JavaDefined
+//    val semiEraseVCs = !isJava && !sym.isCompanionMethod
+//    val erase = erasureFn(isJava, semiEraseVCs, sym.isConstructor, wildcardOK = false)
+//
+//    def eraseParamBounds(tp: PolyType): Type =
+//      tp.derivedPolyType(
+//        tp.paramNames, tp.paramNames map (Function.const(TypeBounds.upper(defn.ObjectType))), tp.resultType)
+//
+//    if (defn.isPolymorphicAfterErasure(sym)) eraseParamBounds(sym.info.asInstanceOf[PolyType])
+//    else if (sym.isAbstractType) TypeAlias(WildcardType)
+//    else if (sym.isConstructor) outer.addParam(sym.owner.asClass, erase(tp)(erasureCtx))
+//    else erase.eraseInfo(tp, sym)(erasureCtx) match {
+//      case einfo: MethodType if sym.isGetter && einfo.resultType.isRef(defn.UnitClass) =>
+//        MethodType(Nil, defn.BoxedUnitClass.typeRef)
+//      case einfo =>
+//        einfo
+//    }
+//  }
 
   /** Is `tp` an abstract type or polymorphic type parameter that has `Any`, `AnyVal`,
    *  or a universal trait as upper bound and that is not Java defined? Arrays of such types are

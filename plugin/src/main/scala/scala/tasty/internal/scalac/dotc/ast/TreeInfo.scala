@@ -502,21 +502,22 @@ trait TypedTreeInfo extends TreeInfo[Type] { self: Trees.Instance[Type] =>
    *  For a tree to be found, The symbol must have a position and its definition
    *  tree must be reachable from come tree stored in an enclosing context.
    */
-  def definingStats(sym: Symbol)(implicit ctx: Context): List[Tree] =
-    if (!sym.pos.exists || (ctx eq NoContext) || ctx.compilationUnit == null) Nil
-    else defPath(sym, ctx.compilationUnit.tpdTree) match {
-      case defn :: encl :: _ =>
-        def verify(stats: List[Tree]) =
-          if (stats exists (definedSym(_) == sym)) stats else Nil
-        encl match {
-          case Block(stats, _) => verify(stats)
-          case encl: Template => verify(encl.body)
-          case PackageDef(_, stats) => verify(stats)
-          case _ => Nil
-        }
-      case nil =>
-        Nil
-    }
+  //TODO - fix compilation unit
+//  def definingStats(sym: Symbol)(implicit ctx: Context): List[Tree] =
+//    if (!sym.pos.exists || (ctx eq NoContext) || ctx.compilationUnit == null) Nil
+//    else defPath(sym, ctx.compilationUnit.tpdTree) match {
+//      case defn :: encl :: _ =>
+//        def verify(stats: List[Tree]) =
+//          if (stats exists (definedSym(_) == sym)) stats else Nil
+//        encl match {
+//          case Block(stats, _) => verify(stats)
+//          case encl: Template => verify(encl.body)
+//          case PackageDef(_, stats) => verify(stats)
+//          case _ => Nil
+//        }
+//      case nil =>
+//        Nil
+//    }
 }
 
 object TreeInfo {

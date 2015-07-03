@@ -10,6 +10,7 @@ import language.higherKinds
 import collection.mutable.ListBuffer
 import config.Printers._
 import typer.Mode
+import scala.tasty.internal.scalac.tools._
 
 object desugar {
 
@@ -58,9 +59,10 @@ object desugar {
         def apply(tp: Type) = tp match {
           case tp: NamedType if tp.symbol.owner eq originalOwner =>
             val defctx = ctx.outersIterator.dropWhile(_.scope eq ctx.scope).next
-            var local = defctx.denotNamed(tp.name).suchThat(_ is ParamOrAccessor).symbol
+            var local: Symbol = ??? //defctx.denotNamed(tp.name).suchThat(_ is ParamOrAccessor).symbol
             if (local.exists) (defctx.owner.thisType select local).dealias
-            else throw new Error(s"no matching symbol for ${sym.showLocated} in ${defctx.owner} / ${defctx.effectiveScope}")
+            //TODO - fix defctx.effectiveScope
+            else throw new Error(s"no matching symbol for ${sym.showLocated} in ${defctx.owner} / defctx.effectiveScope")
           case _ =>
             mapOver(tp)
         }
@@ -786,7 +788,8 @@ object desugar {
           makeBinop(l, op, r)
       case PostfixOp(t, op) =>
         if ((ctx.mode is Mode.Type) && op == nme.raw.STAR) {
-          val seqClass = if (ctx.compilationUnit.isJava) defn.ArrayClass else defn.SeqClass
+          //TODO - fix
+          val seqClass = if (false /*ctx.compilationUnit.isJava*/) defn.ArrayClass else defn.SeqClass
           Annotated(
             New(ref(defn.RepeatedAnnot.typeRef), Nil :: Nil),
             AppliedTypeTree(ref(seqClass.typeRef), t))

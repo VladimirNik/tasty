@@ -289,7 +289,8 @@ object SymDenotations {
      *  Right now, the only usage is for the AnyRef alias in Definitions.
      */
     final private[core] def currentPackageDecls(implicit ctx: Context): MutableScope = myInfo match {
-      case pinfo: SymbolLoaders # PackageLoader => pinfo.currentDecls
+      //TODO - fix
+      //case pinfo: SymbolLoaders # PackageLoader => pinfo.currentDecls
       case _ => unforcedDecls.openForMutations
     }
 
@@ -876,12 +877,12 @@ object SymDenotations {
       //TODO - fix
       else if (!owner.exists /*|| ctx.compilationUnit == null*/)
         NoSymbol
-      //TODO - fix
-      else if (false /*!ctx.compilationUnit.tpdTree.isEmpty*/)
-        tpd.definingStats(symbol).iterator
-          .map(tpd.definedSym)
-          .find(_.name == name)
-          .getOrElse(NoSymbol)
+      //TODO - fix (compilation unit)
+//      else if (false /*!ctx.compilationUnit.tpdTree.isEmpty*/)
+//        tpd.definingStats(symbol).iterator
+//          .map(tpd.definedSym)
+//          .find(_.name == name)
+//          .getOrElse(NoSymbol)
       else if (ctx.scope == null)
         NoSymbol
       else if (ctx.scope.lookup(this.name) == symbol)

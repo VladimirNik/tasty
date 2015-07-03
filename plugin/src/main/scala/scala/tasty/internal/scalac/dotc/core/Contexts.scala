@@ -117,6 +117,11 @@ object Contexts {
     protected def scope_=(scope: Scope) = _scope = scope
     def scope: Scope = _scope
 
+    /** The current type assigner or typer */
+    private[this] var _typeAssigner: TypeAssigner = _
+    protected def typeAssigner_=(typeAssigner: TypeAssigner) = _typeAssigner = typeAssigner
+    def typeAssigner: TypeAssigner = _typeAssigner
+
     /** The currently active import info */
     private[this] var _importInfo: ImportInfo = _
     protected def importInfo_=(importInfo: ImportInfo) = _importInfo = importInfo
@@ -369,6 +374,7 @@ object Contexts {
     def setTree(tree: Tree[_ >: Untyped]): this.type = { this.tree = tree; this }
     def setScope(scope: Scope): this.type = { this.scope = scope; this }
     def setNewScope: this.type = { this.scope = newScope; this }
+    def setTypeAssigner(typeAssigner: TypeAssigner): this.type = { this.typeAssigner = typeAssigner; this }
     def setImportInfo(importInfo: ImportInfo): this.type = { this.importInfo = importInfo; this }
 //    def setRunInfo(runInfo: RunInfo): this.type = { this.runInfo = runInfo; this }
     def setDiagnostics(diagnostics: Option[StringBuilder]): this.type = { this.diagnostics = diagnostics; this }
@@ -414,6 +420,7 @@ object Contexts {
     owner = NoSymbol
     sstate = settings.defaultState
     tree = untpd.EmptyTree
+    typeAssigner = TypeAssigner
 //    runInfo = new RunInfo(this)
     diagnostics = None
     moreProperties = Map.empty
@@ -454,7 +461,7 @@ object Contexts {
 //    def rootLoader(root: TermSymbol)(implicit ctx: Context): SymbolLoader = platform.rootLoader(root)
 
     // Set up some phases to get started */
-    usePhases(List(SomePhase))
+//    usePhases(List(SomePhase))
 
     /** The standard definitions */
     val definitions = new Definitions

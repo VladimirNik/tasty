@@ -6,13 +6,10 @@ import ast._
 import core._
 import Trees._
 import Types._
-import ProtoTypes._
 import Contexts._, Decorators._, Denotations._, Symbols._
-import Applications._, Implicits._
 import Flags._
 import util.Positions._
 import printing.Showable
-import printing.Disambiguation.disambiguated
 
 object ErrorReporting {
 
@@ -26,29 +23,6 @@ object ErrorReporting {
     ErrorType
   }
 
-  def cyclicErrorMsg(ex: CyclicReference)(implicit ctx: Context) = {
-    val cycleSym = ex.denot.symbol
-    def errorMsg(msg: String, cx: Context): String =
-      if (cx.mode is Mode.InferringReturnType) {
-        cx.tree match {
-          case tree: untpd.ValOrDefDef =>
-              // Dotty deviation: Was Trees.ValOrDefDef[_], but this gives ValOrDefDef[Nothing] instead of
-              // ValOrDefDel[Null]. Scala handles it, but it looks accidental because bounds propagation
-              // fails if the parameter is invariant or cotravariant.
-              // See test pending/pos/boundspropagation.scala
-            val treeSym = ctx.symOfContextTree(tree)
-            if (treeSym.exists && treeSym.name == cycleSym.name && treeSym.owner == cycleSym.owner) {
-              val result = if (cycleSym is Method) " result" else ""
-              d"overloaded or recursive $cycleSym needs$result type"
-            }
-            else errorMsg(msg, cx.outer)
-          case _ =>
-            errorMsg(msg, cx.outer)
-        }
-      } else msg
-    errorMsg(ex.show, ctx)
-  }
-
   class Errors(implicit ctx: Context) {
 
     /** An explanatory note to be added to error messages
@@ -57,19 +31,6 @@ object ErrorReporting {
       if (sym.underlyingSymbol.is(Mutable))
         "\n(Note that variables need to be initialized to be defined)"
       else ""
-
-    def expectedTypeStr(tp: Type): String = tp match {
-      case tp: PolyProto =>
-        d"type arguments [${tp.targs}%, %] and ${expectedTypeStr(tp.resultType)}"
-      case tp: FunProto =>
-        val result = tp.resultType match {
-          case _: WildcardType | _: IgnoredProto => ""
-          case tp => d" and expected result type $tp"
-        }
-        d"arguments (${tp.typedArgs.tpes}%, %)$result"
-      case _ =>
-        d"expected type $tp"
-    }
 
     def anonymousTypeMemberStr(tpe: Type) = {
       val kind = tpe match {
@@ -98,26 +59,12 @@ object ErrorReporting {
 
     def patternConstrStr(tree: Tree): String = ???
 
-    def typeMismatch(tree: Tree, pt: Type, implicitFailure: SearchFailure = NoImplicitMatches): Tree = {
-      errorTree(tree, typeMismatchStr(normalize(tree.tpe, pt), pt) + implicitFailure.postscript)
-    }
-
     /** A subtype log explaining why `found` does not conform to `expected` */
     def whyNoMatchStr(found: Type, expected: Type) =
       if (ctx.settings.explaintypes.value)
         "\n" + ctx.typerState.show + "\n" + TypeComparer.explained((found <:< expected)(_))
       else
         ""
-
-    def typeMismatchStr(found: Type, expected: Type) = disambiguated { implicit ctx =>
-      def infoStr = found match { // DEBUG
-          case tp: TypeRef => s"with info ${tp.info} / ${tp.prefix.toString} / ${tp.prefix.dealias.toString}"
-          case _ => ""
-        }
-      d"""type mismatch:
-           | found   : $found
-           | required: $expected""".stripMargin + whyNoMatchStr(found, expected)
-    }
   }
 
   def err(implicit ctx: Context): Errors = new Errors

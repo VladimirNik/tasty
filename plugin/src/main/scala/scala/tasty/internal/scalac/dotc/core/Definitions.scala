@@ -3,7 +3,7 @@ package core
 
 import Types._, Contexts._, Symbols._, Denotations._, SymDenotations._, StdNames._, Names._
 import Flags._, Scopes._, Decorators._, NameOps._, util.Positions._
-import unpickleScala2.Scala2Unpickler.ensureConstructor
+//import unpickleScala2.Scala2Unpickler.ensureConstructor
 import scala.annotation.{ switch, meta }
 import scala.collection.{ mutable, immutable }
 import PartialFunction._
@@ -87,19 +87,24 @@ class Definitions {
     arr
   }
 
-  private def completeClass(cls: ClassSymbol): ClassSymbol = {
+  //TODO - fix
+  private def completeClass(cls: ClassSymbol): ClassSymbol = ??? /*{
     ensureConstructor(cls, EmptyScope)
     if (cls.linkedClass.exists) cls.linkedClass.info = NoType
     cls
-  }
+  }*/
 
-  lazy val RootClass: ClassSymbol = ctx.newPackageSymbol(
-    NoSymbol, nme.ROOT, (root, rootcls) => ctx.rootLoader(root)).moduleClass.asClass
+  //TODO - fix
+  lazy val RootClass: ClassSymbol = ??? /*ctx.newPackageSymbol(
+    NoSymbol, nme.ROOT, (root, rootcls) => ctx.rootLoader(root)).moduleClass.asClass */
   lazy val RootPackage: TermSymbol = ctx.newSymbol(
     NoSymbol, nme.ROOTPKG, PackageCreationFlags, TypeRef(NoPrefix, RootClass))
 
-  lazy val EmptyPackageVal = ctx.newPackageSymbol(
+  //TODO - fix
+  lazy val EmptyPackageVal: Symbol = ??? /*ctx.newPackageSymbol(
     RootClass, nme.EMPTY_PACKAGE, (emptypkg, emptycls) => ctx.rootLoader(emptypkg)).entered
+    * 
+    */
   lazy val EmptyPackageClass = EmptyPackageVal.moduleClass.asClass
 
   /** A package in which we can place all methods that are interpreted specially by the compiler */

@@ -12,6 +12,7 @@ import config.Config
 import config.Printers._
 import TypeErasure.{erasedLub, erasedGlb}
 import scala.util.control.NonFatal
+import scala.tasty.internal.scalac.tools._
 
 /** Provides methods to compare types.
  */
@@ -440,7 +441,8 @@ class TypeComparer(initctx: Context) extends DotClass with ConstraintHandling {
           tp2.info match {
             case tp2i: TermRef =>
               isSubType(tp1, tp2i)
-            case ExprType(tp2i: TermRef) if (ctx.phase.id > ctx.gettersPhase.id) =>
+            //TODO - fix  
+            case ExprType(tp2i: TermRef) if false /*(ctx.phase.id > ctx.gettersPhase.id)*/ =>
               // After getters, val x: T becomes def x: T
               isSubType(tp1, tp2i)
             case _ =>
