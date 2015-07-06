@@ -8,14 +8,13 @@ import Names._
 import Symbols._
 import Contexts._
 import Decorators.StringDecorator
-import util.NameTransformer
 import scala.collection.breakOut
 
 object StdNames {
 
 /** Base strings from which synthetic names are derived. */
 
-  abstract class DefinedNames[N <: Name] {
+  abstract class TastyDefinedNames[N <: Name] {
     protected implicit def fromString(s: String): N
     protected def fromName(name: Name): N = fromString(name.toString)
 
@@ -25,8 +24,8 @@ object StdNames {
     final val keywords: collection.Set[N] = kws
   }
 
-  abstract class ScalaNames[N <: Name] extends DefinedNames[N] {
-    protected def encode(s: String): N = fromName(fromString(s).encode)
+  abstract class TastyScalaNames[N <: Name] extends TastyDefinedNames[N] {
+    protected def encode(s: String): N = ???
 
 // Keywords, need to come first -----------------------
 
@@ -91,12 +90,12 @@ object StdNames {
     val BITMAP_CHECKINIT: N           = BITMAP_PREFIX + "init$"      // initialization bitmap for checkinit values
     val BITMAP_CHECKINIT_TRANSIENT: N = BITMAP_PREFIX + "inittrans$" // initialization bitmap for transient checkinit values
     val DEFAULT_GETTER: N             = "$default$"
-    val DEFAULT_GETTER_INIT: N        = NameTransformer.encode("<init>")
     val DO_WHILE_PREFIX: N            = "doWhile$"
     val EMPTY: N                      = ""
     val EMPTY_PACKAGE: N              = Names.EMPTY_PACKAGE.toString
     val EVIDENCE_PARAM_PREFIX: N      = "evidence$"
     val EXCEPTION_RESULT_PREFIX: N    = "exceptionResult"
+    //*
     val EXPAND_SEPARATOR: N           = "$$"
     val IMPL_CLASS_SUFFIX: N          = "$class"
     val IMPORT: N                     = "<import>"
@@ -105,10 +104,8 @@ object StdNames {
     val INTERPRETER_VAR_PREFIX: N     = "res"
     val INTERPRETER_WRAPPER_SUFFIX: N = "$object"
     val LOCALDUMMY_PREFIX: N          = "<local "       // owner of local blocks
-    val MODULE_SUFFIX: N              = NameTransformer.MODULE_SUFFIX_STRING
     val AVOID_CLASH_SUFFIX: N         = "$_avoid_name_clash_$"
     val MODULE_VAR_SUFFIX: N          = "$module"
-    val NAME_JOIN: N                  = NameTransformer.NAME_JOIN_STRING
     val USCORE_PARAM_PREFIX: N        = "_$"
     val OPS_PACKAGE: N                = "<special-ops>"
     val OVERLOADED: N                 = "<overloaded>"
@@ -248,7 +245,6 @@ object StdNames {
     val REIFY_FREE_THIS_SUFFIX: N   = "$this"
     val REIFY_FREE_VALUE_SUFFIX: N  = "$value"
     val REIFY_SYMDEF_PREFIX: N      = "symdef$"
-    val MODULE_INSTANCE_FIELD: N    = NameTransformer.MODULE_INSTANCE_NAME  // "MODULE$"
     val OUTER: N                    = "$outer"
     val OUTER_LOCAL: N              = "$outer "
     val OUTER_SYNTH: N              = "<outer>" // emitted by virtual pattern matcher, replaced by outer accessor in explicitouter
@@ -268,38 +264,38 @@ object StdNames {
     final val ScalaRunTime: N       = "ScalaRunTime"
     final val Some: N               = "Some"
 
-    val x_0 : N  = "x$0"
-    val x_1 : N  = "x$1"
-    val x_2 : N  = "x$2"
-    val x_3 : N  = "x$3"
-    val x_4 : N  = "x$4"
-    val x_5 : N  = "x$5"
-    val x_6 : N  = "x$6"
-    val x_7 : N  = "x$7"
-    val x_8 : N  = "x$8"
-    val x_9 : N  = "x$9"
-    val _1 : N  = "_1"
-    val _2 : N  = "_2"
-    val _3 : N  = "_3"
-    val _4 : N  = "_4"
-    val _5 : N  = "_5"
-    val _6 : N  = "_6"
-    val _7 : N  = "_7"
-    val _8 : N  = "_8"
-    val _9 : N  = "_9"
-    val _10 : N = "_10"
-    val _11 : N = "_11"
-    val _12 : N = "_12"
-    val _13 : N = "_13"
-    val _14 : N = "_14"
-    val _15 : N = "_15"
-    val _16 : N = "_16"
-    val _17 : N = "_17"
-    val _18 : N = "_18"
-    val _19 : N = "_19"
-    val _20 : N = "_20"
-    val _21 : N = "_21"
-    val _22 : N = "_22"
+//    val x_0 : N  = "x$0"
+//    val x_1 : N  = "x$1"
+//    val x_2 : N  = "x$2"
+//    val x_3 : N  = "x$3"
+//    val x_4 : N  = "x$4"
+//    val x_5 : N  = "x$5"
+//    val x_6 : N  = "x$6"
+//    val x_7 : N  = "x$7"
+//    val x_8 : N  = "x$8"
+//    val x_9 : N  = "x$9"
+//    val _1 : N  = "_1"
+//    val _2 : N  = "_2"
+//    val _3 : N  = "_3"
+//    val _4 : N  = "_4"
+//    val _5 : N  = "_5"
+//    val _6 : N  = "_6"
+//    val _7 : N  = "_7"
+//    val _8 : N  = "_8"
+//    val _9 : N  = "_9"
+//    val _10 : N = "_10"
+//    val _11 : N = "_11"
+//    val _12 : N = "_12"
+//    val _13 : N = "_13"
+//    val _14 : N = "_14"
+//    val _15 : N = "_15"
+//    val _16 : N = "_16"
+//    val _17 : N = "_17"
+//    val _18 : N = "_18"
+//    val _19 : N = "_19"
+//    val _20 : N = "_20"
+//    val _21 : N = "_21"
+//    val _22 : N = "_22"
 
     val ??? = encode("???")
 
@@ -665,52 +661,53 @@ object StdNames {
 
     def isReflectionCacheName(name: Name) = reflectionCacheNames exists (name startsWith _)
   }
-
-  class ScalaTermNames extends ScalaNames[TermName] {
+  
+  class TastyScalaTermNames extends TastyScalaNames[TermName] {
     protected implicit def fromString(s: String): TermName = termName(s)
+    //def lambdaTraitName2: Unit = scala.List().foreach{x => x} //.mkString //scala.List(1,2,3).map{x: Int => 'f'}.mkString
+    
+//    @switch def syntheticParamName(i: Int): TermName = i match {
+//      case 0  => x_0
+//      case 1  => x_1
+//      case 2  => x_2
+//      case 3  => x_3
+//      case 4  => x_4
+//      case 5  => x_5
+//      case 6  => x_6
+//      case 7  => x_7
+//      case 8  => x_8
+//      case 9  => x_9
+//      case _  => termName("x$" + i)
+//    }
+//
+//    @switch def productAccessorName(j: Int): TermName = j match {
+//      case 1  => nme._1
+//      case 2  => nme._2
+//      case 3  => nme._3
+//      case 4  => nme._4
+//      case 5  => nme._5
+//      case 6  => nme._6
+//      case 7  => nme._7
+//      case 8  => nme._8
+//      case 9  => nme._9
+//      case 10 => nme._10
+//      case 11 => nme._11
+//      case 12 => nme._12
+//      case 13 => nme._13
+//      case 14 => nme._14
+//      case 15 => nme._15
+//      case 16 => nme._16
+//      case 17 => nme._17
+//      case 18 => nme._18
+//      case 19 => nme._19
+//      case 20 => nme._20
+//      case 21 => nme._21
+//      case 22 => nme._22
+//      case _  => termName("_" + j)
+//    }
 
-    @switch def syntheticParamName(i: Int): TermName = i match {
-      case 0  => x_0
-      case 1  => x_1
-      case 2  => x_2
-      case 3  => x_3
-      case 4  => x_4
-      case 5  => x_5
-      case 6  => x_6
-      case 7  => x_7
-      case 8  => x_8
-      case 9  => x_9
-      case _  => termName("x$" + i)
-    }
-
-    @switch def productAccessorName(j: Int): TermName = j match {
-      case 1  => nme._1
-      case 2  => nme._2
-      case 3  => nme._3
-      case 4  => nme._4
-      case 5  => nme._5
-      case 6  => nme._6
-      case 7  => nme._7
-      case 8  => nme._8
-      case 9  => nme._9
-      case 10 => nme._10
-      case 11 => nme._11
-      case 12 => nme._12
-      case 13 => nme._13
-      case 14 => nme._14
-      case 15 => nme._15
-      case 16 => nme._16
-      case 17 => nme._17
-      case 18 => nme._18
-      case 19 => nme._19
-      case 20 => nme._20
-      case 21 => nme._21
-      case 22 => nme._22
-      case _  => termName("_" + j)
-    }
-
-    def syntheticParamNames(num: Int): List[TermName] =
-      (0 until num).map(syntheticParamName)(breakOut)
+    def syntheticParamNames(num: Int): List[TermName] = null
+//      (0 until num).map(syntheticParamName)(breakOut)
 
     def localDummyName(clazz: Symbol)(implicit ctx: Context): TermName =
       LOCALDUMMY_PREFIX ++ clazz.name ++ ">"
@@ -729,25 +726,25 @@ object StdNames {
     def isPrimitiveName(name: Name) = primitive.names.contains(name)
   }
 
-  class ScalaTypeNames extends ScalaNames[TypeName] {
+  class TastyScalaTypeNames extends TastyScalaNames[TypeName] {
     protected implicit def fromString(s: String): TypeName = typeName(s)
 
     @switch def syntheticTypeParamName(i: Int): TypeName = "T" + i
 
-    def syntheticTypeParamNames(num: Int): List[TypeName] =
-      (0 until num).map(syntheticTypeParamName)(breakOut)
+//    def syntheticTypeParamNames(num: Int): List[TypeName] =
+//      (0 until num).map(syntheticTypeParamName)(breakOut)
 
-    def lambdaTraitName(vcs: List[Int]): TypeName = LambdaPrefix ++ vcs.map(varianceSuffix).mkString
-    def lambdaArgName(n: Int) = LAMBDA_ARG_PREFIX ++ n.toString
-
-    final val Conforms = encode("<:<")
+//    def lambdaTraitName(vcs: List[Int]): TypeName = LambdaPrefix ++ vcs.map(varianceSuffix).mkString //scala.List(1,2,3).map{x: Int => 'f'}.mkString//
+//    def lambdaArgName(n: Int) = LAMBDA_ARG_PREFIX ++ n.toString
+//    def test(vcs: List[Int]): TypeName = scala.List(1,2,3).map{x: Int => 'f'}.mkString
+//    final val Conforms = encode("<:<")
 
     def varianceSuffix(v: Int): Char = varianceSuffixes.charAt(v + 1)
 
     val varianceSuffixes = "NIP"
   }
 
-  abstract class JavaNames[N <: Name] extends DefinedNames[N] {
+  abstract class TastyJavaNames[N <: Name] extends TastyDefinedNames[N] {
     final val ABSTRACTkw: N     = kw("abstract")
     final val ASSERTkw: N       = kw("assert")
     final val BOOLEANkw: N      = kw("boolean")
@@ -831,16 +828,16 @@ object StdNames {
     final val JavaSerializable: N    = "java.io.Serializable"
    }
 
-  class JavaTermNames extends JavaNames[TermName] {
+  class TastyJavaTermNames extends TastyJavaNames[TermName] {
     protected def fromString(s: String): TermName = termName(s)
   }
-  class JavaTypeNames extends JavaNames[TypeName] {
+  class TastyJavaTypeNames extends TastyJavaNames[TypeName] {
     protected def fromString(s: String): TypeName = typeName(s)
   }
 
-  val nme = new ScalaTermNames
-  val tpnme = new ScalaTypeNames
-  val jnme = new JavaTermNames
-  val jtpnme = new JavaTypeNames
-
+  //*
+  val nme: TastyScalaTermNames = new TastyScalaTermNames
+  val jtpnme: TastyJavaTypeNames = new TastyJavaTypeNames
+  //*
+  val tpnme: TastyScalaTypeNames = new TastyScalaTypeNames
 }

@@ -6,8 +6,8 @@ import scala.tools.nsc.{ Global, Phase, SubComponent }
 import scala.tools.nsc.plugins.{ Plugin => NscPlugin, PluginComponent => NscPluginComponent }
 import scala.reflect.io.AbstractFile
 //import scala.tasty.internal.scalac.pickler.core.TreePicklers
-import scala.tasty.internal.scalac.util.TastyUtils
-import scala.tasty.internal.scalac.util.TastyGenUtils
+//import scala.tasty.internal.scalac.util.TastyUtils
+//import scala.tasty.internal.scalac.util.TastyGenUtils
 
 trait TastyPhase {
   self =>
@@ -32,7 +32,7 @@ trait TastyPhase {
 
   object TastyComponent extends {
     val global: self.global.type = self.global
-  } with NscPluginComponent with TastyGenUtils {
+  } with NscPluginComponent /*with TastyGenUtils*/ {
 
     override val runsAfter = List("superaccessors")
     override val runsRightAfter = Some("superaccessors")

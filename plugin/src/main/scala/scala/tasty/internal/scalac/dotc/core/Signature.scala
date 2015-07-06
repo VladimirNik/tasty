@@ -1,8 +1,8 @@
 package scala.tasty.internal.scalac.dotc
 package core
 
-import Names._, Types._, Contexts._, StdNames._
-import TypeErasure.sigName
+import Names._, Types._, Contexts._
+import StdNames._
 
 /** The signature of a denotation.
  *  Overloaded denotations with the same name are distinguished by
@@ -32,15 +32,7 @@ case class Signature(paramsSig: List[TypeName], resSig: TypeName) {
    *  it means `sameParams`. Once types are erased, it means `==`, comparing parameter as
    *  well as result type parts.
    */
-  final def matches(that: Signature)(implicit ctx: Context) =
-    if (ctx.erasedTypes) equals(that) else sameParams(that)
-
-  /** Construct a signature by prepending the signature names of the given `params`
-   *  to the parameter part of this signature.
-   */
-  def prepend(params: List[Type], isJava: Boolean)(implicit ctx: Context) =
-    Signature((params.map(sigName(_, isJava))) ++ paramsSig, resSig)
-
+  final def matches(that: Signature)(implicit ctx: Context) = ???
 }
 
 object Signature {
@@ -55,8 +47,5 @@ object Signature {
   val OverloadedSignature = Signature(List(tpnme.OVERLOADED), EmptyTypeName)
 
   /** The signature of a method with no parameters and result type `resultType`. */
-  def apply(resultType: Type, isJava: Boolean)(implicit ctx: Context): Signature = {
-    assert(!resultType.isInstanceOf[ExprType])
-    apply(Nil, sigName(resultType, isJava))
-  }
+  def apply(resultType: Type, isJava: Boolean)(implicit ctx: Context): Signature = ???
 }

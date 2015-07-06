@@ -2,7 +2,6 @@ package scala.tasty.internal.scalac.dotc
 package core
 
 import Types._, Symbols._, Contexts._
-import printing.Printer
 
 object Constants {
 
@@ -22,7 +21,7 @@ object Constants {
   // For supporting java enumerations inside java annotations (see ClassfileParser)
   final val EnumTag    = 13
 
-  case class Constant(value: Any) extends printing.Showable {
+  case class Constant(value: Any) {
     import java.lang.Double.doubleToRawLongBits
     import java.lang.Float.floatToRawIntBits
 
@@ -53,7 +52,7 @@ object Constants {
     def isNonUnitAnyVal       = BooleanTag <= tag && tag <= DoubleTag
     def isAnyVal              = UnitTag <= tag && tag <= DoubleTag
 
-    def tpe(implicit ctx: Context): Type = tag match {
+    def tpe(implicit ctx: Context): Type = ???/*tag match {
       case UnitTag    => defn.UnitClass.typeRef
       case BooleanTag => defn.BooleanClass.typeRef
       case ByteTag    => defn.ByteClass.typeRef
@@ -67,7 +66,7 @@ object Constants {
       case NullTag    => defn.NullClass.typeRef
       case ClazzTag   => defn.ClassType(typeValue)
       case EnumTag    => defn.EnumType(symbolValue)
-    }
+    }*/
 
     /** We need the equals method to take account of tags as well as values.
      */
@@ -164,38 +163,38 @@ object Constants {
       case _         => throw new Error("value " + value + " is not a Double")
     }
 
-    /** Convert constant value to conform to given type.
-     */
-    def convertTo(pt: Type)(implicit ctx: Context): Constant = {
-      def lowerBound(pt: Type): Type = pt.dealias.stripTypeVar match {
-        case tref: TypeRef if !tref.symbol.isClass => lowerBound(tref.info.bounds.lo)
-        case param: PolyParam => lowerBound(ctx.typerState.constraint.nonParamBounds(param).lo)
-        case pt => pt
-      }
-      val target = lowerBound(pt).typeSymbol
-      if (target == tpe.typeSymbol)
-        this
-      else if ((target == defn.ByteClass) && isByteRange)
-        Constant(byteValue)
-      else if (target == defn.ShortClass && isShortRange)
-        Constant(shortValue)
-      else if (target == defn.CharClass && isCharRange)
-        Constant(charValue)
-      else if (target == defn.IntClass && isIntRange)
-        Constant(intValue)
-      else if (target == defn.LongClass && isLongRange)
-        Constant(longValue)
-      else if (target == defn.FloatClass && isFloatRange)
-        Constant(floatValue)
-      else if (target == defn.DoubleClass && isNumeric)
-        Constant(doubleValue)
-      else
-        null
-    }
+//    /** Convert constant value to conform to given type.
+//     */
+//    def convertTo(pt: Type)(implicit ctx: Context): Constant = {
+//      def lowerBound(pt: Type): Type = pt.dealias.stripTypeVar match {
+//        case tref: TypeRef if !tref.symbol.isClass => lowerBound(tref.info.bounds.lo)
+//        case param: PolyParam => lowerBound(ctx.typerState.constraint.nonParamBounds(param).lo)
+//        case pt => pt
+//      }
+//      val target = lowerBound(pt).typeSymbol
+//      if (target == tpe.typeSymbol)
+//        this
+//      else if ((target == defn.ByteClass) && isByteRange)
+//        Constant(byteValue)
+//      else if (target == defn.ShortClass && isShortRange)
+//        Constant(shortValue)
+//      else if (target == defn.CharClass && isCharRange)
+//        Constant(charValue)
+//      else if (target == defn.IntClass && isIntRange)
+//        Constant(intValue)
+//      else if (target == defn.LongClass && isLongRange)
+//        Constant(longValue)
+//      else if (target == defn.FloatClass && isFloatRange)
+//        Constant(floatValue)
+//      else if (target == defn.DoubleClass && isNumeric)
+//        Constant(doubleValue)
+//      else
+//        null
+//    }
 
     def stringValue: String = value.toString
 
-    def toText(printer: Printer) = printer.toText(this)
+    //def toText(printer: Printer) = printer.toText(this)
 
     def typeValue: Type     = value.asInstanceOf[Type]
     def symbolValue: Symbol = value.asInstanceOf[Symbol]

@@ -2,9 +2,6 @@ package scala.tasty.internal.scalac.dotc
 package core
 
 import scala.io.Codec
-import util.NameTransformer
-import printing.{Showable, Texts, Printer}
-import Texts.Text
 import Decorators._
 import Contexts.Context
 import collection.IndexedSeqOptimized
@@ -12,7 +9,6 @@ import collection.generic.CanBuildFrom
 import collection.mutable.{ Builder, StringBuilder }
 import collection.immutable.WrappedString
 import collection.generic.CanBuildFrom
-import util.DotClass
 //import annotation.volatile
 
 object Names {
@@ -20,11 +16,12 @@ object Names {
   /** A common class for things that can be turned into names.
    *  Instances are both names and strings, the latter via a decorator.
    */
-  trait PreName extends Any with Showable {
+  trait PreName extends Any {
     def toTypeName: TypeName
     def toTermName: TermName
   }
 
+  //*
   /** A name is essentially a string, with three differences
    *  1. Names belong in one of two name spaces: they are type names or term names.
    *     Term names have a sub-category of "local" field names.
@@ -34,8 +31,8 @@ object Names {
    *  3. Names are intended to be encoded strings. @see dotc.util.NameTransformer.
    *     The encoding will be applied when converting a string to a name.
    */
-  abstract class Name extends DotClass
-    with PreName
+  //*
+  abstract class Name extends PreName
     with Seq[Char]
     with IndexedSeqOptimized[Char, Name] {
 
@@ -57,6 +54,7 @@ object Names {
     /** This name converted to a type name */
     def toTypeName: TypeName
 
+    //*
     /** This name converted to a term name */
     def toTermName: TermName
 
@@ -87,27 +85,6 @@ object Names {
     override def toString =
       if (length == 0) "" else new String(chrs, start, length)
 
-    def toText(printer: Printer): Text = printer.toText(this)
-
-    /** Write to UTF8 representation of this name to given character array.
-     *  Start copying to index `to`. Return index of next free byte in array.
-     *  Array must have enough remaining space for all bytes
-     *  (i.e. maximally 3*length bytes).
-     */
-    final def copyUTF8(bs: Array[Byte], offset: Int): Int = {
-      val bytes = Codec.toUTF8(chrs, start, length)
-      scala.compat.Platform.arraycopy(bytes, 0, bs, offset, bytes.length)
-      offset + bytes.length
-    }
-
-    /** Replace \$op_name's by corresponding operator symbols. */
-    def decode: Name =
-      if (contains('$')) fromString(NameTransformer.decode(toString))
-      else this
-
-    /** Replace operator symbols by corresponding \$op_name's. */
-    def encode: Name =
-      if (dontEncode(toTermName)) this else NameTransformer.encode(this)
 
     /** A more efficient version of concatenation */
     def ++ (other: Name): ThisName = ++ (other.toString)
@@ -134,13 +111,6 @@ object Names {
 
     def firstChar = chrs(start)
 
-    // ----- Collections integration -------------------------------------
-
-    override protected[this] def thisCollection: WrappedString = new WrappedString(repr.toString)
-    override protected[this] def toCollection(repr: Name): WrappedString = new WrappedString(repr.toString)
-
-    override protected[this] def newBuilder: Builder[Char, Name] = unsupported("newBuilder")
-
     override def apply(index: Int): Char = chrs(start + index)
 
     override def slice(from: Int, until: Int): ThisName =
@@ -149,6 +119,8 @@ object Names {
     override def equals(that: Any) = this eq that.asInstanceOf[AnyRef]
 
     override def seq = toCollection(this)
+
+    override protected[this] def newBuilder: Builder[Char, Name] = ??? //unsupported("newBuilder")
   }
 
   class TermName(val start: Int, val length: Int, private[Names] var next: TermName) extends Name {
@@ -199,6 +171,7 @@ object Names {
   private final val InitialNameSize = 0x20000
   private final val fillFactor = 0.7
 
+  //*
   /** Memory to store all names sequentially. */
   private[core] var chrs: Array[Char] = new Array[Char](InitialNameSize)
 
@@ -272,7 +245,6 @@ object Names {
    *  Assume they are already encoded.
    */
   def termName(cs: Array[Char], offset: Int, len: Int): TermName = {
-    util.Stats.record("termName")
     val h = hashValue(cs, offset, len) & (table.size - 1)
     synchronized {
       val next = table(h)
@@ -310,6 +282,7 @@ object Names {
   def typeName(bs: Array[Byte], offset: Int, len: Int): TypeName =
     termName(bs, offset, len).toTypeName
 
+  //*
   /** Create a term name from a string, without encoding operators */
   def termName(s: String): TermName = termName(s.toCharArray, 0, s.length)
 

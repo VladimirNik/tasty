@@ -6,47 +6,10 @@ import scala.annotation.switch
 import scala.io.Codec
 import Names._, StdNames._, Contexts._, Symbols._, Flags._
 import Decorators.StringDecorator
-import util.Chars
-import Chars.isOperatorPart
+//import util.Chars
+//import Chars.isOperatorPart
 
 object NameOps {
-
-  final object compactify {
-    lazy val md5 = MessageDigest.getInstance("MD5")
-
-    /** COMPACTIFY
-     *
-     *  The hashed name has the form (prefix + marker + md5 + marker + suffix), where
-     *   - prefix/suffix.length = MaxNameLength / 4
-     *   - md5.length = 32
-     *
-     *  We obtain the formula:
-     *
-     *   FileNameLength = 2*(MaxNameLength / 4) + 2.marker.length + 32 + 6
-     *
-     *  (+6 for ".class"). MaxNameLength can therefore be computed as follows:
-     */
-    def apply(s: String)(implicit ctx: Context): String = {
-      val marker = "$$$$"
-      val limit: Int = ctx.settings.maxClassfileName.value
-      val MaxNameLength = (limit - 6) min 2 * (limit - 6 - 2 * marker.length - 32)
-
-      def toMD5(s: String, edge: Int): String = {
-        val prefix = s take edge
-        val suffix = s takeRight edge
-
-        val cs = s.toArray
-        val bytes = Codec toUTF8 cs
-        md5 update bytes
-        val md5chars = (md5.digest() map (b => (b & 0xFF).toHexString)).mkString
-
-        prefix + marker + md5chars + marker + suffix
-      }
-
-      if (s.length <= MaxNameLength) s else toMD5(s, MaxNameLength / 4)
-    }
-  }
-
   class PrefixNameExtractor(pre: TermName) {
     def apply(name: TermName): TermName = pre ++ name
     def unapply(name: TermName): Option[TermName] =
@@ -71,10 +34,10 @@ object NameOps {
     def isReplWrapperName = name containsSlice INTERPRETER_IMPORT_WRAPPER
     def isSetterName = name endsWith SETTER_SUFFIX
     def isSingletonName = name endsWith SINGLETON_SUFFIX
-    def isModuleClassName = name endsWith MODULE_SUFFIX
     def isAvoidClashName = name endsWith AVOID_CLASH_SUFFIX
     def isImportName = name startsWith IMPORT
     def isFieldName = name endsWith LOCAL_SUFFIX
+    //*
     def isShadowedName = name.length > 0 && name.head == '(' && name.startsWith(nme.SHADOWED)
     def isDefaultGetterName = name.isTermName && name.asTermName.defaultGetterIndex >= 0
     def isScala2LocalSuffix = name.endsWith(" ")
@@ -88,13 +51,6 @@ object NameOps {
         && (name != false_)
         && (name != true_)
         && (name != null_))
-    }
-
-    def isOpAssignmentName: Boolean = name match {
-      case raw.NE | raw.LE | raw.GE | EMPTY =>
-        false
-      case _ =>
-        name.length > 0 && name.last == '=' && name.head != '=' && isOperatorPart(name.head)
     }
 
     /** Is this the name of a higher-kinded type parameter of a Lambda? */
@@ -127,16 +83,6 @@ object NameOps {
         name
     }
 
-    /** Convert this module name to corresponding module class name */
-    def moduleClassName: TypeName = (name ++ tpnme.MODULE_SUFFIX).toTypeName
-
-    /** Convert this module class name to corresponding source module name */
-    def sourceModuleName: TermName = stripModuleClassSuffix.toTermName
-
-    /** If name ends in module class suffix, drop it */
-    def stripModuleClassSuffix: Name =
-      if (isModuleClassName) name dropRight MODULE_SUFFIX.length else name
-
     /** Append a suffix so that this name does not clash with another name in the same scope */
     def avoidClashName: TermName = (name ++ AVOID_CLASH_SUFFIX).toTermName
 
@@ -144,42 +90,9 @@ object NameOps {
     def stripAvoidClashSuffix: Name =
       if (isAvoidClashName) name dropRight AVOID_CLASH_SUFFIX.length else name
 
-    /** If flags is a ModuleClass but not a Package, add module class suffix */
-    def adjustIfModuleClass(flags: Flags.FlagSet): N = {
-      if (flags is (ModuleClass, butNot = Package)) name.asTypeName.moduleClassName
-      else stripAvoidClashSuffix
-    }.asInstanceOf[N]
-
-    /** The superaccessor for method with given name */
-    def superName: TermName = (nme.SUPER_PREFIX ++ name).toTermName
-
-    /** The expanded name of `name` relative to given class `base`.
-     */
-    def expandedName(base: Symbol, separator: Name)(implicit ctx: Context): N =
-      expandedName(if (base is Flags.ExpandedName) base.name else base.fullNameSeparated("$"), separator)
-
-    def expandedName(base: Symbol)(implicit ctx: Context): N = expandedName(base, nme.EXPAND_SEPARATOR)
-
-    /** The expanded name of `name` relative to `basename` with given `separator`
-     */
-    def expandedName(prefix: Name, separator: Name = nme.EXPAND_SEPARATOR): N =
-      name.fromName(prefix ++ separator ++ name).asInstanceOf[N]
-
-    def expandedName(prefix: Name): N = expandedName(prefix, nme.EXPAND_SEPARATOR)
-
-    def unexpandedName: N = {
-      val idx = name.lastIndexOfSlice(nme.EXPAND_SEPARATOR)
-      if (idx < 0) name else (name drop (idx + nme.EXPAND_SEPARATOR.length)).asInstanceOf[N]
-    }
-
-    def expandedPrefix: N = {
-      val idx = name.lastIndexOfSlice(nme.EXPAND_SEPARATOR)
-      assert(idx >= 0)
-      name.take(idx).asInstanceOf[N]
-    }
-
     def shadowedName: N = likeTyped(nme.SHADOWED ++ name)
 
+    //*
     def revertShadowed: N = likeTyped(name.drop(nme.SHADOWED.length))
 
     def implClassName: N = likeTyped(name ++ tpnme.IMPL_CLASS_SUFFIX)
@@ -236,30 +149,38 @@ object NameOps {
       case nme.clone_ => nme.clone_
     }
 
-    def specializedFor(returnType: Types.Type, args: List[Types.Type])(implicit ctx: Context): name.ThisName = {
-
-      def typeToTag(tp: Types.Type): Name = {
-        tp.classSymbol match {
-          case t if t eq defn.IntClass     => nme.specializedTypeNames.Int
-          case t if t eq defn.BooleanClass => nme.specializedTypeNames.Boolean
-          case t if t eq defn.ByteClass    => nme.specializedTypeNames.Byte
-          case t if t eq defn.LongClass    => nme.specializedTypeNames.Long
-          case t if t eq defn.ShortClass   => nme.specializedTypeNames.Short
-          case t if t eq defn.FloatClass   => nme.specializedTypeNames.Float
-          case t if t eq defn.UnitClass    => nme.specializedTypeNames.Void
-          case t if t eq defn.DoubleClass  => nme.specializedTypeNames.Double
-          case t if t eq defn.CharClass    => nme.specializedTypeNames.Char
-          case _                           => nme.specializedTypeNames.Object
-        }
-      }
-
-      name.fromName(name ++ nme.specializedTypeNames.prefix ++
-        args.map(typeToTag).foldRight(typeToTag(returnType))(_ ++ _) ++
-        nme.specializedTypeNames.suffix)
+    def expandedPrefix: N = {
+      val idx = name.lastIndexOfSlice(nme.EXPAND_SEPARATOR)
+      assert(idx >= 0)
+      name.take(idx).asInstanceOf[N]
     }
 
-    /** If name length exceeds allowable limit, replace part of it by hash */
-    def compactified(implicit ctx: Context): TermName = termName(compactify(name.toString))
+    def unexpandedName: N = {
+      val idx = name.lastIndexOfSlice(nme.EXPAND_SEPARATOR)
+      if (idx < 0) name else (name drop (idx + nme.EXPAND_SEPARATOR.length)).asInstanceOf[N]
+    }
+
+//    def specializedFor(returnType: Types.Type, args: List[Types.Type])(implicit ctx: Context): name.ThisName = {
+//
+//      def typeToTag(tp: Types.Type): Name = {
+//        tp.classSymbol match {
+//          case t if t eq defn.IntClass     => nme.specializedTypeNames.Int
+//          case t if t eq defn.BooleanClass => nme.specializedTypeNames.Boolean
+//          case t if t eq defn.ByteClass    => nme.specializedTypeNames.Byte
+//          case t if t eq defn.LongClass    => nme.specializedTypeNames.Long
+//          case t if t eq defn.ShortClass   => nme.specializedTypeNames.Short
+//          case t if t eq defn.FloatClass   => nme.specializedTypeNames.Float
+//          case t if t eq defn.UnitClass    => nme.specializedTypeNames.Void
+//          case t if t eq defn.DoubleClass  => nme.specializedTypeNames.Double
+//          case t if t eq defn.CharClass    => nme.specializedTypeNames.Char
+//          case _                           => nme.specializedTypeNames.Object
+//        }
+//      }
+//
+//      name.fromName(name ++ nme.specializedTypeNames.prefix ++
+//        args.map(typeToTag).foldRight(typeToTag(returnType))(_ ++ _) ++
+//        nme.specializedTypeNames.suffix)
+//    }
   }
 
   // needed???
@@ -298,25 +219,6 @@ object NameOps {
       name.take(name.length - LOCAL_SUFFIX.length).asTermName
     }
 
-    /** Nominally, name$default$N, encoded for <init>
-     *  @param  Post the parameters position.
-     *  @note Default getter name suffixes start at 1, so `pos` has to be adjusted by +1
-     */
-    def defaultGetterName(pos: Int): TermName = {
-      val prefix = if (name.isConstructorName) DEFAULT_GETTER_INIT else name
-      prefix ++ DEFAULT_GETTER ++ (pos + 1).toString
-    }
-
-    /** Nominally, name from name$default$N, CONSTRUCTOR for <init> */
-    def defaultGetterToMethod: TermName = {
-      val p = name.indexOfSlice(DEFAULT_GETTER)
-      if (p >= 0) {
-        val q = name.take(p).asTermName
-        // i.e., if (q.decoded == CONSTRUCTOR.toString) CONSTRUCTOR else q
-        if (q == DEFAULT_GETTER_INIT) CONSTRUCTOR else q
-      } else name
-    }
-
     /** If this is a default getter, its index (starting from 0), else -1 */
     def defaultGetterIndex: Int = {
       var i = name.length
@@ -329,14 +231,6 @@ object NameOps {
 
     def stripScala2LocalSuffix: TermName =
       if (name.isScala2LocalSuffix) name.init.asTermName else name
-
-    /** The name of an accessor for protected symbols. */
-    def protectedAccessorName: TermName =
-      PROTECTED_PREFIX ++ name.unexpandedName
-
-    /** The name of a setter for protected symbols. Used for inherited Java fields. */
-    def protectedSetterName: TermName =
-      PROTECTED_SET_PREFIX ++ name.unexpandedName
 
     def moduleVarName: TermName =
       name ++ MODULE_VAR_SUFFIX
