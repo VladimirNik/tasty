@@ -74,14 +74,6 @@ object untpd extends Trees.Instance[Untyped] {
     /** The watched tree; used only for printing */
     def watched: Tree = myWatched
 
-    /** Install the derived type tree as a dependency on `original` */
-//    def watching(original: DefTree): this.type = {
-//      myWatched = original
-//      val existing = original.attachmentOrElse(References, Nil)
-//      original.putAttachment(References, this :: existing)
-//      this
-//    }
-
     /** A hook to ensure that all necessary symbols are completed so that
      *  OriginalSymbol attachments are propagated to this tree
      */
@@ -90,18 +82,6 @@ object untpd extends Trees.Instance[Untyped] {
     /** The method that computes the type of this tree */
     def derivedType(originalSym: Symbol)(implicit ctx: Context): Type
   }
-
-    /** Attachment key containing TypeTrees whose type is computed
-   *  from the symbol in this type. These type trees have marker trees
-   *  TypeRefOfSym or InfoOfSym as their originals.
-   */
-//  val References = new Attachment.Key[List[Tree]]
-//
-//  /** Attachment key for TypeTrees marked with TypeRefOfSym or InfoOfSym
-//   *  which contains the symbol of the original tree from which this
-//   *  TypeTree is derived.
-//   */
-//  val OriginalSymbol = new Attachment.Key[Symbol]
 
   // ------ Creation methods for untyped only -----------------
 
@@ -151,30 +131,11 @@ object untpd extends Trees.Instance[Untyped] {
 
   // ------ Additional creation methods for untyped only -----------------
 
-  // def TypeTree(tpe: Type): TypeTree = TypeTree().withType(tpe) todo: move to untpd/tpd
-
   /**     new pre.C[Ts](args1)...(args_n)
    *  ==>
    *      (new pre.C).<init>[Ts](args1)...(args_n)
    */
-  def New(tpt: Tree, argss: List[List[Tree]])(implicit ctx: Context): Tree = ???/*{
-    val (tycon, targs) = tpt match {
-      case AppliedTypeTree(tycon, targs) =>
-        (tycon, targs)
-      case TypedSplice(AppliedTypeTree(tycon, targs)) =>
-        (TypedSplice(tycon), targs map TypedSplice)
-      case TypedSplice(tpt1: Tree) =>
-        val argTypes = tpt1.tpe.argTypes
-        val tycon = tpt1.tpe.withoutArgs(argTypes)
-        def wrap(tpe: Type) = TypeTree(tpe) withPos tpt.pos
-        (wrap(tycon), argTypes map wrap)
-      case _ =>
-        (tpt, Nil)
-    }
-    var prefix: Tree = Select(New(tycon), nme.CONSTRUCTOR)
-    if (targs.nonEmpty) prefix = TypeApply(prefix, targs)
-    ensureApplied((prefix /: argss)(Apply(_, _)))
-  }*/
+  def New(tpt: Tree, argss: List[List[Tree]])(implicit ctx: Context): Tree = ???
 
   def Block(stat: Tree, expr: Tree): Block =
     Block(stat :: Nil, expr)
@@ -200,8 +161,6 @@ object untpd extends Trees.Instance[Untyped] {
   def ref(tp: NamedType)(implicit ctx: Context): Tree =
     TypedSplice(tpd.ref(tp))
 
-//  def scalaUnit(implicit ctx: Context) = ref(defn.UnitClass.typeRef)
-
   def makeConstructor(tparams: List[TypeDef], vparamss: List[List[ValDef]], rhs: Tree = EmptyTree)(implicit ctx: Context): DefDef =
     DefDef(nme.CONSTRUCTOR, tparams, vparamss, TypeTree(), rhs)
 
@@ -225,215 +184,4 @@ object untpd extends Trees.Instance[Untyped] {
   def makeSyntheticParameter(n: Int = 1, tpt: Tree = TypeTree())(implicit ctx: Context): ValDef = ???
 
   def refOfDef(tree: NameTree)(implicit ctx: Context) = Ident(tree.name)
-
-// ------- Decorators -------------------------------------------------
-
-//  implicit class UntypedTreeDecorator(val self: Tree) extends AnyVal {
-//    def locateEnclosing(base: List[Tree], pos: Position): List[Tree] = {
-//      def encloses(elem: Any) = elem match {
-//        case t: Tree => t.envelope contains pos
-//        case _ => false
-//      }
-//      base.productIterator find encloses match {
-//        case Some(tree: Tree) => locateEnclosing(tree :: base, pos)
-//        case none => base
-//      }
-//    }
-//  }
-//
-//  implicit class modsDeco(val mdef: MemberDef)(implicit ctx: Context) extends ModsDeco {
-//    def mods = mdef.rawMods
-//  }
-
-// --------- Copier/Transformer/Accumulator classes for untyped trees -----
-
-//  override val cpy: UntypedTreeCopier = new UntypedTreeCopier
-
-//  class UntypedTreeCopier extends TreeCopier {
-
-//    def postProcess(tree: Tree, copied: Tree): copied.ThisTree[Untyped] =
-//      copied.asInstanceOf[copied.ThisTree[Untyped]]
-//
-//    def postProcess(tree: Tree, copied: MemberDef): copied.ThisTree[Untyped] = {
-//      tree match {
-//        case tree: MemberDef => copied.withMods(tree.rawMods)
-//        case _ => copied
-//      }
-//    }.asInstanceOf[copied.ThisTree[Untyped]]
-
-//    def ModuleDef(tree: Tree)(name: TermName, impl: Template) = tree match {
-//      case tree: ModuleDef if (name eq tree.name) && (impl eq tree.impl) => tree
-//      case _ => untpd.ModuleDef(name, impl).withPos(tree.pos)
-//    }
-//    def PolyTypeDef(tree: Tree)(name: TypeName, tparams: List[TypeDef], rhs: Tree) = tree match {
-//      case tree: PolyTypeDef if (name eq tree.name) && (tparams eq tree.tparams) && (rhs eq tree.rhs) => tree
-//      case _ => new PolyTypeDef(name, tparams, rhs).withPos(tree.pos)
-//    }
-//    def SymbolLit(tree: Tree)(str: String) = tree match {
-//      case tree: SymbolLit if str == tree.str => tree
-//      case _ => untpd.SymbolLit(str).withPos(tree.pos)
-//    }
-//    def InterpolatedString(tree: Tree)(id: TermName, strings: List[Literal], elems: List[Tree]) = tree match {
-//      case tree: InterpolatedString if (id eq tree.id) && (strings eq tree.strings) && (elems eq tree.elems) => tree
-//      case _ => untpd.InterpolatedString(id, strings, elems).withPos(tree.pos)
-//    }
-//    def Function(tree: Tree)(args: List[Tree], body: Tree) = tree match {
-//      case tree: Function if (args eq tree.args) && (body eq tree.body) => tree
-//      case _ => untpd.Function(args, body).withPos(tree.pos)
-//    }
-//    def InfixOp(tree: Tree)(left: Tree, op: Name, right: Tree) = tree match {
-//      case tree: InfixOp if (left eq tree.left) && (op eq tree.op) && (right eq tree.right) => tree
-//      case _ => untpd.InfixOp(left, op, right).withPos(tree.pos)
-//    }
-//    def PostfixOp(tree: Tree)(od: Tree, op: Name) = tree match {
-//      case tree: PostfixOp if (od eq tree.od) && (op eq tree.op) => tree
-//      case _ => untpd.PostfixOp(od, op).withPos(tree.pos)
-//    }
-//    def PrefixOp(tree: Tree)(op: Name, od: Tree) = tree match {
-//      case tree: PrefixOp if (op eq tree.op) && (od eq tree.od) => tree
-//      case _ => untpd.PrefixOp(op, od).withPos(tree.pos)
-//    }
-//    def Parens(tree: Tree)(t: Tree) = tree match {
-//      case tree: Parens if t eq tree.t => tree
-//      case _ => untpd.Parens(t).withPos(tree.pos)
-//    }
-//    def Tuple(tree: Tree)(trees: List[Tree]) = tree match {
-//      case tree: Tuple if trees eq tree.trees => tree
-//      case _ => untpd.Tuple(trees).withPos(tree.pos)
-//    }
-//    def Throw(tree: Tree)(expr: Tree) = tree match {
-//      case tree: Throw if expr eq tree.expr => tree
-//      case _ => untpd.Throw(expr).withPos(tree.pos)
-//    }
-//    def WhileDo(tree: Tree)(cond: Tree, body: Tree) = tree match {
-//      case tree: WhileDo if (cond eq tree.cond) && (body eq tree.body) => tree
-//      case _ => untpd.WhileDo(cond, body).withPos(tree.pos)
-//    }
-//    def DoWhile(tree: Tree)(body: Tree, cond: Tree) = tree match {
-//      case tree: DoWhile if (body eq tree.body) && (cond eq tree.cond) => tree
-//      case _ => untpd.DoWhile(body, cond).withPos(tree.pos)
-//    }
-//    def ForYield(tree: Tree)(enums: List[Tree], expr: Tree) = tree match {
-//      case tree: ForYield if (enums eq tree.enums) && (expr eq tree.expr) => tree
-//      case _ => untpd.ForYield(enums, expr).withPos(tree.pos)
-//    }
-//    def ForDo(tree: Tree)(enums: List[Tree], body: Tree) = tree match {
-//      case tree: ForDo if (enums eq tree.enums) && (body eq tree.body) => tree
-//      case _ => untpd.ForDo(enums, body).withPos(tree.pos)
-//    }
-//    def GenFrom(tree: Tree)(pat: Tree, expr: Tree) = tree match {
-//      case tree: GenFrom if (pat eq tree.pat) && (expr eq tree.expr) => tree
-//      case _ => untpd.GenFrom(pat, expr).withPos(tree.pos)
-//    }
-//    def GenAlias(tree: Tree)(pat: Tree, expr: Tree) = tree match {
-//      case tree: GenAlias if (pat eq tree.pat) && (expr eq tree.expr) => tree
-//      case _ => untpd.GenAlias(pat, expr).withPos(tree.pos)
-//    }
-//    def ContextBounds(tree: Tree)(bounds: TypeBoundsTree, cxBounds: List[Tree]) = tree match {
-//      case tree: ContextBounds if (bounds eq tree.bounds) && (cxBounds eq tree.cxBounds) => tree
-//      case _ => untpd.ContextBounds(bounds, cxBounds).withPos(tree.pos)
-//    }
-//    def PatDef(tree: Tree)(mods: Modifiers, pats: List[Tree], tpt: Tree, rhs: Tree) = tree match {
-//      case tree: PatDef if (mods eq tree.mods) && (pats eq tree.pats) && (tpt eq tree.tpt) && (rhs eq tree.rhs) => tree
-//      case _ => untpd.PatDef(mods, pats, tpt, rhs).withPos(tree.pos)
-//    }
-//  }
-
-//  abstract class UntypedTreeMap(cpy: UntypedTreeCopier = untpd.cpy) extends TreeMap(cpy) {
-//    override def transform(tree: Tree)(implicit ctx: Context): Tree = tree match {
-//      case ModuleDef(name, impl) =>
-//        cpy.ModuleDef(tree)(name, transformSub(impl))
-//      case SymbolLit(str) =>
-//        cpy.SymbolLit(tree)(str)
-//      case InterpolatedString(id, strings, elems) =>
-//        cpy.InterpolatedString(tree)(id, transformSub(strings), transform(elems))
-//      case Function(args, body) =>
-//        cpy.Function(tree)(transform(args), transform(body))
-//      case InfixOp(left, op, right) =>
-//        cpy.InfixOp(tree)(transform(left), op, transform(right))
-//      case PostfixOp(od, op) =>
-//        cpy.PostfixOp(tree)(transform(od), op)
-//      case PrefixOp(op, od) =>
-//        cpy.PrefixOp(tree)(op, transform(od))
-//      case Parens(t) =>
-//        cpy.Parens(tree)(transform(t))
-//      case Tuple(trees) =>
-//        cpy.Tuple(tree)(transform(trees))
-//      case Throw(expr) =>
-//        cpy.Throw(tree)(transform(expr))
-//      case WhileDo(cond, body) =>
-//        cpy.WhileDo(tree)(transform(cond), transform(body))
-//      case DoWhile(body, cond) =>
-//        cpy.DoWhile(tree)(transform(body), transform(cond))
-//      case ForYield(enums, expr) =>
-//        cpy.ForYield(tree)(transform(enums), transform(expr))
-//      case ForDo(enums, body) =>
-//        cpy.ForDo(tree)(transform(enums), transform(body))
-//      case GenFrom(pat, expr) =>
-//        cpy.GenFrom(tree)(transform(pat), transform(expr))
-//      case GenAlias(pat, expr) =>
-//        cpy.GenAlias(tree)(transform(pat), transform(expr))
-//      case ContextBounds(bounds, cxBounds) =>
-//        cpy.ContextBounds(tree)(transformSub(bounds), transform(cxBounds))
-//      case PatDef(mods, pats, tpt, rhs) =>
-//        cpy.PatDef(tree)(mods, transform(pats), transform(tpt), transform(rhs))
-//      case tree: PolyTypeDef =>
-//        cpy.PolyTypeDef(tree)(tree.name, transformSub(tree.tparams), transform(tree.rhs))
-//      case _ =>
-//        super.transform(tree)
-//    }
-//  }
-
-//  abstract class UntypedTreeAccumulator[X] extends TreeAccumulator[X] {
-//    override def foldOver(x: X, tree: Tree)(implicit ctx: Context): X = tree match {
-//      case ModuleDef(name, impl) =>
-//        this(x, impl)
-//      case SymbolLit(str) =>
-//        x
-//      case InterpolatedString(id, strings, elems) =>
-//        this(this(x, strings), elems)
-//      case Function(args, body) =>
-//        this(this(x, args), body)
-//      case InfixOp(left, op, right) =>
-//        this(this(x, left), right)
-//      case PostfixOp(od, op) =>
-//        this(x, od)
-//      case PrefixOp(op, od) =>
-//        this(x, od)
-//      case Parens(t) =>
-//        this(x, t)
-//      case Tuple(trees) =>
-//        this(x, trees)
-//      case Throw(expr) =>
-//        this(x, expr)
-//      case WhileDo(cond, body) =>
-//        this(this(x, cond), body)
-//      case DoWhile(body, cond) =>
-//        this(this(x, body), cond)
-//      case ForYield(enums, expr) =>
-//        this(this(x, enums), expr)
-//      case ForDo(enums, body) =>
-//        this(this(x, enums), body)
-//      case GenFrom(pat, expr) =>
-//        this(this(x, pat), expr)
-//      case GenAlias(pat, expr) =>
-//        this(this(x, pat), expr)
-//      case ContextBounds(bounds, cxBounds) =>
-//        this(this(x, bounds), cxBounds)
-//      case PatDef(mods, pats, tpt, rhs) =>
-//        this(this(this(x, pats), tpt), rhs)
-//      case tree: PolyTypeDef =>
-//        this(this(x, tree.tparams), tree.rhs)
-//      case TypedSplice(tree) =>
-//        this(x, tree)
-//      case _ =>
-//        super.foldOver(x, tree)
-//    }
-//  }
-//
-//  override def rename(tree: NameTree, newName: Name)(implicit ctx: Context): tree.ThisTree[Untyped] = tree match {
-//    case t: PolyTypeDef =>
-//      cpy.PolyTypeDef(t)(newName.asTypeName, t.tparams, t.rhs).asInstanceOf[tree.ThisTree[Untyped]]
-//    case _ => super.rename(tree, newName)
-//  }
 }

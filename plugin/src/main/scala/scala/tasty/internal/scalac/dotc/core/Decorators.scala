@@ -17,9 +17,7 @@ object Decorators {
   /** Turns Strings into PreNames, adding toType/TermName methods */
   implicit class StringDecorator(val s: String) extends AnyVal with PreName {
     def toTypeName: TypeName = typeName(s)
-    //*
     def toTermName: TermName = termName(s)
-//    def toText(printer: Printer): Text = Str(s)
   }
 
   /** Implements a findSymbol method on iterators of Symbols that
@@ -130,28 +128,6 @@ object Decorators {
   implicit class TextToString(val text: Text) extends AnyVal {
     def show(implicit ctx: Context) = ??? //text.mkString(ctx.settings.pageWidth.value)
   }
-
-//  /** Test whether a list of strings representing phases contains
-//   *  a given phase. See [[config.CompilerCommand#explainAdvanced]] for the
-//   *  exact meaning of "contains" here.
-//   */
-//  implicit class PhaseListDecorator(val names: List[String]) extends AnyVal {
-//    def containsPhase(phase: Phase): Boolean = phase match {
-//      //TODO - fix
-////      case phase: TreeTransformer => phase.transformations.exists(trans => containsPhase(trans.phase))
-//      case _ =>
-//        names exists { name =>
-//          name == "all" || {
-//            val strippedName = name.stripSuffix("+")
-//            val logNextPhase = name ne strippedName
-//            phase.phaseName.startsWith(strippedName) ||
-//              (logNextPhase && phase.prev.phaseName.startsWith(strippedName))
-//          }
-//        }
-//    }
-//  }
-
-//  implicit def sourcePos(pos: Position)(implicit ctx: Context): SourcePosition = ???
 
   /** The i"..." string interpolator adds two features to the s interpolator:
    *  1) On all Showables, `show` is called instead of `toString`

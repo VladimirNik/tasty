@@ -47,8 +47,5 @@ object Contexts {
      *  "contains" here.
      */
     def log(msg: => String, pos: Position = NoPosition): Unit = ???
-    //def log(msg: => String, pos: SourcePosition = NoSourcePosition): Unit = ???
-    
-//    def log(msg: => String): Unit = ???
   }
 }

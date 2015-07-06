@@ -666,48 +666,7 @@ object StdNames {
     protected implicit def fromString(s: String): TermName = termName(s)
     //def lambdaTraitName2: Unit = scala.List().foreach{x => x} //.mkString //scala.List(1,2,3).map{x: Int => 'f'}.mkString
     
-//    @switch def syntheticParamName(i: Int): TermName = i match {
-//      case 0  => x_0
-//      case 1  => x_1
-//      case 2  => x_2
-//      case 3  => x_3
-//      case 4  => x_4
-//      case 5  => x_5
-//      case 6  => x_6
-//      case 7  => x_7
-//      case 8  => x_8
-//      case 9  => x_9
-//      case _  => termName("x$" + i)
-//    }
-//
-//    @switch def productAccessorName(j: Int): TermName = j match {
-//      case 1  => nme._1
-//      case 2  => nme._2
-//      case 3  => nme._3
-//      case 4  => nme._4
-//      case 5  => nme._5
-//      case 6  => nme._6
-//      case 7  => nme._7
-//      case 8  => nme._8
-//      case 9  => nme._9
-//      case 10 => nme._10
-//      case 11 => nme._11
-//      case 12 => nme._12
-//      case 13 => nme._13
-//      case 14 => nme._14
-//      case 15 => nme._15
-//      case 16 => nme._16
-//      case 17 => nme._17
-//      case 18 => nme._18
-//      case 19 => nme._19
-//      case 20 => nme._20
-//      case 21 => nme._21
-//      case 22 => nme._22
-//      case _  => termName("_" + j)
-//    }
-
-    def syntheticParamNames(num: Int): List[TermName] = null
-//      (0 until num).map(syntheticParamName)(breakOut)
+    def syntheticParamNames(num: Int): List[TermName] = { ???; null }
 
     def localDummyName(clazz: Symbol)(implicit ctx: Context): TermName =
       LOCALDUMMY_PREFIX ++ clazz.name ++ ">"
@@ -731,13 +690,8 @@ object StdNames {
 
     @switch def syntheticTypeParamName(i: Int): TypeName = "T" + i
 
-//    def syntheticTypeParamNames(num: Int): List[TypeName] =
-//      (0 until num).map(syntheticTypeParamName)(breakOut)
-
 //    def lambdaTraitName(vcs: List[Int]): TypeName = LambdaPrefix ++ vcs.map(varianceSuffix).mkString //scala.List(1,2,3).map{x: Int => 'f'}.mkString//
-//    def lambdaArgName(n: Int) = LAMBDA_ARG_PREFIX ++ n.toString
 //    def test(vcs: List[Int]): TypeName = scala.List(1,2,3).map{x: Int => 'f'}.mkString
-//    final val Conforms = encode("<:<")
 
     def varianceSuffix(v: Int): Char = varianceSuffixes.charAt(v + 1)
 
@@ -835,9 +789,7 @@ object StdNames {
     protected def fromString(s: String): TypeName = typeName(s)
   }
 
-  //*
   val nme: TastyScalaTermNames = new TastyScalaTermNames
   val jtpnme: TastyJavaTypeNames = new TastyJavaTypeNames
-  //*
   val tpnme: TastyScalaTypeNames = new TastyScalaTypeNames
 }

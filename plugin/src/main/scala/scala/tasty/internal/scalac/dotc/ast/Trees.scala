@@ -152,7 +152,6 @@ object Trees {
    */
   abstract class ProxyTree[-T >: Untyped] extends Tree[T] {
     type ThisTree[-T >: Untyped] <: ProxyTree[T]
-//    def forwardTo: Tree[T]
     override def isTerm: Boolean = ??? //forwardTo.isTerm
     override def isType: Boolean = ??? //forwardTo.isType
   }
@@ -497,7 +496,6 @@ object Trees {
     override def isEmpty: Boolean = trees.isEmpty
     override def toList: List[Tree[T]] = ???
     override def toString = if (isEmpty) "EmptyTree" else "Thicket(" + trees.mkString(", ") + ")"
-//    override def withPos(pos: Position): this.type = ???
   }
 
   class EmptyValDef[T >: Untyped] extends ValDef[T](
@@ -506,7 +504,6 @@ object Trees {
     setMods(Modifiers[T](PrivateLocal))
   }
 
-  val a = 5
   val theEmptyTree: Thicket[Type] = Thicket(Nil)
   val theEmptyValDef = new EmptyValDef[Type]
   val theEmptyModifiers = new Modifiers()
@@ -594,59 +591,5 @@ object Trees {
     def Modifiers(flags: FlagSet = EmptyFlags,
                   privateWithin: TypeName = tpnme.EMPTY,
                   annotations: List[Tree] = Nil) = new Modifiers(flags, privateWithin, annotations)
-
-    // ----- Helper classes for copying, transforming, accumulating -----------------
-
-//    val cpy: TreeCopier
-
-    /** A class for copying trees. The copy methods avid creating a new tree
-     *  If all arguments stay the same.
-     *
-     * Note: Some of the copy methods take a context.
-     * These are exactly those methods that are overridden in TypedTreeCopier
-     * so that they selectively retype themselves. Retyping needs a context.
-     */
-//    abstract class TreeCopier {
-//      def Ident(tree: Tree)(name: Name): Ident = ???
-//      def Select(tree: Tree)(qualifier: Tree, name: Name)(implicit ctx: Context): Select = ???
-//      def This(tree: Tree)(qual: TypeName): This = ???
-//      def Super(tree: Tree)(qual: Tree, mix: TypeName): Super = ???
-//      def Apply(tree: Tree)(fun: Tree, args: List[Tree])(implicit ctx: Context): Apply = ???
-//      def TypeApply(tree: Tree)(fun: Tree, args: List[Tree])(implicit ctx: Context): TypeApply = ???
-//      def Literal(tree: Tree)(const: Constant)(implicit ctx: Context): Literal = ???
-//      def New(tree: Tree)(tpt: Tree)(implicit ctx: Context): New = ???
-//      def Pair(tree: Tree)(left: Tree, right: Tree)(implicit ctx: Context): Pair = ???
-//      def Typed(tree: Tree)(expr: Tree, tpt: Tree)(implicit ctx: Context): Typed = ???
-//      def NamedArg(tree: Tree)(name: Name, arg: Tree)(implicit ctx: Context): NamedArg = ???
-//      def Assign(tree: Tree)(lhs: Tree, rhs: Tree)(implicit ctx: Context): Assign = ???
-//      def Block(tree: Tree)(stats: List[Tree], expr: Tree)(implicit ctx: Context): Block = ???
-//      def If(tree: Tree)(cond: Tree, thenp: Tree, elsep: Tree)(implicit ctx: Context): If = ???
-//      def Closure(tree: Tree)(env: List[Tree], meth: Tree, tpt: Tree)(implicit ctx: Context): Closure = ???
-//      def Match(tree: Tree)(selector: Tree, cases: List[CaseDef])(implicit ctx: Context): Match = ???
-//      def CaseDef(tree: Tree)(pat: Tree, guard: Tree, body: Tree)(implicit ctx: Context): CaseDef = ???
-//      def Return(tree: Tree)(expr: Tree, from: Tree)(implicit ctx: Context): Return = ???
-//      def Try(tree: Tree)(expr: Tree, cases: List[CaseDef], finalizer: Tree)(implicit ctx: Context): Try = ???
-//      def SeqLiteral(tree: Tree)(elems: List[Tree])(implicit ctx: Context): SeqLiteral = ???
-//      def TypeTree(tree: Tree)(original: Tree): TypeTree = ???
-//      def SingletonTypeTree(tree: Tree)(ref: Tree): SingletonTypeTree = ???
-//      def SelectFromTypeTree(tree: Tree)(qualifier: Tree, name: Name): SelectFromTypeTree = ???
-//      def AndTypeTree(tree: Tree)(left: Tree, right: Tree): AndTypeTree = ???
-//      def OrTypeTree(tree: Tree)(left: Tree, right: Tree): OrTypeTree = ???
-//      def RefinedTypeTree(tree: Tree)(tpt: Tree, refinements: List[Tree]): RefinedTypeTree = ???
-//      def AppliedTypeTree(tree: Tree)(tpt: Tree, args: List[Tree]): AppliedTypeTree = ???
-//      def ByNameTypeTree(tree: Tree)(result: Tree): ByNameTypeTree = ???
-//      def TypeBoundsTree(tree: Tree)(lo: Tree, hi: Tree): TypeBoundsTree = ???
-//      def Bind(tree: Tree)(name: Name, body: Tree): Bind = ???
-//      def Alternative(tree: Tree)(trees: List[Tree]): Alternative = ???
-//      def UnApply(tree: Tree)(fun: Tree, implicits: List[Tree], patterns: List[Tree]): UnApply = ???
-//      def ValDef(tree: Tree)(name: TermName, tpt: Tree, rhs: LazyTree): ValDef = ???
-//      def DefDef(tree: Tree)(name: TermName, tparams: List[TypeDef], vparamss: List[List[ValDef]], tpt: Tree, rhs: LazyTree): DefDef = ???
-//      def TypeDef(tree: Tree)(name: TypeName, rhs: Tree, tparams: List[untpd.TypeDef]): TypeDef = ???
-//      def Template(tree: Tree)(constr: DefDef, parents: List[Tree], self: ValDef, body: LazyTreeList): Template = ???
-//      def Import(tree: Tree)(expr: Tree, selectors: List[untpd.Tree]): Import = ???
-//      def PackageDef(tree: Tree)(pid: RefTree, stats: List[Tree]): PackageDef = ???
-//      def Annotated(tree: Tree)(annot: Tree, arg: Tree)(implicit ctx: Context): Annotated = ???
-//      def Thicket(tree: Tree)(trees: List[Tree]): Thicket = ???
-//    }
   }
 }
