@@ -25,8 +25,7 @@ object Contexts {
    *      of all class fields of type context; allow them only in whitelisted
    *      classes (which should be short-lived).
    */
-  abstract class Context extends Symbols
-    with Cloneable { thiscontext =>
+  abstract class Context extends { thiscontext =>
 
     //TODO - fix add real TyperState if required                         
     trait TyperState {
