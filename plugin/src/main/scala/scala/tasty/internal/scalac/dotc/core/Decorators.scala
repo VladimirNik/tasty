@@ -125,10 +125,6 @@ object Decorators {
     def nestedMapconserve[U](f: T => U): List[List[U]] = xss mapconserve (_ mapconserve f)
   }
 
-  implicit class TextToString(val text: Text) extends AnyVal {
-    def show(implicit ctx: Context) = ??? //text.mkString(ctx.settings.pageWidth.value)
-  }
-
   /** The i"..." string interpolator adds two features to the s interpolator:
    *  1) On all Showables, `show` is called instead of `toString`
    *  2) Lists can be formatted using the desired separator between two `%` signs,

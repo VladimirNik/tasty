@@ -2,7 +2,7 @@ package scala.tasty.internal.scalac
 package dotc
 package core
 
-import SymDenotations.{ SymDenotation, ClassDenotation, NoDenotation, NotDefinedHereDenotation }
+import SymDenotations.{ SymDenotation, ClassDenotation, NoDenotation }
 import Contexts.{Context}
 import Names.{Name, PreName}
 import Names.TypeName

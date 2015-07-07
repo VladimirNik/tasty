@@ -666,8 +666,6 @@ object StdNames {
     protected implicit def fromString(s: String): TermName = termName(s)
     //def lambdaTraitName2: Unit = scala.List().foreach{x => x} //.mkString //scala.List(1,2,3).map{x: Int => 'f'}.mkString
     
-    def syntheticParamNames(num: Int): List[TermName] = { ???; null }
-
     def localDummyName(clazz: Symbol)(implicit ctx: Context): TermName =
       LOCALDUMMY_PREFIX ++ clazz.name ++ ">"
 

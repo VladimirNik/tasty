@@ -23,17 +23,7 @@ import StdNames._
  *
  *  The signatures of non-method types are always `NotAMethod`.
  */
-case class Signature(paramsSig: List[TypeName], resSig: TypeName) {
-
-  /** Does this signature coincide with that signature on their parameter parts? */
-  final def sameParams(that: Signature): Boolean = this.paramsSig == that.paramsSig
-
-  /** The meaning of `matches` depends on the phase. If types are not erased,
-   *  it means `sameParams`. Once types are erased, it means `==`, comparing parameter as
-   *  well as result type parts.
-   */
-  final def matches(that: Signature)(implicit ctx: Context) = ???
-}
+case class Signature(paramsSig: List[TypeName], resSig: TypeName)
 
 object Signature {
 
@@ -41,11 +31,4 @@ object Signature {
    *  a type different from PolyType, MethodType, or ExprType.
    */
   val NotAMethod = Signature(List(), EmptyTypeName)
-
-  /** The signature of an overloaded denotation.
-   */
-  val OverloadedSignature = Signature(List(tpnme.OVERLOADED), EmptyTypeName)
-
-  /** The signature of a method with no parameters and result type `resultType`. */
-  def apply(resultType: Type, isJava: Boolean)(implicit ctx: Context): Signature = ???
 }
