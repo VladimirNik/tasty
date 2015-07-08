@@ -33,32 +33,6 @@ object Trees {
     flags: FlagSet = EmptyFlags,
     privateWithin: TypeName = tpnme.EMPTY,
     annotations: List[Tree[T]] = Nil) extends Positioned with Cloneable {
-
-    def is(fs: FlagSet): Boolean = flags is fs
-    def is(fc: FlagConjunction): Boolean = flags is fc
-
-    def | (fs: FlagSet): Modifiers[T] = withFlags(flags | fs)
-    def & (fs: FlagSet): Modifiers[T] = withFlags(flags & fs)
-    def &~(fs: FlagSet): Modifiers[T] = withFlags(flags &~ fs)
-
-    def toTypeFlags: Modifiers[T] = withFlags(flags.toTypeFlags)
-    def toTermFlags: Modifiers[T] = withFlags(flags.toTermFlags)
-
-    private def withFlags(flags: FlagSet) =
-      if (this.flags == flags) this
-      else copy(flags = flags)
-
-    def withAnnotations[U >: Untyped <: T](annots: List[Tree[U]]): Modifiers[U] =
-      if (annots.isEmpty) this
-      else copy(annotations = annotations ++ annots)
-
-    def withPrivateWithin(pw: TypeName) =
-      if (pw.isEmpty) this
-      else copy(privateWithin = pw)
-
-    def hasFlags = flags != EmptyFlags
-    def hasAnnotations = annotations.nonEmpty
-    def hasPrivateWithin = privateWithin != tpnme.EMPTY
   }
 
   type LazyTree = AnyRef     /* really: Tree | Lazy[Tree] */
@@ -92,25 +66,8 @@ object Trees {
     /** Shorthand for `denot.symbol`. */
     final def symbol(implicit ctx: Context): Symbol = ???
 
-    /** Does this tree represent a type? */
-    def isType: Boolean = false
-
-    /** Does this tree represent a term? */
-    def isTerm: Boolean = false
-
-    /** Is this a legal part of a pattern which is not at the same time a term? */
-    def isPattern: Boolean = false
-
-    /** Does this tree define a new symbol that is not defined elsewhere? */
-    def isDef: Boolean = false
-
     /** Is this tree either the empty tree or the empty ValDef? */
     def isEmpty: Boolean = false
-
-    /** Convert tree to a list. Gives a singleton list, except
-     *  for thickets which return their element trees.
-     */
-    def toList: List[Tree[T]] = this :: Nil
 
     override def hashCode(): Int = System.identityHashCode(this)
     override def equals(that: Any) = this eq that.asInstanceOf[AnyRef]
@@ -123,7 +80,6 @@ object Trees {
    */
   trait TypTree[-T >: Untyped] extends Tree[T] {
     type ThisTree[-T >: Untyped] <: TypTree[T]
-    override def isType = true
   }
 
   /** Instances of this class are trees for which isTerm is definitely true.
@@ -131,7 +87,6 @@ object Trees {
    */
   trait TermTree[-T >: Untyped] extends Tree[T] {
     type ThisTree[-T >: Untyped] <: TermTree[T]
-    override def isTerm = true
   }
 
   /** Instances of this class are trees which are not terms but are legal
@@ -139,7 +94,6 @@ object Trees {
    */
   trait PatternTree[-T >: Untyped] extends Tree[T] {
     type ThisTree[-T >: Untyped] <: PatternTree[T]
-    override def isPattern = true
   }
 
   /** Tree's denotation can be derived from its type */
@@ -152,8 +106,6 @@ object Trees {
    */
   abstract class ProxyTree[-T >: Untyped] extends Tree[T] {
     type ThisTree[-T >: Untyped] <: ProxyTree[T]
-    override def isTerm: Boolean = ??? //forwardTo.isTerm
-    override def isType: Boolean = ??? //forwardTo.isType
   }
 
   /** Tree has a name */
@@ -165,16 +117,12 @@ object Trees {
   /** Tree refers by name to a denotation */
   abstract class RefTree[-T >: Untyped] extends NameTree[T] {
     type ThisTree[-T >: Untyped] <: RefTree[T]
-    def qualifier: Tree[T]
-    override def isType = name.isTypeName
-    override def isTerm = name.isTermName
+//    def qualifier: Tree[T]
   }
 
   /** Tree defines a new symbol */
   trait DefTree[-T >: Untyped] extends DenotingTree[T] {
     type ThisTree[-T >: Untyped] <: DefTree[T]
-    override def isDef = true
-    def namedType = tpe.asInstanceOf[NamedType]
   }
   
   /** Tree defines a new symbol and carries modifiers.
@@ -184,7 +132,7 @@ object Trees {
    */
   abstract class MemberDef[-T >: Untyped] extends NameTree[T] with DefTree[T] {
     type ThisTree[-T >: Untyped] <: MemberDef[T]
-      protected def setMods(mods: Modifiers[T @uncheckedVariance]) = ???
+//      protected def setMods(mods: Modifiers[T @uncheckedVariance]) = ???
   }
 
   /** A ValDef or DefDef tree */
@@ -198,20 +146,12 @@ object Trees {
   /** name */
   case class Ident[-T >: Untyped] private[ast] (name: Name) extends RefTree[T] {
     type ThisTree[-T >: Untyped] = Ident[T]
-    def qualifier: Tree[T] = ???
-  }
-
-  class BackquotedIdent[-T >: Untyped] private[ast] (name: Name) extends Ident[T](name) {
-    override def toString = s"BackquotedIdent($name)"
+//    def qualifier: Tree[T] = ???
   }
 
   /** qualifier.name */
   case class Select[-T >: Untyped] private[ast] (qualifier: Tree[T], name: Name) extends RefTree[T] {
     type ThisTree[-T >: Untyped] = Select[T]
-  }
-
-  class SelectWithSig[-T >: Untyped] private[ast] (qualifier: Tree[T], name: Name, val sig: Signature) extends Select[T](qualifier, name) {
-    override def toString = s"SelectWithSig($qualifier, $name, $sig)"
   }
 
   /** qual.this */
@@ -253,9 +193,6 @@ object Trees {
   /** (left, right) */
   case class Pair[-T >: Untyped] private[ast] (left: Tree[T], right: Tree[T]) extends TermTree[T] {
     type ThisTree[-T >: Untyped] = Pair[T]
-    override def isTerm = left.isTerm && right.isTerm
-    override def isType = left.isType && right.isType
-    override def isPattern = !isTerm && (left.isPattern || left.isTerm) && (right.isPattern || right.isTerm)
   }
 
   /** expr : tpt */
@@ -343,65 +280,37 @@ object Trees {
     type ThisTree[-T >: Untyped] = SeqLiteral[T]
   }
 
-  /** Array(elems) */
-  class JavaSeqLiteral[T >: Untyped] private[ast] (elems: List[Tree[T]]) extends SeqLiteral(elems) {
-    override def toString = s"JavaSeqLiteral($elems)"
-  }
-
   /** A type tree that represents an existing or inferred type */
   case class TypeTree[-T >: Untyped] private[ast] (original: Tree[T]) extends DenotingTree[T] with TypTree[T] {
     type ThisTree[-T >: Untyped] = TypeTree[T]
-//    override def initialPos = NoPosition
     //TODO - fix
     override def isEmpty = /*!hasType &&*/ original.isEmpty
     override def toString = s"TypeTree${ /*if (hasType) s"[$typeOpt]" else */ s"($original)"}"
   }
 
-  /** ref.type */
-  case class SingletonTypeTree[-T >: Untyped] private[ast] (ref: Tree[T]) extends DenotingTree[T] with TypTree[T] {
-    type ThisTree[-T >: Untyped] = SingletonTypeTree[T]
-  }
-
-  /** qualifier # name */
-  case class SelectFromTypeTree[-T >: Untyped] private[ast] (qualifier: Tree[T], name: Name) extends RefTree[T] {
-    type ThisTree[-T >: Untyped] = SelectFromTypeTree[T]
-  }
-
-  /** left & right */
-  case class AndTypeTree[-T >: Untyped] private[ast] (left: Tree[T], right: Tree[T]) extends TypTree[T] {
-    type ThisTree[-T >: Untyped] = AndTypeTree[T]
-  }
-
-  /** left | right */
-  case class OrTypeTree[-T >: Untyped] private[ast] (left: Tree[T], right: Tree[T]) extends TypTree[T] {
-    type ThisTree[-T >: Untyped] = OrTypeTree[T]
-  }
-
-  /** tpt { refinements } */
-  case class RefinedTypeTree[-T >: Untyped] private[ast] (tpt: Tree[T], refinements: List[Tree[T]]) extends ProxyTree[T] with TypTree[T] {
-    type ThisTree[-T >: Untyped] = RefinedTypeTree[T]
-  }
-
-  /** tpt[args] */
-  case class AppliedTypeTree[-T >: Untyped] private[ast] (tpt: Tree[T], args: List[Tree[T]]) extends ProxyTree[T] with TypTree[T] {
-    type ThisTree[-T >: Untyped] = AppliedTypeTree[T]
-  }
-
-  /** => T */
-  case class ByNameTypeTree[-T >: Untyped] private[ast] (result: Tree[T]) extends TypTree[T] {
-    type ThisTree[-T >: Untyped] = ByNameTypeTree[T]
-  }
-
-  /** >: lo <: hi */
-  case class TypeBoundsTree[-T >: Untyped] private[ast] (lo: Tree[T], hi: Tree[T]) extends TypTree[T] {
-    type ThisTree[-T >: Untyped] = TypeBoundsTree[T]
-  }
+//  /** ref.type */
+//  case class SingletonTypeTree[-T >: Untyped] private[ast] (ref: Tree[T]) extends DenotingTree[T] with TypTree[T] {
+//    type ThisTree[-T >: Untyped] = SingletonTypeTree[T]
+//  }
+//
+//  /** tpt[args] */
+//  case class AppliedTypeTree[-T >: Untyped] private[ast] (tpt: Tree[T], args: List[Tree[T]]) extends ProxyTree[T] with TypTree[T] {
+//    type ThisTree[-T >: Untyped] = AppliedTypeTree[T]
+//  }
+//
+//  /** => T */
+//  case class ByNameTypeTree[-T >: Untyped] private[ast] (result: Tree[T]) extends TypTree[T] {
+//    type ThisTree[-T >: Untyped] = ByNameTypeTree[T]
+//  }
+//
+//  /** >: lo <: hi */
+//  case class TypeBoundsTree[-T >: Untyped] private[ast] (lo: Tree[T], hi: Tree[T]) extends TypTree[T] {
+//    type ThisTree[-T >: Untyped] = TypeBoundsTree[T]
+//  }
 
   /** name @ body */
   case class Bind[-T >: Untyped] private[ast] (name: Name, body: Tree[T]) extends NameTree[T] with DefTree[T] with PatternTree[T] {
     type ThisTree[-T >: Untyped] = Bind[T]
-    override def isType = name.isTypeName
-    override def isTerm = name.isTermName
   }
 
   /** tree_1 | ... | tree_n */
@@ -475,15 +384,9 @@ object Trees {
     type ThisTree[-T >: Untyped] = PackageDef[T]
   }
 
-  /** arg @annot */
-  case class Annotated[-T >: Untyped] private[ast] (annot: Tree[T], arg: Tree[T]) extends ProxyTree[T] {
-    type ThisTree[-T >: Untyped] = Annotated[T]
-  }
-
   trait WithoutTypeOrPos[-T >: Untyped] extends Tree[T] {
     override def tpe: T @uncheckedVariance = NoType.asInstanceOf[T]
     override def pos = NoPosition
-//    override def setPos(pos: Position) = {}
   }
 
   /** Temporary class that results from translation of ModuleDefs
@@ -494,21 +397,20 @@ object Trees {
   case class Thicket[-T >: Untyped](trees: List[Tree[T]]) extends Tree[T] with WithoutTypeOrPos[T] {
     type ThisTree[-T >: Untyped] = Thicket[T]
     override def isEmpty: Boolean = trees.isEmpty
-    override def toList: List[Tree[T]] = ???
     override def toString = if (isEmpty) "EmptyTree" else "Thicket(" + trees.mkString(", ") + ")"
   }
 
-  class EmptyValDef[T >: Untyped] extends ValDef[T](
-    nme.WILDCARD, genericEmptyTree[T], genericEmptyTree[T]) with WithoutTypeOrPos[T] {
-    override def isEmpty: Boolean = true
-    setMods(Modifiers[T](PrivateLocal))
-  }
+//  class EmptyValDef[T >: Untyped] extends ValDef[T](
+//    nme.WILDCARD, genericEmptyTree[T], genericEmptyTree[T]) with WithoutTypeOrPos[T] {
+//    override def isEmpty: Boolean = true
+//    setMods(Modifiers[T](PrivateLocal))
+//  }
 
   val theEmptyTree: Thicket[Type] = Thicket(Nil)
-  val theEmptyValDef = new EmptyValDef[Type]
+//  val theEmptyValDef = new EmptyValDef[Type]
   val theEmptyModifiers = new Modifiers()
 
-  def genericEmptyValDef[T >: Untyped]: ValDef[T]       = theEmptyValDef.asInstanceOf[ValDef[T]]
+//  def genericEmptyValDef[T >: Untyped]: ValDef[T]       = theEmptyValDef.asInstanceOf[ValDef[T]]
   def genericEmptyTree[T >: Untyped]: Thicket[T]        = theEmptyTree.asInstanceOf[Thicket[T]]
   def genericEmptyModifiers[T >: Untyped]: Modifiers[T] = theEmptyModifiers.asInstanceOf[Modifiers[T]]
 
@@ -529,19 +431,12 @@ object Trees {
     type Tree = Trees.Tree[T]
     type TypTree = Trees.TypTree[T]
     type TermTree = Trees.TermTree[T]
-    type PatternTree = Trees.PatternTree[T]
-    type DenotingTree = Trees.DenotingTree[T]
-    type ProxyTree = Trees.ProxyTree[T]
-    type NameTree = Trees.NameTree[T]
     type RefTree = Trees.RefTree[T]
-    type DefTree = Trees.DefTree[T]
     type MemberDef = Trees.MemberDef[T]
     type ValOrDefDef = Trees.ValOrDefDef[T]
 
     type Ident = Trees.Ident[T]
-    type BackquotedIdent = Trees.BackquotedIdent[T]
     type Select = Trees.Select[T]
-    type SelectWithSig = Trees.SelectWithSig[T]
     type This = Trees.This[T]
     type Super = Trees.Super[T]
     type Apply = Trees.Apply[T]
@@ -560,16 +455,11 @@ object Trees {
     type Return = Trees.Return[T]
     type Try = Trees.Try[T]
     type SeqLiteral = Trees.SeqLiteral[T]
-    type JavaSeqLiteral = Trees.JavaSeqLiteral[T]
     type TypeTree = Trees.TypeTree[T]
-    type SingletonTypeTree = Trees.SingletonTypeTree[T]
-    type SelectFromTypeTree = Trees.SelectFromTypeTree[T]
-    type AndTypeTree = Trees.AndTypeTree[T]
-    type OrTypeTree = Trees.OrTypeTree[T]
-    type RefinedTypeTree = Trees.RefinedTypeTree[T]
-    type AppliedTypeTree = Trees.AppliedTypeTree[T]
-    type ByNameTypeTree = Trees.ByNameTypeTree[T]
-    type TypeBoundsTree = Trees.TypeBoundsTree[T]
+//    type SingletonTypeTree = Trees.SingletonTypeTree[T]
+//    type AppliedTypeTree = Trees.AppliedTypeTree[T]
+//    type ByNameTypeTree = Trees.ByNameTypeTree[T]
+//    type TypeBoundsTree = Trees.TypeBoundsTree[T]
     type Bind = Trees.Bind[T]
     type Alternative = Trees.Alternative[T]
     type UnApply = Trees.UnApply[T]
@@ -579,17 +469,10 @@ object Trees {
     type Template = Trees.Template[T]
     type Import = Trees.Import[T]
     type PackageDef = Trees.PackageDef[T]
-    type Annotated = Trees.Annotated[T]
     type Thicket = Trees.Thicket[T]
 
     val EmptyTree: Thicket = genericEmptyTree
-    val EmptyValDef: ValDef = genericEmptyValDef
+//    val EmptyValDef: ValDef = genericEmptyValDef
     val EmptyModifiers: Modifiers = genericEmptyModifiers
-
-    // ----- Auxiliary creation methods ------------------
-
-    def Modifiers(flags: FlagSet = EmptyFlags,
-                  privateWithin: TypeName = tpnme.EMPTY,
-                  annotations: List[Tree] = Nil) = new Modifiers(flags, privateWithin, annotations)
   }
 }
