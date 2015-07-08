@@ -10,7 +10,7 @@ import Contexts._
 import Annotations._
 import Decorators._
 import util.Positions.Position
-//import util.{DotClass, SimpleMap}
+import util.DotClass
 import ast.tpd._
 import printing.Texts._
 import ast.untpd
@@ -54,7 +54,7 @@ object Types {
    *                       +- ErrorType
    *                       +- WildcardType
    */
-  abstract class Type {
+  abstract class Type extends DotClass {
 
 // ----- Tests -----------------------------------------------------
 
@@ -317,7 +317,6 @@ object Types {
     override def toString = s"RefinedType($parent, $refinedName, $refinedInfo | $hashCode)" // !!! TODO: remove
   }
 
-  //TODO - continue here
   // --- AndType/OrType ---------------------------------------------------------------
 
   trait AndOrType extends ValueType { // todo: check where we can simplify using AndOrType
@@ -511,8 +510,7 @@ object Types {
       cls: ClassSymbol,
       classParents: List[TypeRef],
       decls: Iterable[Symbol]/*Scope*/,
-      //TODO add DotClass (should be for TreePickling)
-      selfInfo: Type /* should be: Type | Symbol */) extends CachedGroundType with TypeType {
+      selfInfo: DotClass /* should be: Type | Symbol */) extends CachedGroundType with TypeType {
 
     def typeRef(implicit ctx: Context): Type = ???
 

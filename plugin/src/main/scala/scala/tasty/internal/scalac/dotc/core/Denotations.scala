@@ -90,7 +90,7 @@ object Denotations {
    *
    *  @param symbol  The referencing symbol, or NoSymbol is none exists
    */
-  abstract class Denotation(val symbol: Symbol) {
+  abstract class Denotation(val symbol: Symbol) extends util.DotClass {
 
     /** The type info of the denotation, exists only for non-overloaded denotations */
     def info(implicit ctx: Context): Type

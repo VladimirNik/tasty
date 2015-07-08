@@ -425,7 +425,7 @@ object Trees {
 
   // ----- Generic Tree Instances, inherited from  `tpt` and `untpd`.
 
-  abstract class Instance[T >: Untyped <: Type] /*extends DotClass*/ { inst =>
+  abstract class Instance[T >: Untyped <: Type] extends util.DotClass { inst =>
 
     type Modifiers = Trees.Modifiers[T]
     type Tree = Trees.Tree[T]

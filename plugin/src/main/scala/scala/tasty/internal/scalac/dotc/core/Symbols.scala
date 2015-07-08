@@ -19,13 +19,13 @@ import collection.mutable
 import language.implicitConversions
 import scala.reflect.io.AbstractFile
 import SymDenotations._
-//import util.{NoSource, DotClass}
+import util.DotClass
 
 object Symbols {
 
   /** A Symbol represents a Scala definition/declaration or a package.
    */
-  class Symbol private[Symbols] (val coord: Coord) {
+  class Symbol private[Symbols] (val coord: Coord) extends DotClass {
 
     type ThisName <: Name
 

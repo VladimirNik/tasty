@@ -32,7 +32,7 @@ object Names {
    *     The encoding will be applied when converting a string to a name.
    */
   //*
-  abstract class Name extends PreName
+  abstract class Name extends util.DotClass with PreName
     with Seq[Char]
     with IndexedSeqOptimized[Char, Name] {
 
@@ -120,7 +120,7 @@ object Names {
 
     override def seq = toCollection(this)
 
-    override protected[this] def newBuilder: Builder[Char, Name] = ??? //unsupported("newBuilder")
+    override protected[this] def newBuilder: Builder[Char, Name] = unsupported("newBuilder")
   }
 
   class TermName(val start: Int, val length: Int, private[Names] var next: TermName) extends Name {
