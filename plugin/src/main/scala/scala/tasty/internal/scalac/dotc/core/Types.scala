@@ -87,17 +87,6 @@ object Types {
      */
     def stripTypeVar(implicit ctx: Context): Type = this
 
-    /** Widen from singleton type to its underlying non-singleton
-     *  base type by applying one or more `underlying` dereferences,
-     *  Also go from => T to T.
-     *  Identity for all other types. Example:
-     *
-     *  class Outer { class C ; val x: C }
-     *  def o: Outer
-     *  <o.x.type>.widen = o.C
-     */
-    final def widen(implicit ctx: Context): Type = ???
-
     /** Is this either not a method at all, or a parameterless method? */
     final def isParameterless(implicit ctx: Context): Boolean = this match {
       case mt: MethodType => false
