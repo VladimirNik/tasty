@@ -25,7 +25,7 @@ object StdNames {
   }
 
   abstract class TastyScalaNames[N <: Name] extends TastyDefinedNames[N] {
-    protected def encode(s: String): N = ???
+    protected def encode(s: String): N = fromName(fromString(s).encode)
 
 // Keywords, need to come first -----------------------
 

@@ -85,6 +85,9 @@ object Names {
     override def toString =
       if (length == 0) "" else new String(chrs, start, length)
 
+    /** Replace operator symbols by corresponding \$op_name's. */
+    def encode: Name =
+      if (dontEncode(toTermName)) this else util.NameTransformer.encode(this)
 
     /** A more efficient version of concatenation */
     def ++ (other: Name): ThisName = ++ (other.toString)
