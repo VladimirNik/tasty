@@ -362,7 +362,7 @@ object Trees {
      *  Can be different from Nil only for PolyTypeDefs, which are always
      *  untyped and get eliminated during desugaring.
      */
-    def tparams: List[untpd.TypeDef] = Nil
+    //def tparams: List[untpd.TypeDef] = Nil
   }
 
   /** extends parents { self => body } */

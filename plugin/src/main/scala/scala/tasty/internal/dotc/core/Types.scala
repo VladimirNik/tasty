@@ -13,7 +13,6 @@ import util.Positions.Position
 import util.DotClass
 import ast.tpd._
 import printing.Texts._
-import ast.untpd
 import collection.{mutable, Seq, breakOut}
 import config.Printers._
 import annotation.tailrec
@@ -467,7 +466,7 @@ object Types {
    *  `owningTree` and `owner` are used to determine whether a type-variable can be instantiated
    *  at some given point. See `Inferencing#interpolateUndetVars`.
    */
-  final class TypeVar(val origin: PolyParam/*, creatorState: TyperState*/, val owningTree: untpd.Tree, val owner: Symbol) extends CachedProxyType with ValueType {
+  final class TypeVar(val origin: PolyParam/*, creatorState: TyperState, val owningTree: untpd.Tree*/, val owner: Symbol) extends CachedProxyType with ValueType {
     /** Unwrap to instance (if instantiated) or origin (if not), until result
      *  is no longer a TypeVar
      */
