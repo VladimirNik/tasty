@@ -27,18 +27,17 @@ object Contexts {
    */
   abstract class Context extends { thiscontext =>
 
-    //TODO - fix add real TyperState if required                         
     trait TyperState {
-
-      def constraint: Constraint
+      val constraint: Constraint = new Constraint
     }
 
-    trait Constraint {
+    class Constraint {
       import Types.{ Type, PolyParam }
-      def entry(param: PolyParam): Type = ???
+      //TODO implement after finding the case when/if this exception arises
+      def entry(param: PolyParam): Type = throw new Exception("special case in TreePickler: def entry in scala.tasty.internal.dotc.core.Context#Constraint should be implemented!")
     }
 
-    def typerState: TyperState = ???
+    def typerState: TyperState = throw new Exception("special case in TreePickler: def typerState in scala.tasty.internal.dotc.core.Context should be implemented!")
 
     /**
      * Log msg if settings.log contains the current phase.
