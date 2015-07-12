@@ -22,31 +22,15 @@ import SymDenotations._
 import util.DotClass
 
 object Symbols {
-
-  /** A Symbol represents a Scala definition/declaration or a package.
-   */
   class Symbol private[Symbols] (val coord: Coord) extends DotClass {
-
     type ThisName <: Name
 
-    /** The current denotation of this symbol */
     final def denot: SymDenotation = ???
-
     final def asType: TypeSymbol = ??? //{ assert(isType, s"isType called on not-a-Type $this"); asInstanceOf[TypeSymbol] }
-
-    /** The current name of this symbol */
     final def name: ThisName = ???
-
-    /** The position of this symbol, or NoPosition is symbol was not loaded
-     *  from source.
-     */
     def pos: Position = if (coord.isPosition) coord.toPosition else NoPosition
 
-// -------- Printing --------------------------------------------------------
-
-    /** The prefix string to be used when displaying this symbol without denotation */
     protected def prefixString = "Symbol"
-
     override def toString: String = ???
   }
 
@@ -65,10 +49,7 @@ object Symbols {
   }
 
   object NoSymbol extends Symbol(NoCoord)
-
-  /** Makes all denotation operations available on symbols */
+  
   implicit def toDenot(sym: Symbol): SymDenotation = sym.denot
-
-  /** Makes all class denotations available on class symbols */
   implicit def toClassDenot(cls: ClassSymbol): ClassDenotation = cls.classDenot
 }

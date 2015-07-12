@@ -688,8 +688,8 @@ object StdNames {
 
     @switch def syntheticTypeParamName(i: Int): TypeName = "T" + i
 
-//    def lambdaTraitName(vcs: List[Int]): TypeName = LambdaPrefix ++ vcs.map(varianceSuffix).mkString //scala.List(1,2,3).map{x: Int => 'f'}.mkString//
-//    def test(vcs: List[Int]): TypeName = scala.List(1,2,3).map{x: Int => 'f'}.mkString
+    //Problem arises (ClassBType.info not yet assigned) if uncomment this def (only if name of the def starts with lambdaTraitName)
+    //def lambdaTraitName(vcs: List[Int]): TypeName = LambdaPrefix ++ vcs.map(varianceSuffix).mkString
 
     def varianceSuffix(v: Int): Char = varianceSuffixes.charAt(v + 1)
 
