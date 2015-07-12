@@ -93,7 +93,7 @@ object Denotations {
   abstract class Denotation(val symbol: Symbol) extends util.DotClass {
 
     /** The type info of the denotation, exists only for non-overloaded denotations */
-    def info(implicit ctx: Context): Type
+    def info: Type
 
     /** Is this a reference to a type symbol? */
     def isType: Boolean
@@ -102,7 +102,7 @@ object Denotations {
     def isTerm: Boolean = !isType
 
     /** The signature of the denotation. */
-    def signature(implicit ctx: Context): Signature
+    def signature: Signature
 
     /** Is this denotation different from NoDenotation or an ErrorDenotation? */
     def exists: Boolean = true
@@ -113,7 +113,7 @@ object Denotations {
 
   /** A non-overloaded denotation */
   abstract class SingleDenotation(symbol: Symbol) extends Denotation(symbol) with PreDenotation {
-    final def signature(implicit ctx: Context): Signature = {
+    final def signature: Signature = {
       if (isType) Signature.NotAMethod // don't force info if this is a type SymDenotation
       else info match {
         case info: MethodicType =>
@@ -130,10 +130,10 @@ object Denotations {
     // ------ Forming types -------------------------------------------
 
     /** The TypeRef representing this type denotation at its original location. */
-    def typeRef(implicit ctx: Context): TypeRef = ???
+    def typeRef: TypeRef = ???
 
     /** The TermRef representing this term denotation at its original location. */
-    def termRef(implicit ctx: Context): TermRef = ???
+    def termRef: TermRef = ???
   }
 
   // --------------- PreDenotations -------------------------------------------------

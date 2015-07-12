@@ -17,16 +17,16 @@ import collection.mutable
 class TypeApplications(val self: Type) extends AnyVal {
 
   /** Is type `tp` a Lambda with all Arg$ fields fully instantiated? */
-  def isInstantiatedLambda(implicit ctx: Context): Boolean = ???
+  def isInstantiatedLambda: Boolean = ???
 
   /** If this is an encoding of a (partially) applied type, return its arguments,
    *  otherwise return Nil.
    *  Existential types in arguments are returned as TypeBounds instances.
    *  @param interpolate   See argInfo
    */
-  final def argInfos(interpolate: Boolean)(implicit ctx: Context): List[Type] = ???
+  final def argInfos(interpolate: Boolean): List[Type] = ???
 
-  final def argInfos(implicit ctx: Context): List[Type] = argInfos(interpolate = true)
+  final def argInfos: List[Type] = argInfos(interpolate = true)
 
   /** The core type without any type arguments.
    *  @param `typeArgs` must be the type arguments of this type.

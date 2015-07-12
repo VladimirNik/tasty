@@ -132,7 +132,7 @@ object Decorators {
    */
   implicit class StringInterpolators(val sc: StringContext) extends AnyVal {
 
-    def i(args: Any*)(implicit ctx: Context): String = {
+    def i(args: Any*): String = {
 
       def treatArg(arg: Any, suffix: String): (Any, String) = arg match {
         case arg: Seq[_] if suffix.nonEmpty && suffix.head == '%' =>

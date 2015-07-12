@@ -64,7 +64,7 @@ object Trees {
     def tpe: T @uncheckedVariance = ???
 
     /** Shorthand for `denot.symbol`. */
-    final def symbol(implicit ctx: Context): Symbol = ???
+    final def symbol: Symbol = ???
 
     /** Is this tree either the empty tree or the empty ValDef? */
     def isEmpty: Boolean = false
@@ -138,7 +138,7 @@ object Trees {
   /** A ValDef or DefDef tree */
   trait ValOrDefDef[-T >: Untyped] extends MemberDef[T] with WithLazyField[Tree[T]] {
     def tpt: Tree[T]
-    def rhs(implicit ctx: Context): Tree[T] = ???
+    def rhs: Tree[T] = ???
   }
 
   // ----------- Tree case classes ------------------------------------
@@ -368,7 +368,7 @@ object Trees {
   /** extends parents { self => body } */
   case class Template[-T >: Untyped] private[ast] (constr: DefDef[T], parents: List[Tree[T]], self: ValDef[T], private var preBody: LazyTreeList) extends DefTree[T] with WithLazyField[List[Tree[T]]] {
     type ThisTree[-T >: Untyped] = Template[T]
-    def body(implicit ctx: Context): List[Tree[T]] = ???
+    def body: List[Tree[T]] = ???
   }
 
   /** import expr.selectors

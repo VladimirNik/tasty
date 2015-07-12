@@ -52,7 +52,7 @@ object Constants {
     def isNonUnitAnyVal       = BooleanTag <= tag && tag <= DoubleTag
     def isAnyVal              = UnitTag <= tag && tag <= DoubleTag
 
-    def tpe(implicit ctx: Context): Type = ???
+    def tpe: Type = ???
 
     /** We need the equals method to take account of tags as well as values.
      */

@@ -25,7 +25,7 @@ trait L { this: Context =>
     name: Name,
     initFlags: FlagSet,
     initInfo: Type,
-    initPrivateWithin: Symbol = NoSymbol)(implicit ctx: Context): SymDenotation = ???
+    initPrivateWithin: Symbol = NoSymbol): SymDenotation = ???
 }
 
 object SymDenotations {
@@ -48,10 +48,10 @@ object SymDenotations {
     def owner: Symbol = ??? //ownerIfExists
 
     /** The flag set */
-    final def flags(implicit ctx: Context): FlagSet = ???
+    final def flags: FlagSet = ???
 
     /** Has this denotation one of the flags in `fs` set? */
-    final def is(fs: FlagSet)(implicit ctx: Context) = {
+    final def is(fs: FlagSet) = {
       (if (fs <= FromStartFlags) myFlags else flags) is fs
     }
 
@@ -59,14 +59,14 @@ object SymDenotations {
      *  The info is an instance of TypeType iff this is a type denotation
      *  Uncompleted denotations set myInfo to a LazyType.
      */
-    final def info(implicit ctx: Context): Type = ???
+    final def info: Type = ???
 
     /** The privateWithin boundary, NoSymbol if no boundary is given.
      */
-    final def privateWithin(implicit ctx: Context): Symbol = ???
+    final def privateWithin: Symbol = ???
 
     /** The annotations of this denotation */
-    final def annotations(implicit ctx: Context): List[Annotation] = ???
+    final def annotations: List[Annotation] = ???
 
     // ----- Tests -------------------------------------------------
 
@@ -81,22 +81,22 @@ object SymDenotations {
       (name.toTermName == nme.ROOT || name == nme.ROOTPKG) && (owner eq NoSymbol)
 
     /** Is this symbol the empty package class or its companion object? */
-    final def isEmptyPackage(implicit ctx: Context): Boolean =
+    final def isEmptyPackage: Boolean =
       name.toTermName == nme.EMPTY_PACKAGE && owner.isRoot
 
     /** Is this symbol the empty package class or its companion object? */
       //*
-    final def isEffectiveRoot(implicit ctx: Context) = isRoot || isEmptyPackage
+    final def isEffectiveRoot = isRoot || isEmptyPackage
 
     /** Is this a setter? */
-    final def isSetter(implicit ctx: Context): Boolean = ???
+    final def isSetter: Boolean = ???
 
     /** Is this the constructor of a trait or a class */
     final def isConstructor = name.isConstructorName
 
-    override def typeRef(implicit ctx: Context): TypeRef = ???
+    override def typeRef: TypeRef = ???
 
-    override def termRef(implicit ctx: Context): TermRef = ???
+    override def termRef: TermRef = ???
 
     override def toString = {
       val kindString =

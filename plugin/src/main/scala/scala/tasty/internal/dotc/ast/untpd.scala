@@ -29,7 +29,7 @@ object untpd extends Trees.Instance[Untyped] {
 //  case class ModuleDef(name: TermName, impl: Template)
 //    extends MemberDef {
 //    type ThisTree[-T >: Untyped] <: Trees.NameTree[T] with Trees.MemberDef[T] with ModuleDef
-//    def withName(name: Name)(implicit ctx: Context) = ???
+//    def withName(name: Name) = ???
 //  }
 
 //  case class ParsedTry(expr: Tree, handler: Tree, finalizer: Tree) extends TermTree
@@ -112,7 +112,7 @@ object untpd extends Trees.Instance[Untyped] {
 //   *  ==>
 //   *      (new pre.C).<init>[Ts](args1)...(args_n)
 //   */
-//  def New(tpt: Tree, argss: List[List[Tree]])(implicit ctx: Context): Tree = ???
+//  def New(tpt: Tree, argss: List[List[Tree]]): Tree = ???
 //
 //  def Block(stat: Tree, expr: Tree): Block =
 //    Block(stat :: Nil, expr)
@@ -135,25 +135,25 @@ object untpd extends Trees.Instance[Untyped] {
 //
 //  def unitLiteral = Literal(Constant(()))
 //
-//  def makeConstructor(tparams: List[TypeDef], vparamss: List[List[ValDef]], rhs: Tree = EmptyTree)(implicit ctx: Context): DefDef =
+//  def makeConstructor(tparams: List[TypeDef], vparamss: List[List[ValDef]], rhs: Tree = EmptyTree): DefDef =
 //    DefDef(nme.CONSTRUCTOR, tparams, vparamss, TypeTree(), rhs)
 //
-//  def emptyConstructor(implicit ctx: Context): DefDef =
+//  def emptyConstructor: DefDef =
 //    makeConstructor(Nil, Nil)
 //
-//  def makeSelfDef(name: TermName, tpt: Tree)(implicit ctx: Context) = ???
+//  def makeSelfDef(name: TermName, tpt: Tree) = ???
 //
-//  def makeTupleOrParens(ts: List[Tree])(implicit ctx: Context) = ts match {
+//  def makeTupleOrParens(ts: List[Tree]) = ts match {
 //    case t :: Nil => Parens(t)
 //    case _ => Tuple(ts)
 //  }
 //
-//  def makeTuple(ts: List[Tree])(implicit ctx: Context) = ts match {
+//  def makeTuple(ts: List[Tree]) = ts match {
 //    case t :: Nil => t
 //    case _ => Tuple(ts)
 //  }
 //
-//  def makeParameter(pname: TermName, tpe: Tree, mods: Modifiers = EmptyModifiers)(implicit ctx: Context): ValDef = ???
+//  def makeParameter(pname: TermName, tpe: Tree, mods: Modifiers = EmptyModifiers): ValDef = ???
 //
-//  def makeSyntheticParameter(n: Int = 1, tpt: Tree = TypeTree())(implicit ctx: Context): ValDef = ???
+//  def makeSyntheticParameter(n: Int = 1, tpt: Tree = TypeTree()): ValDef = ???
 }

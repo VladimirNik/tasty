@@ -73,7 +73,7 @@ object Types {
 // ----- Associated symbols ----------------------------------------------
 
     /** The type symbol associated with the type */
-    final def typeSymbol(implicit ctx: Context): Symbol = this match {
+    final def typeSymbol: Symbol = this match {
       case tp: TypeRef => tp.symbol
       case tp: ClassInfo => tp.cls
 //    case ThisType(cls) => cls // needed?
@@ -85,20 +85,20 @@ object Types {
     /** Map a TypeVar to either its instance if it is instantiated, or its origin,
      *  if not, until the result is no longer a TypeVar. Identity on all other types.
      */
-    def stripTypeVar(implicit ctx: Context): Type = this
+    def stripTypeVar: Type = this
 
     /** Is this either not a method at all, or a parameterless method? */
-    final def isParameterless(implicit ctx: Context): Boolean = this match {
+    final def isParameterless: Boolean = this match {
       case mt: MethodType => false
       case pt: PolyType => pt.resultType.isParameterless
       case _ => true
     }
 
     /** The resultType of a PolyType, MethodType, or ExprType, the type itself for others */
-    def resultType(implicit ctx: Context): Type = this
+    def resultType: Type = this
 
     /** This type seen as a TypeBounds */
-    final def bounds(implicit ctx: Context): TypeBounds = this match {
+    final def bounds: TypeBounds = this match {
       case tp: TypeBounds => tp
       case ci: ClassInfo => TypeAlias(ci.typeRef)
       case wc: WildcardType =>
@@ -117,7 +117,7 @@ object Types {
      *   pattern is that method signatures use caching, so encapsulation
      *   is improved using an OO scheme).
      */
-    def signature(implicit ctx: Context): Signature = Signature.NotAMethod
+    def signature: Signature = Signature.NotAMethod
   } // end Type
 
 // ----- Type categories ----------------------------------------------
@@ -130,7 +130,7 @@ object Types {
    */
   abstract class TypeProxy extends Type {
     /** The type to which this proxy forwards operations. */
-    def underlying(implicit ctx: Context): Type
+    def underlying: Type
   }
 
   // Every type has to inherit one of the following four abstract type classes.,
@@ -166,7 +166,7 @@ object Types {
    *  single non-null value (they might contain null in addition).
    */
   trait SingletonType extends TypeProxy with ValueType {
-    def isOverloaded(implicit ctx: Context) = false
+    def isOverloaded = false
   }
 
   /** A marker trait for types that bind other types that refer to them.
@@ -191,9 +191,9 @@ object Types {
 
     protected def sig: Signature = Signature.NotAMethod
 
-    def symbol(implicit ctx: Context): Symbol = ???
+    def symbol: Symbol = ???
 
-    def info(implicit ctx: Context): Type = ??? //denot.info
+    def info: Type = ??? //denot.info
 
     def isType = isInstanceOf[TypeRef]
     def isTerm = isInstanceOf[TermRef]
@@ -212,18 +212,18 @@ object Types {
   abstract case class TermRef(override val prefix: Type, name: TermName) extends NamedType with SingletonType {
     type ThisType = TermRef
 
-    override def underlying(implicit ctx: Context): Type = ???
+    override def underlying: Type = ???
   }
 
   abstract case class TypeRef(override val prefix: Type, name: TypeName) extends NamedType {
     type ThisType = TypeRef
 
-    override def underlying(implicit ctx: Context): Type = ???
+    override def underlying: Type = ???
   }
 
   final class TermRefWithSignature(prefix: Type, name: TermName, override val sig: Signature) extends TermRef(prefix, name) {
     assert(prefix ne NoPrefix)
-    override def signature(implicit ctx: Context) = sig
+    override def signature = sig
 
     override def equals(that: Any) = that match {
       case that: TermRefWithSignature =>
@@ -244,7 +244,7 @@ object Types {
      *  from the symbol if it is completed, or creating a term ref without
      *  signature, if symbol is not yet completed.
      */
-    def apply(prefix: Type, sym: TermSymbol)(implicit ctx: Context): TermRef = ???
+    def apply(prefix: Type, sym: TermSymbol): TermRef = ???
   }
 
   /** The type cls.this
@@ -253,8 +253,8 @@ object Types {
    *  do not survive runs whereas typerefs do.
    */
   abstract case class ThisType(tref: TypeRef) extends CachedProxyType with SingletonType {
-    def cls(implicit ctx: Context): ClassSymbol = ???//tref.stableInRunSymbol.asClass
-    override def underlying(implicit ctx: Context): Type = ???
+    def cls: ClassSymbol = ???//tref.stableInRunSymbol.asClass
+    override def underlying: Type = ???
   }
 
   /** The type of a super reference cls.super where
@@ -262,17 +262,17 @@ object Types {
    *  by `super`.
    */
   abstract case class SuperType(thistpe: Type, supertpe: Type) extends CachedProxyType with SingletonType {
-    override def underlying(implicit ctx: Context) = supertpe
+    override def underlying = supertpe
   }
 
   /** A constant type with  single `value`. */
   abstract case class ConstantType(value: Constant) extends CachedProxyType with SingletonType {
-    override def underlying(implicit ctx: Context) = value.tpe
+    override def underlying = value.tpe
   }
 
   case class LazyRef(refFn: () => Type) extends UncachedProxyType with ValueType {
     lazy val ref = refFn()
-    override def underlying(implicit ctx: Context) = ref
+    override def underlying = ref
     override def toString = s"LazyRef($ref)"
     override def equals(other: Any) = other match {
       case other: LazyRef => this.ref.equals(other.ref)
@@ -293,7 +293,7 @@ object Types {
 
     val refinedInfo: Type
 
-    override def underlying(implicit ctx: Context) = parent
+    override def underlying = parent
 
     override def equals(that: Any) = that match {
       case that: RefinedType =>
@@ -322,7 +322,7 @@ object Types {
 
 //  /** A trait that mixes in functionality for signature caching */
   trait MethodicType extends Type {
-    final override def signature(implicit ctx: Context): Signature = ???
+    final override def signature: Signature = ???
   }
 
   trait MethodOrPoly extends MethodicType
@@ -335,7 +335,7 @@ object Types {
     private[core] val resType = resultTypeExp(this)
     assert(resType.exists)
 
-    override def resultType(implicit ctx: Context): Type = ???
+    override def resultType: Type = ???
 
     override def equals(that: Any) = that match {
       case that: MethodType =>
@@ -353,8 +353,8 @@ object Types {
   /** A by-name parameter type of the form `=> T`, or the type of a method with no parameter list. */
   abstract case class ExprType(resType: Type)
   extends CachedProxyType with TermType with MethodicType {
-    override def resultType(implicit ctx: Context): Type = resType
-    override def underlying(implicit ctx: Context): Type = resType
+    override def resultType: Type = resType
+    override def underlying: Type = resType
   }
 
   case class PolyType(paramNames: List[TypeName])(paramBoundsExp: PolyType => List[TypeBounds], resultTypeExp: PolyType => Type)
@@ -363,7 +363,7 @@ object Types {
     val paramBounds = paramBoundsExp(this)
     val resType = resultTypeExp(this)
 
-    override def resultType(implicit ctx: Context) = resType
+    override def resultType = resType
 
     // need to override hashCode and equals to be object identity
     // because paramNames by itself is not discriminatory enough
@@ -390,7 +390,7 @@ object Types {
 
   abstract case class MethodParam(binder: MethodType, paramNum: Int) extends ParamType with SingletonType {
     type BT = MethodType
-    override def underlying(implicit ctx: Context): Type = binder.paramTypes(paramNum)
+    override def underlying: Type = binder.paramTypes(paramNum)
 //    def copyBoundType(bt: BT) = new MethodParamImpl(bt, paramNum)
 
     // need to customize hashCode and equals to prevent infinite recursion for dep meth types.
@@ -409,7 +409,7 @@ object Types {
     type BT = PolyType
 //    def copyBoundType(bt: BT) = PolyParam(bt, paramNum)
 
-    override def underlying(implicit ctx: Context): Type = binder.paramBounds(paramNum)
+    override def underlying: Type = binder.paramBounds(paramNum)
     // no customized hashCode/equals needed because cycle is broken in PolyType
     override def toString = s"PolyParam(${binder.paramNames(paramNum)})"
 
@@ -424,7 +424,7 @@ object Types {
   /** a this-reference to an enclosing refined type `binder`. */
   case class RefinedThis(binder: RefinedType) extends BoundType with SingletonType {
     type BT = RefinedType
-    override def underlying(implicit ctx: Context) = binder
+    override def underlying = binder
 //    def copyBoundType(bt: BT) = RefinedThis(bt)
 
     // need to customize hashCode and equals to prevent infinite recursion for
@@ -440,7 +440,7 @@ object Types {
 
   /** A skolem type reference with underlying type `binder`. */
   abstract case class SkolemType(info: Type) extends CachedProxyType with ValueType with SingletonType {
-    override def underlying(implicit ctx: Context) = info
+    override def underlying = info
     override def equals(that: Any) = this eq that.asInstanceOf[AnyRef]
     override def toString = s"Skolem($info)"
   }
@@ -471,10 +471,10 @@ object Types {
     /** Unwrap to instance (if instantiated) or origin (if not), until result
      *  is no longer a TypeVar
      */
-    override def stripTypeVar(implicit ctx: Context): Type = ???
+    override def stripTypeVar: Type = ???
 
     /** If the variable is instantiated, its instance, otherwise its origin */
-    override def underlying(implicit ctx: Context): Type = ???
+    override def underlying: Type = ???
 
     override def equals(that: Any) = this eq that.asInstanceOf[AnyRef]
 
@@ -501,7 +501,7 @@ object Types {
       decls: Iterable[Symbol]/*Scope*/,
       selfInfo: DotClass /* should be: Type | Symbol */) extends CachedGroundType with TypeType {
 
-    def typeRef(implicit ctx: Context): Type = ???
+    def typeRef: Type = ???
 
     override def toString = s"ClassInfo($prefix, $cls)"
   }
@@ -514,7 +514,7 @@ object Types {
 
     def variance: Int = 0
 
-    override def underlying(implicit ctx: Context): Type = hi
+    override def underlying: Type = hi
 
     override def equals(that: Any): Boolean = that match {
       case that: TypeBounds =>
@@ -530,11 +530,11 @@ object Types {
   abstract class TypeAlias(val alias: Type, override val variance: Int) extends TypeBounds(alias, alias)
   
   object TypeBounds {
-    def empty(implicit ctx: Context) = ???
+    def empty = ???
   }
 
   object TypeAlias {
-    def apply(alias: Type, variance: Int = 0)(implicit ctx: Context) = ???
+    def apply(alias: Type, variance: Int = 0) = ???
   }
 
   // ----- Annotated and Import types -----------------------------------------------
@@ -543,9 +543,9 @@ object Types {
   case class AnnotatedType(annot: Annotation, tpe: Type)
       extends UncachedProxyType with ValueType {
     // todo: cache them? but this makes only sense if annotations and trees are also cached.
-    override def underlying(implicit ctx: Context): Type = tpe
+    override def underlying: Type = tpe
 
-    override def stripTypeVar(implicit ctx: Context): Type = ???
+    override def stripTypeVar: Type = ???
   }
 
   // Special type objects and classes -----------------------------------------------------

@@ -30,12 +30,12 @@ object Symbols {
     type ThisName <: Name
 
     /** The current denotation of this symbol */
-    final def denot(implicit ctx: Context): SymDenotation = ???
+    final def denot: SymDenotation = ???
 
-    final def asType(implicit ctx: Context): TypeSymbol = ??? //{ assert(isType, s"isType called on not-a-Type $this"); asInstanceOf[TypeSymbol] }
+    final def asType: TypeSymbol = ??? //{ assert(isType, s"isType called on not-a-Type $this"); asInstanceOf[TypeSymbol] }
 
     /** The current name of this symbol */
-    final def name(implicit ctx: Context): ThisName = ???
+    final def name: ThisName = ???
 
     /** The position of this symbol, or NoPosition is symbol was not loaded
      *  from source.
@@ -58,7 +58,7 @@ object Symbols {
 
     type ThisName = TypeName
 
-    final def classDenot(implicit ctx: Context): ClassDenotation =
+    final def classDenot: ClassDenotation =
       denot.asInstanceOf[ClassDenotation]
 
     override protected def prefixString = "ClassSymbol"
@@ -67,8 +67,8 @@ object Symbols {
   object NoSymbol extends Symbol(NoCoord)
 
   /** Makes all denotation operations available on symbols */
-  implicit def toDenot(sym: Symbol)(implicit ctx: Context): SymDenotation = sym.denot
+  implicit def toDenot(sym: Symbol): SymDenotation = sym.denot
 
   /** Makes all class denotations available on class symbols */
-  implicit def toClassDenot(cls: ClassSymbol)(implicit ctx: Context): ClassDenotation = cls.classDenot
+  implicit def toClassDenot(cls: ClassSymbol): ClassDenotation = cls.classDenot
 }

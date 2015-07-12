@@ -7,8 +7,8 @@ import StdNames._
 object Annotations {
 
   abstract class Annotation {
-    def tree(implicit ctx: Context): Tree
-    def symbol(implicit ctx: Context): Symbol =
+    def tree: Tree
+    def symbol: Symbol =
       if (tree.symbol.isConstructor) tree.symbol.owner
       else tree.tpe.typeSymbol
   }
