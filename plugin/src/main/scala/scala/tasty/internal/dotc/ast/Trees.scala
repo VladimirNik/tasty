@@ -22,20 +22,40 @@ object Trees {
     annotations: List[Tree[T]] = Nil) extends Positioned with Cloneable {
   }
 
-  type LazyTree = AnyRef     /* really: Tree | Lazy[Tree] */
-  type LazyTreeList = AnyRef /* really: List[Tree] | Lazy[List[Tree]] */
-
   abstract class Tree[-T >: Untyped] extends Positioned with Product with Cloneable {
     type ThisTree[T >: Untyped] <: Tree[T]
 
-    def tpe: T @uncheckedVariance = ???
+    private[this] var myTpe: T = _
 
-    final def symbol: Symbol = ???
+    def tpe: T @uncheckedVariance = {
+      if (myTpe == null)
+        throw new UnAssignedTypeException(this)
+      myTpe
+    }
+
+    def withType(tpe: T): ThisTree[Type] = {
+      myTpe = tpe
+      this.asInstanceOf[ThisTree[Type]]
+    }
+
+    private[this] var mySym: Symbol = NoSymbol
+
+    final def symbol: Symbol = mySym
+
+    //TODO - maybe it's better to reuse denot.symbol
+    def withSymbol(sym: Symbol): ThisTree[Type] = {
+      mySym = sym
+      this.asInstanceOf[ThisTree[Type]]
+    }
 
     def isEmpty: Boolean = false
 
     override def hashCode(): Int = System.identityHashCode(this)
     override def equals(that: Any) = this eq that.asInstanceOf[AnyRef]
+  }
+
+  class UnAssignedTypeException[T >: Untyped](tree: Tree[T]) extends RuntimeException {
+    override def getMessage: String = s"type of $tree is not assigned"
   }
 
   trait TypTree[-T >: Untyped] extends Tree[T] {
@@ -74,12 +94,13 @@ object Trees {
   
   abstract class MemberDef[-T >: Untyped] extends NameTree[T] with DefTree[T] {
     type ThisTree[-T >: Untyped] <: MemberDef[T]
-      protected def setMods(mods: Modifiers[T @uncheckedVariance]) = ???
+    private[this] var myMods: Modifiers[T] = null
+    protected def setMods(mods: Modifiers[T @uncheckedVariance]) = myMods = mods
   }
 
   trait ValOrDefDef[-T >: Untyped] extends MemberDef[T] with WithLazyField[Tree[T]] {
     def tpt: Tree[T]
-    def rhs: Tree[T] = ???
+    def rhs: Tree[T]
   }
 
   case class Ident[-T >: Untyped] private[ast] (name: Name) extends RefTree[T] {
@@ -211,12 +232,12 @@ object Trees {
     type ThisTree[-T >: Untyped] = UnApply[T]
   }
 
-  case class ValDef[-T >: Untyped] private[ast] (name: TermName, tpt: Tree[T], private var preRhs: LazyTree) extends ValOrDefDef[T] {
+  case class ValDef[-T >: Untyped] private[ast] (name: TermName, tpt: Tree[T], val rhs: Tree[T]) extends ValOrDefDef[T] {
     type ThisTree[-T >: Untyped] = ValDef[T]
   }
 
   case class DefDef[-T >: Untyped] private[ast] (name: TermName, tparams: List[TypeDef[T]],
-      vparamss: List[List[ValDef[T]]], tpt: Tree[T], private var preRhs: LazyTree) extends ValOrDefDef[T] {
+      vparamss: List[List[ValDef[T]]], tpt: Tree[T], val rhs: Tree[T]) extends ValOrDefDef[T] {
     type ThisTree[-T >: Untyped] = DefDef[T]
   }
 
@@ -230,9 +251,8 @@ object Trees {
     def isClassDef = rhs.isInstanceOf[Template[_]]
   }
 
-  case class Template[-T >: Untyped] private[ast] (constr: DefDef[T], parents: List[Tree[T]], self: ValDef[T], private var preBody: LazyTreeList) extends DefTree[T] with WithLazyField[List[Tree[T]]] {
+  case class Template[-T >: Untyped] private[ast] (constr: DefDef[T], parents: List[Tree[T]], self: ValDef[T], body: List[Tree[T]]) extends DefTree[T] with WithLazyField[List[Tree[T]]] {
     type ThisTree[-T >: Untyped] = Template[T]
-    def body: List[Tree[T]] = ???
   }
 
   case class Import[-T >: Untyped] private[ast] (expr: Tree[T], selectors: List[Tree[Untyped]]) extends DenotingTree[T] {
