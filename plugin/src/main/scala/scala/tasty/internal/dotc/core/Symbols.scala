@@ -25,13 +25,15 @@ object Symbols {
   class Symbol private[Symbols] (val coord: Coord) extends DotClass {
     type ThisName <: Name
 
-    final def denot: SymDenotation = ???
-    final def asType: TypeSymbol = ??? //{ assert(isType, s"isType called on not-a-Type $this"); asInstanceOf[TypeSymbol] }
-    final def name: ThisName = ???
+    private[this] var myDenot: SymDenotation = _
+    private[core] def denot_=(d: SymDenotation) = myDenot = d
+    final def denot: SymDenotation = myDenot
+    final def asType: TypeSymbol = { assert(denot.isType, s"isType called on not-a-Type $this"); asInstanceOf[TypeSymbol] }
+    final def name: ThisName = denot.name.asInstanceOf[ThisName]
     def pos: Position = if (coord.isPosition) coord.toPosition else NoPosition
 
     protected def prefixString = "Symbol"
-    override def toString: String = ???
+    override def toString: String = myDenot.toString()
   }
 
   type TermSymbol = Symbol { type ThisName = TermName }
