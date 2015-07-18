@@ -197,6 +197,11 @@ trait TTrees {
         type ThisTree[-T >: Untyped] = SeqLiteral[T]
       }
 
+      class JavaSeqLiteral[T >: Untyped] private[ast] (elems: List[Tree[T]])
+        extends SeqLiteral(elems) {
+        override def toString = s"JavaSeqLiteral($elems)"
+      }
+
       case class TypeTree[-T >: Untyped] private[ast] (original: Tree[T]) extends DenotingTree[T] with TypTree[T] {
         type ThisTree[-T >: Untyped] = TypeTree[T]
         //TODO - fix
@@ -204,25 +209,25 @@ trait TTrees {
         override def toString = s"TypeTree${ /*if (hasType) s"[$typeOpt]" else */ s"($original)"}"
       }
 
-      //  /** ref.type */
-      //  case class SingletonTypeTree[-T >: Untyped] private[ast] (ref: Tree[T]) extends DenotingTree[T] with TypTree[T] {
-      //    type ThisTree[-T >: Untyped] = SingletonTypeTree[T]
-      //  }
-      //
-      //  /** tpt[args] */
-      //  case class AppliedTypeTree[-T >: Untyped] private[ast] (tpt: Tree[T], args: List[Tree[T]]) extends ProxyTree[T] with TypTree[T] {
-      //    type ThisTree[-T >: Untyped] = AppliedTypeTree[T]
-      //  }
-      //
-      //  /** => T */
-      //  case class ByNameTypeTree[-T >: Untyped] private[ast] (result: Tree[T]) extends TypTree[T] {
-      //    type ThisTree[-T >: Untyped] = ByNameTypeTree[T]
-      //  }
-      //
-      //  /** >: lo <: hi */
-      //  case class TypeBoundsTree[-T >: Untyped] private[ast] (lo: Tree[T], hi: Tree[T]) extends TypTree[T] {
-      //    type ThisTree[-T >: Untyped] = TypeBoundsTree[T]
-      //  }
+      /** ref.type */
+      case class SingletonTypeTree[-T >: Untyped] private[ast] (ref: Tree[T]) extends DenotingTree[T] with TypTree[T] {
+        type ThisTree[-T >: Untyped] = SingletonTypeTree[T]
+      }
+
+      /** tpt[args] */
+      case class AppliedTypeTree[-T >: Untyped] private[ast] (tpt: Tree[T], args: List[Tree[T]]) extends ProxyTree[T] with TypTree[T] {
+        type ThisTree[-T >: Untyped] = AppliedTypeTree[T]
+      }
+
+      /** => T */
+      case class ByNameTypeTree[-T >: Untyped] private[ast] (result: Tree[T]) extends TypTree[T] {
+        type ThisTree[-T >: Untyped] = ByNameTypeTree[T]
+      }
+
+      /** >: lo <: hi */
+      case class TypeBoundsTree[-T >: Untyped] private[ast] (lo: Tree[T], hi: Tree[T]) extends TypTree[T] {
+        type ThisTree[-T >: Untyped] = TypeBoundsTree[T]
+      }
 
       /** name @ body */
       case class Bind[-T >: Untyped] private[ast] (name: Name, body: Tree[T]) extends NameTree[T] with DefTree[T] with PatternTree[T] {
@@ -267,6 +272,11 @@ trait TTrees {
 
       case class PackageDef[-T >: Untyped] private[ast] (pid: RefTree[T], stats: List[Tree[T]]) extends ProxyTree[T] {
         type ThisTree[-T >: Untyped] = PackageDef[T]
+      }
+
+      case class Annotated[-T >: Untyped] private[ast] (annot: Tree[T], arg: Tree[T])
+        extends ProxyTree[T] {
+        type ThisTree[-T >: Untyped] = Annotated[T]
       }
 
       trait WithoutTypeOrPos[-T >: Untyped] extends Tree[T] {
@@ -326,11 +336,12 @@ trait TTrees {
         type Return = Trees.Return[T]
         type Try = Trees.Try[T]
         type SeqLiteral = Trees.SeqLiteral[T]
+        type JavaSeqLiteral = Trees.JavaSeqLiteral[T]
         type TypeTree = Trees.TypeTree[T]
-        //    type SingletonTypeTree = Trees.SingletonTypeTree[T]
-        //    type AppliedTypeTree = Trees.AppliedTypeTree[T]
-        //    type ByNameTypeTree = Trees.ByNameTypeTree[T]
-        //    type TypeBoundsTree = Trees.TypeBoundsTree[T]
+        type SingletonTypeTree = Trees.SingletonTypeTree[T]
+        type AppliedTypeTree = Trees.AppliedTypeTree[T]
+        type ByNameTypeTree = Trees.ByNameTypeTree[T]
+        type TypeBoundsTree = Trees.TypeBoundsTree[T]
         type Bind = Trees.Bind[T]
         type Alternative = Trees.Alternative[T]
         type UnApply = Trees.UnApply[T]
@@ -340,6 +351,7 @@ trait TTrees {
         type Template = Trees.Template[T]
         type Import = Trees.Import[T]
         type PackageDef = Trees.PackageDef[T]
+        type Annotated = Trees.Annotated[T]
         type Thicket = Trees.Thicket[T]
 
         val EmptyTree: Thicket = genericEmptyTree
@@ -348,6 +360,209 @@ trait TTrees {
       }
     }
     
-    object tpd extends Trees.Instance[Type]
+    object tpd extends Trees.Instance[Type] {      
+      def Modifiers(sym: Symbol): Modifiers = ast.Trees.Modifiers(
+        sym.flags & ModifierFlags,
+        if (sym.privateWithin.exists) sym.privateWithin.asType.name else tpnme.EMPTY,
+        sym.annotations map (_.tree))
+
+      def Ident(name: Name)/*(tp: NamedType)*/: Ident =
+        new Ident(name)
+
+      def Select(qualifier: Tree, name: Name): Select =
+        new Select(qualifier, name)
+
+//      def SelectFromTypeTree(qualifier: Tree, name: Name): SelectFromTypeTree =
+//        new SelectFromTypeTree(qualifier, name)
+
+      def This(qual: TypeName)/*(cls: ClassSymbol)*/: This =
+        new This(qual)
+
+      def Super(qual: Tree, mix: TypeName, inConstrCall: Boolean, mixinClass: Symbol = NoSymbol): Super =
+        new Super(qual, mix)
+
+      def Apply(fn: Tree, args: List[Tree]): Apply =
+        new Apply(fn, args)
+
+      def TypeApply(fn: Tree, args: List[Tree]): TypeApply =
+        new TypeApply(fn, args)
+
+      def Literal(const: Constant): Literal =
+        new Literal(const)
+
+      def unitLiteral: Literal =
+        Literal(Constant(()))
+
+      def New(tpt: Tree): New =
+        new New(tpt)
+
+      def New(tp: Type): New = New(TypeTree(tp))
+
+      def Pair(left: Tree, right: Tree): Pair =
+        new Pair(left, right)
+
+      def Typed(expr: Tree, tpt: Tree): Typed =
+        new Typed(expr, tpt)
+
+      def NamedArg(name: Name, arg: Tree) =
+        new NamedArg(name, arg)
+
+      def Assign(lhs: Tree, rhs: Tree): Assign =
+        new Assign(lhs, rhs)
+
+      def Block(stats: List[Tree], expr: Tree): Block =
+        new Block(stats, expr)
+
+      def If(cond: Tree, thenp: Tree, elsep: Tree): If =
+        new If(cond, thenp, elsep)
+
+      def Closure(env: List[Tree], meth: Tree, tpt: Tree): Closure =
+        new Closure(env, meth, tpt)
+
+      /**
+       * A function def
+       *
+       *    vparams => expr
+       *
+       *  gets expanded to
+       *
+       *    { def $anonfun(vparams) = expr; Closure($anonfun) }
+       *
+       *  where the closure's type is the target type of the expression (FunctionN, unless
+       *  otherwise specified).
+       */
+//      def Closure(meth: TermSymbol, rhsFn: List[List[Tree]] => Tree, targs: List[Tree] = Nil, targetType: Type = NoType): Block = {
+//        val targetTpt = if (targetType.exists) TypeTree(targetType) else EmptyTree
+//        val call =
+//          if (targs.isEmpty) Ident(TermRef(NoPrefix, meth))
+//          else TypeApply(Ident(TermRef(NoPrefix, meth)), targs)
+//        Block(
+//          DefDef(meth, rhsFn) :: Nil,
+//          Closure(Nil, call, targetTpt))
+//      }
+
+      def CaseDef(pat: Tree, guard: Tree, body: Tree): CaseDef =
+        new CaseDef(pat, guard, body)
+
+      def Match(selector: Tree, cases: List[CaseDef]): Match =
+        new Match(selector, cases)
+
+      def Return(expr: Tree, from: Tree): Return =
+        new Return(expr, from)
+
+      def Try(block: Tree, cases: List[CaseDef], finalizer: Tree): Try =
+        new Try(block, cases, finalizer)
+
+      def SeqLiteral(elems: List[Tree]): SeqLiteral =
+        new SeqLiteral(elems)
+
+//      def SeqLiteral(tpe: Type, elems: List[Tree]): SeqLiteral =
+//        if (tpe derivesFrom defn.SeqClass) SeqLiteral(elems) else JavaSeqLiteral(elems)
+
+      def JavaSeqLiteral(elems: List[Tree]): SeqLiteral =
+        new JavaSeqLiteral(elems)
+
+      def TypeTree(original: Tree): TypeTree =
+        TypeTree(original.tpe, original)
+
+      def TypeTree(tp: Type, original: Tree = EmptyTree): TypeTree =
+        new TypeTree(original).withType(tp)
+
+      def SingletonTypeTree(ref: Tree): SingletonTypeTree =
+        new SingletonTypeTree(ref)
+
+      def AppliedTypeTree(tycon: Tree, args: List[Tree]): AppliedTypeTree =
+        new AppliedTypeTree(tycon, args)
+
+      def ByNameTypeTree(result: Tree): ByNameTypeTree =
+        new ByNameTypeTree(result)
+
+      def TypeBoundsTree(lo: Tree, hi: Tree): TypeBoundsTree =
+        new TypeBoundsTree(lo, hi)
+
+      def Bind(sym: TermSymbol, body: Tree): Bind =
+        new Bind(sym.name, body)
+
+      def Alternative(trees: List[Tree]): Alternative =
+        new Alternative(trees)
+
+      def UnApply(fun: Tree, implicits: List[Tree], patterns: List[Tree], proto: Type): UnApply =
+        new UnApply(fun, implicits, patterns)
+
+      def ValDef(sym: TermSymbol, rhs: Tree = EmptyTree): ValDef =
+        new ValDef(sym.name, TypeTree(sym.info), rhs)
+      
+      def ValDef(name: TermName, tpt: TypeTree, rhs: Tree): ValDef = 
+        new ValDef(name, tpt, rhs)
+
+//      def SyntheticValDef(name: TermName, rhs: Tree): ValDef =
+//        ValDef(ctx.newSymbol(ctx.owner, name, Synthetic, rhs.tpe.widen, coord = rhs.pos), rhs)
+
+//      def DefDef(sym: TermSymbol, rhs: Tree = EmptyTree): DefDef =
+//        DefDef(sym, Function.const(rhs) _)
+
+//      def DefDef(sym: TermSymbol, rhsFn: List[List[Tree]] => Tree): DefDef =
+//        polyDefDef(sym, Function.const(rhsFn))
+      
+      def DefDef(name: TermName, tparams: List[TypeDef], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree): DefDef = new DefDef(name, tparams, vparamss, tpt, rhs)
+
+      def TypeDef(sym: TypeSymbol): TypeDef =
+        new TypeDef(sym.name, TypeTree(sym.info))
+      
+      def TypeDef(name: TypeName, tpt: TypeTree) =
+        new TypeDef(name, tpt)
+
+      def Template(constr: DefDef, parents: List[Tree], self: ValDef, body: List[Tree]): Template = new Template(constr, parents, self, body)
+
+      def ClassDef(name: TypeName, impl: Template) =
+        new TypeDef(name, impl)
+      
+      def ClassDef(cls: ClassSymbol, constr: DefDef, body: List[Tree], superArgs: List[Tree] = Nil): TypeDef = ???
+
+      /**
+       * An anonymous class
+       *
+       *      new parents { forwarders }
+       *
+       */
+//      def AnonClass(parents: List[Type], fns: List[TermSymbol], methNames: List[TermName]): Block = {
+//        val owner = fns.head.owner
+//        val parents1 =
+//          if (parents.head.classSymbol.is(Trait)) defn.ObjectClass.typeRef :: parents
+//          else parents
+//        val cls = ctx.newNormalizedClassSymbol(owner, tpnme.ANON_FUN, Synthetic, parents1,
+//          coord = fns.map(_.pos).reduceLeft(_ union _))
+//        val constr = ctx.newConstructor(cls, Synthetic, Nil, Nil).entered
+//        def forwarder(fn: TermSymbol, name: TermName) = {
+//          val fwdMeth = fn.copy(cls, name, Synthetic | Method).entered.asTerm
+//          DefDef(fwdMeth, prefss => ref(fn).appliedToArgss(prefss))
+//        }
+//        val forwarders = (fns, methNames).zipped.map(forwarder)
+//        val cdef = ClassDef(cls, DefDef(constr), forwarders)
+//        Block(cdef :: Nil, New(cls.typeRef, Nil))
+//      }
+
+      // { <label> def while$(): Unit = if (cond) { body; while$() } ; while$() }
+//      def WhileDo(owner: Symbol, cond: Tree, body: List[Tree]): Tree = {
+//        val sym = ctx.newSymbol(owner, nme.WHILE_PREFIX, Flags.Label | Flags.Synthetic,
+//          MethodType(Nil, defn.UnitType), coord = cond.pos)
+//
+//        val call = Apply(ref(sym), Nil)
+//        val rhs = If(cond, Block(body, call), unitLiteral)
+//        Block(List(DefDef(sym, rhs)), call)
+//      }
+
+      def Import(expr: Tree, selectors: List[Tree]): Import =
+        new Import(expr, selectors)
+
+      def PackageDef(pid: RefTree, stats: List[Tree]): PackageDef =
+        new PackageDef(pid, stats)
+
+      def Annotated(annot: Tree, arg: Tree): Annotated =
+        new Annotated(annot, arg)
+
+//      def Throw(expr: Tree): Tree =
+//        ref(defn.throwMethod).appliedTo(expr)
+    }
   }
 }
