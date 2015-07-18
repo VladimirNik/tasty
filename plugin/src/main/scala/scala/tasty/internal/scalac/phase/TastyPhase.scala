@@ -1,5 +1,6 @@
 package scala.tasty
-package internal.scalac
+package internal
+package scalac
 package phase
 
 import scala.tools.nsc.{ Global, Phase, SubComponent }
@@ -9,15 +10,17 @@ import scala.reflect.io.AbstractFile
 //import scala.tasty.internal.scalac.util.TastyUtils
 //import scala.tasty.internal.scalac.util.TastyGenUtils
 
-trait TastyPhase {
+trait TastyPhase extends TastyPhaseUtils {
   self =>
 
   val global: Global
  
+  val apiInstance = new API(global)
+  
 //  val picklersInstance = new {
 //    val global: self.global.type = self.global
 //  } with TreePicklers
-//
+
 //  import scala.collection.mutable.{ Map => MMap }
 //  private var picklers: MMap[global.CompilationUnit, MMap[global.ClassSymbol, picklersInstance.TastyPickler]] = MMap()
 //
@@ -57,11 +60,11 @@ trait TastyPhase {
       override def apply(unit: CompilationUnit): Unit = {
         val tree = unit.body
 
-//        if (!unit.isJava) {
-//          for {
-//            cls <- dropCompanionModuleClasses(topLevelClasses(unit.body))
-//            tree <- sliceTopLevel(unit.body, cls)
-//          } {
+        if (!unit.isJava) {
+          for {
+            cls <- dropCompanionModuleClasses(topLevelClasses(unit.body))
+            tree <- sliceTopLevel(unit.body, cls)
+          } {
 //            val pickler = new picklersInstance.TastyPickler
 //            addPickler(unit, cls, pickler)
 //            val treePkl = new picklersInstance.TreePickler(pickler)
@@ -81,8 +84,8 @@ trait TastyPhase {
 //            val pickledInfo = treePkl.logInfo
 //            generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
 //            //testSame(pickledInfo, unit)
-//          }
-//        }
+          }
+        }
       }
     }
 
