@@ -4,7 +4,7 @@ package core
 package tasty
 
 trait TastyPicklers {
-  self: API =>
+  self: PicklerAPI =>
 
 import TastyFormat._
 import collection.mutable

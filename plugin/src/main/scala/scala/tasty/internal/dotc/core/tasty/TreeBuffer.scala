@@ -4,7 +4,7 @@ package core
 package tasty
 
 trait TreeBuffers {
-  self: API =>
+  self: PicklerAPI =>
 
 import util.Util.{bestFit, dble}
 import TastyBuffer.{Addr, AddrWidth}

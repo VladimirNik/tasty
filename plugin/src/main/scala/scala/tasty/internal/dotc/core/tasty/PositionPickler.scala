@@ -4,7 +4,7 @@ package core
 package tasty
 
 trait PositionPicklers {
-  self: API =>
+  self: PicklerAPI =>
 
 import ast.tpd._
 import ast.Trees.WithLazyField

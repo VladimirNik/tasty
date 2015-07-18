@@ -4,7 +4,7 @@ package core
 package tasty
 
 trait TreePicklers {
-  self: API =>
+  self: PicklerAPI =>
 
 import ast.Trees._
 import TastyFormat._

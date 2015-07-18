@@ -15,7 +15,7 @@ trait TastyPhase extends TastyPhaseUtils {
 
   val global: Global
  
-  val apiInstance = new API(global)
+  val apiInstance = new PicklerAPI(global)
   
 //  val picklersInstance = new {
 //    val global: self.global.type = self.global

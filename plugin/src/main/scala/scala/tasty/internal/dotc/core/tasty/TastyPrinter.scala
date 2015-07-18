@@ -4,7 +4,7 @@ package core
 package tasty
 
 trait TastyPrinters {
-  self: API =>
+  self: PicklerAPI =>
 
 import Contexts._, Decorators._
 import printing.Texts._
