@@ -1,6 +1,10 @@
-package scala.tasty.internal.dotc
+package scala.tasty.internal
+package dotc
 package core
 package tasty
+
+trait TastyPrinters {
+  self: API =>
 
 import Contexts._, Decorators._
 import printing.Texts._
@@ -119,4 +123,5 @@ class TastyPrinter(bytes: Array[Byte])(implicit ctx: Context) {
       for ((addr, pos) <- sorted) println(s"${addr.index}: ${offsetToInt(pos.start)} .. ${pos.end}")
     }
   }
+}
 }

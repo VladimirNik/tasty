@@ -1,29 +1,34 @@
-package scala.tasty.internal.dotc
+package scala.tasty.internal
+package dotc
 package core
 
-import Types._
-import Symbols._
-import Decorators._
-import Names._
-import NameOps._
-import Flags._
-import StdNames._
-import util.Positions.Position
-import config.Printers._
-import collection.mutable
+trait TTypeApplications {
+  self: API =>
 
-class TypeApplications(val self: Type) extends AnyVal {
-  def isInstantiatedLambda: Boolean = ???
+  import Types._
+  import Symbols._
+  import Decorators._
+  import Names._
+  import NameOps._
+  import Flags._
+  import StdNames._
+  import util.Positions.Position
+  import config.Printers._
+  import collection.mutable
 
-  final def argInfos(interpolate: Boolean): List[Type] = ???
+  class TypeApplications(val self: Type) /*extends AnyVal*/ {
+    def isInstantiatedLambda: Boolean = ???
 
-  final def argInfos: List[Type] = argInfos(interpolate = true)
+    final def argInfos(interpolate: Boolean): List[Type] = ???
 
-  final def withoutArgs(typeArgs: List[Type]): Type = typeArgs match {
-    case _ :: typeArgs1 =>
-      val RefinedType(tycon, _) = self
-      tycon.withoutArgs(typeArgs1)
-    case nil =>
-      self
+    final def argInfos: List[Type] = argInfos(interpolate = true)
+
+    final def withoutArgs(typeArgs: List[Type]): Type = typeArgs match {
+      case _ :: typeArgs1 =>
+        val RefinedType(tycon, _) = self
+        tycon.withoutArgs(typeArgs1)
+      case nil =>
+        self
+    }
   }
 }

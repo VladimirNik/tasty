@@ -1,6 +1,10 @@
-package scala.tasty.internal.dotc
+package scala.tasty.internal
+package dotc
 package core
 package tasty
+
+trait PositionPicklers {
+  self: API =>
 
 import ast.tpd._
 import ast.Trees.WithLazyField
@@ -71,4 +75,5 @@ class PositionPickler(pickler: TastyPickler, addrOfTree: Tree => Option[Addr]) {
     buf.writeNat(totalRange.end)
     traverse(roots, totalRange, record)
   }
+}
 }

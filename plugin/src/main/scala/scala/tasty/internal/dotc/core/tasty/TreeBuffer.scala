@@ -1,6 +1,10 @@
-package scala.tasty.internal.dotc
+package scala.tasty.internal
+package dotc
 package core
 package tasty
+
+trait TreeBuffers {
+  self: API =>
 
 import util.Util.{bestFit, dble}
 import TastyBuffer.{Addr, AddrWidth}
@@ -175,4 +179,5 @@ class TreeBuffer extends TastyBuffer(50000) {
     val wasted = compress()
     pickling.println(s"original length: $origLength, compressed to: $length, wasted: $wasted") // DEBUG, for now.
   }
+}
 }

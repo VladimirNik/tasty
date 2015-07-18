@@ -1,13 +1,11 @@
-package scala.tasty.internal.dotc
+package scala.tasty.internal
+package dotc
 package core
 
 import annotation.tailrec
-import Symbols._
-import Contexts._, Names._
-import util.Positions.Position //, util.SourcePosition
+import Names._
+import util.Positions.Position
 import collection.mutable.ListBuffer
-//import dotty.tools.dotc.transform.TreeTransforms._
-//import typer.Mode
 import scala.language.implicitConversions
 import printing.Texts._
 
@@ -15,30 +13,18 @@ import printing.Texts._
 object Decorators {
 
   /** Turns Strings into PreNames, adding toType/TermName methods */
-  implicit class StringDecorator(val s: String) extends AnyVal with PreName {
+  implicit class StringDecorator(val s: String) extends /*AnyVal with*/ PreName {
     def toTypeName: TypeName = typeName(s)
     def toTermName: TermName = termName(s)
   }
 
-  /** Implements a findSymbol method on iterators of Symbols that
-   *  works like find but avoids Option, replacing None with NoSymbol.
-   */
-  implicit class SymbolIteratorDecorator(val it: Iterator[Symbol]) extends AnyVal {
-    final def findSymbol(p: Symbol => Boolean): Symbol = {
-      while (it.hasNext) {
-        val sym = it.next
-        if (p(sym)) return sym
-      }
-      NoSymbol
-    }
-  }
-
   final val MaxFilterRecursions = 1000
 
-  /** Implements filterConserve, zipWithConserve methods
+  /**
+   * Implements filterConserve, zipWithConserve methods
    *  on lists that avoid duplication of list nodes where feasible.
    */
-  implicit class ListDecorator[T](val xs: List[T]) extends AnyVal {
+  implicit class ListDecorator[T](val xs: List[T]) /*extends AnyVal*/ {
 
     @inline final def mapconserve[U](f: T => U): List[U] = {
       @tailrec
@@ -67,7 +53,8 @@ object Decorators {
       loop(null, xs.asInstanceOf[List[U]], xs)
     }
 
-    /** Like `xs filter p` but returns list `xs` itself  - instead of a copy -
+    /**
+     * Like `xs filter p` but returns list `xs` itself  - instead of a copy -
      *  if `p` is true for all elements and `xs` is not longer
      *  than `MaxFilterRecursions`.
      */
@@ -86,7 +73,8 @@ object Decorators {
       loop(xs, 0)
     }
 
-    /** Like `(xs, ys).zipped.map(f)`, but returns list `xs` itself
+    /**
+     * Like `(xs, ys).zipped.map(f)`, but returns list `xs` itself
      *  - instead of a copy - if function `f` maps all elements of
      *  `xs` to themselves. Also, it is required that `ys` is at least
      *  as long as `xs`.
@@ -97,12 +85,12 @@ object Decorators {
         val x1 = f(xs.head, ys.head)
         val xs1 = xs.tail.zipWithConserve(ys.tail)(f)
         if ((x1.asInstanceOf[AnyRef] eq xs.head.asInstanceOf[AnyRef]) &&
-            (xs1 eq xs.tail)) xs
+          (xs1 eq xs.tail)) xs
         else x1 :: xs1
       }
 
     def foldRightBN[U](z: => U)(op: (T, => U) => U): U = xs match {
-      case Nil => z
+      case Nil      => z
       case x :: xs1 => op(x, xs1.foldRightBN(z)(op))
     }
 
@@ -114,23 +102,24 @@ object Decorators {
     }
 
     /** Union on lists seen as sets */
-    def | (ys: List[T]): List[T] = xs ++ (ys filterNot (xs contains _))
+    def |(ys: List[T]): List[T] = xs ++ (ys filterNot (xs contains _))
 
     /** Intersection on lists seen as sets */
-    def & (ys: List[T]): List[T] = xs filter (ys contains _)
+    def &(ys: List[T]): List[T] = xs filter (ys contains _)
   }
 
-  implicit class ListOfListDecorator[T](val xss: List[List[T]]) extends AnyVal {
+  implicit class ListOfListDecorator[T](val xss: List[List[T]]) /*extends AnyVal*/ {
     def nestedMap[U](f: T => U): List[List[U]] = xss map (_ map f)
     def nestedMapconserve[U](f: T => U): List[List[U]] = xss mapconserve (_ mapconserve f)
   }
 
-  /** The i"..." string interpolator adds two features to the s interpolator:
+  /**
+   * The i"..." string interpolator adds two features to the s interpolator:
    *  1) On all Showables, `show` is called instead of `toString`
    *  2) Lists can be formatted using the desired separator between two `%` signs,
    *     eg `i"myList = (${myList}%, %)"`
    */
-  implicit class StringInterpolators(val sc: StringContext) extends AnyVal {
+  implicit class StringInterpolators(val sc: StringContext) /*extends AnyVal*/ {
 
     def i(args: Any*): String = {
 
@@ -144,10 +133,10 @@ object Decorators {
           (treatSingleArg(arg), suffix)
       }
 
-      def treatSingleArg(arg: Any) : Any =
+      def treatSingleArg(arg: Any): Any =
         try
           arg match {
-//            case arg: Showable => arg.show(ctx.addMode(Mode.FutureDefsOK))
+            //            case arg: Showable => arg.show(ctx.addMode(Mode.FutureDefsOK))
             case _ => arg
           }
         catch {
@@ -159,7 +148,8 @@ object Decorators {
       new StringContext(prefix :: suffixes1.toList: _*).s(args1: _*)
     }
 
-    /** Lifted from scala.reflect.internal.util
+    /**
+     * Lifted from scala.reflect.internal.util
      *  A safe combination of [[scala.collection.immutable.StringLike#stripMargin]]
      *  and [[scala.StringContext#raw]].
      *
@@ -187,7 +177,7 @@ object Decorators {
       }
       val stripped: List[String] = sc.parts.toList match {
         case head :: tail => head.stripMargin :: (tail map stripTrailingPart)
-        case Nil => Nil
+        case Nil          => Nil
       }
       new StringContext(stripped: _*).raw(args: _*)
     }

@@ -4,7 +4,7 @@ package core
 import java.security.MessageDigest
 import scala.annotation.switch
 import scala.io.Codec
-import Names._, StdNames._, Contexts._, Symbols._, Flags._
+import Names._, StdNames._, Flags._
 import Decorators.StringDecorator
 
 object NameOps {

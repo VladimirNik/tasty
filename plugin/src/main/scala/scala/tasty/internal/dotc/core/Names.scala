@@ -2,8 +2,6 @@ package scala.tasty.internal.dotc
 package core
 
 import scala.io.Codec
-import Decorators._
-import Contexts.Context
 import collection.IndexedSeqOptimized
 import collection.generic.CanBuildFrom
 import collection.mutable.{ Builder, StringBuilder }

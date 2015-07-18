@@ -1,6 +1,10 @@
-package scala.tasty.internal.dotc
+package scala.tasty.internal
+package dotc
 package core
 package tasty
+
+trait TreePicklers {
+  self: API =>
 
 import ast.Trees._
 import TastyFormat._
@@ -549,4 +553,5 @@ class TreePickler(pickler: TastyPickler) {
     compactify()
     updateMapWithDeltas(symRefs)
   }
+}
 }

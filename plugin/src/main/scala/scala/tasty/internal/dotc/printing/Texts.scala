@@ -1,6 +1,5 @@
 package scala.tasty.internal.dotc
 package printing
-import core.Contexts.Context
 import language.implicitConversions
 
 object Texts {

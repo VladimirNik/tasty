@@ -1,6 +1,10 @@
-package scala.tasty.internal.dotc
+package scala.tasty.internal
+package dotc
 package core
 package tasty
+
+trait TastyPicklers {
+  self: API =>
 
 import TastyFormat._
 import collection.mutable
@@ -66,4 +70,5 @@ class TastyPickler {
    * so one can reliably use this function only dirrectly after `pickler`
    */
   var addrOfSym: Symbol => Option[Addr] = (_ => None)
+}
 }
