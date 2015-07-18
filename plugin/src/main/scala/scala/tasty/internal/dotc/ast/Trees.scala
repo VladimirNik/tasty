@@ -483,6 +483,9 @@ trait TTrees {
       def Bind(sym: TermSymbol, body: Tree): Bind =
         new Bind(sym.name, body)
 
+      def Bind(name: TermName, body: Tree): Bind =
+        new Bind(name, body)
+
       def Alternative(trees: List[Tree]): Alternative =
         new Alternative(trees)
 
@@ -509,12 +512,12 @@ trait TTrees {
       def TypeDef(sym: TypeSymbol): TypeDef =
         new TypeDef(sym.name, TypeTree(sym.info))
       
-      def TypeDef(name: TypeName, tpt: TypeTree) =
+      def TypeDef(name: TypeName, tpt: Tree /*TypeTree*/) =
         new TypeDef(name, tpt)
 
       def Template(constr: DefDef, parents: List[Tree], self: ValDef, body: List[Tree]): Template = new Template(constr, parents, self, body)
 
-      def ClassDef(name: TypeName, impl: Template) =
+      def ClassDef(name: TypeName, impl: Tree) =
         new TypeDef(name, impl)
       
       def ClassDef(cls: ClassSymbol, constr: DefDef, body: List[Tree], superArgs: List[Tree] = Nil): TypeDef = ???

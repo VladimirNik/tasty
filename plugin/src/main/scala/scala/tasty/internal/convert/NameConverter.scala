@@ -8,6 +8,10 @@ trait NameConverter {
   self: API =>
     
   object GlobalToTName {
+
+    implicit def convertToName(name: g.Name): t.Name = 
+      if (name.isTermName) convertToTermName(name) else convertToTypeName(name)
+
     def convertToTermName(name: g.Name): t.TermName = t.termName(name.toChars, name.start, name.length)
     
     def convertToTypeName(name: g.Name): t.TypeName = t.typeName(name.toChars, name.start, name.length)
