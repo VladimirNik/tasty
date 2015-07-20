@@ -65,6 +65,7 @@ trait TastyPhase extends TastyPhaseUtils {
             cls <- dropCompanionModuleClasses(topLevelClasses(unit.body))
             tree <- sliceTopLevel(unit.body, cls)
           } {
+            apiInstance.convertTree(unit.body.asInstanceOf[apiInstance.g.Tree])
 //            val pickler = new picklersInstance.TastyPickler
 //            addPickler(unit, cls, pickler)
 //            val treePkl = new picklersInstance.TreePickler(pickler)

@@ -20,6 +20,7 @@ class API(val global: Global) extends TTrees
 
 class ConverterAPI(override val global: Global) extends API(global)
                                        with NameConverter
+                                       with TreeConverter
                               
 class PicklerAPI(override val global: Global) extends ConverterAPI(global)
                                               with PositionPicklers
