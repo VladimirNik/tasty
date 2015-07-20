@@ -11,6 +11,7 @@ trait TreeConverter {
   def convertTrees(tree: List[g.Tree]): List[t.Tree] = tree map convertTree
 
   def convertTree(tree: g.Tree): t.Tree = {
+    //println(s"tree: ${g.showRaw(tree)}")
     tree match {
       case g.Ident(name) =>
         t.Ident(name)
@@ -70,8 +71,12 @@ trait TreeConverter {
         val tFinalizer = convertTree(finalizer)
         t.Try(tBlock, tCases, tFinalizer)
       case tt @ g.TypeTree() =>
-        val orig = convertTree(tt.original)
-        t.TypeTree(orig)
+        if (tt.original != null) {
+          val orig = convertTree(tt.original)
+          t.TypeTree(orig)
+        } else {
+          t.TypeTree()
+        }
       case g.Bind(name, body) =>
         val tBody = convertTree(body)
         val tName = convertToTermName(name)
@@ -151,6 +156,7 @@ trait TreeConverter {
         t.PackageDef(tPid, tStats)
       case g.EmptyTree   => t.EmptyTree
       case g.Throw(expr) => ???
+      case tr => println(s"no implementation for: ${g.show(tr)}"); ???
     }
   }
 

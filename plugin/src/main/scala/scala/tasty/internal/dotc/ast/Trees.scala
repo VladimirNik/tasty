@@ -468,6 +468,8 @@ trait TTrees {
       def TypeTree(tp: Type, original: Tree = EmptyTree): TypeTree =
         new TypeTree(original).withType(tp)
 
+      def TypeTree() = new TypeTree(EmptyTree)  
+
       def SingletonTypeTree(ref: Tree): SingletonTypeTree =
         new SingletonTypeTree(ref)
 
