@@ -71,12 +71,13 @@ trait TreeConverter {
         val tFinalizer = convertTree(finalizer)
         t.Try(tBlock, tCases, tFinalizer)
       case tt @ g.TypeTree() =>
-        if (tt.original != null) {
-          val orig = convertTree(tt.original)
-          t.TypeTree(orig)
-        } else {
+        //TODO - do we need to persist tt.original?
+//        if (tt.original != null) {
+//          val orig = convertTree(tt.original)
+//          t.TypeTree(orig)
+//        } else {
           t.TypeTree()
-        }
+//        }
       case g.Bind(name, body) =>
         val tBody = convertTree(body)
         val tName = convertToTermName(name)
@@ -105,7 +106,7 @@ trait TreeConverter {
         //TODO tparams should be processed
         t.ClassDef(name, tImpl)
       case tree: g.ModuleDef =>
-        //TODO fix (here two tree should be returned)
+        //TODO fix (here two tree should be returned) - use Thicket
         //val modClSym = tree.symbol.moduleClass
         //def syntheticName(name: g.Name) = name.append('$')
         //val synthName = syntheticName(modClSym.name)
@@ -141,11 +142,19 @@ trait TreeConverter {
           case g.TypeTree() => tree.tpe =:= global.definitions.AnyRefTpe
           case _ => false
         }
-        val tPrimaryCtr = convertTree(primaryCtr).asInstanceOf[t.DefDef]
+        val tPrimaryCtr = convertTree(primaryCtr)
         val tParents = convertTrees(parents)
         val tSelf = convertTree(self).asInstanceOf[t.ValDef]
         val tBody = convertTrees(body)
-        t.Template(tPrimaryCtr, tParents, tSelf, tBody)
+        val resTPrimaryCtr = {
+          tPrimaryCtr match {
+            case dd: t.DefDef => dd
+            //TODO - fix to correct constructor representation
+            case t.EmptyTree => t.DefDef(dotc.core.StdNames.nme.USCOREkw, Nil, List(Nil), t.TypeTree(), t.EmptyTree)
+            case _ => throw new Exception("Not correct constructed is found!")
+          }
+        }
+        t.Template(resTPrimaryCtr, tParents, tSelf, tBody)
       case g.Import(expr, selectors) =>
         val tExpr = convertTree(expr)
         val tSelectors = convertSelectors(selectors)
