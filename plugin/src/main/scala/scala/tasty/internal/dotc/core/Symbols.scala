@@ -30,14 +30,73 @@ trait TSymbols {
       type Symbol = self.Symbols.Symbol
     }
   }
+  
+  def newNakedSymbol[N <: Name](coord: Coord = NoCoord): Symbol { type ThisName = N } =
+    new Symbol(coord).asInstanceOf[Symbol { type ThisName = N }]
+
+  def newNakedClassSymbol(coord: Coord = NoCoord, assocFile: AbstractFile = null) =
+    new ClassSymbol(coord, assocFile)
+
+  import self.global.{ Symbol => GSymbol }
+  
+  def newSymbol[N <: Name](
+    owner: Symbol,
+    name: N,
+    flags: FlagSet,
+    initGSymbol: GSymbol,
+    privateWithin: Symbol = NoSymbol,
+    coord: Coord = NoCoord): Symbol { type ThisName = N } = {
+    val sym = newNakedSymbol[N](coord)
+    val denot = SymDenotation(sym, owner, name, flags, initGSymbol, privateWithin)
+    sym.denot = denot
+    sym
+  }
+
+  def newClassSymbol(
+    owner: Symbol,
+    name: TypeName,
+    flags: FlagSet,
+    initGSymbol: GSymbol,
+    privateWithin: Symbol = NoSymbol,
+    coord: Coord = NoCoord,
+    assocFile: AbstractFile = null): ClassSymbol = {
+    val cls = newNakedClassSymbol(coord, assocFile)
+    val denot = SymDenotation(cls, owner, name, flags, initGSymbol, privateWithin)
+    cls.denot = denot
+    cls
+  }
+
+  //TODO should be implemented for Modules (see in Dotty implementation)
+  //def newModuleSymbol
+
+  //TODO see for package objects original dotty implementation
+  def newPackageSymbol(
+    owner: Symbol,
+    name: TermName,
+    flags: FlagSet = EmptyFlags,
+    initGSymbol: GSymbol): TermSymbol =
+    newSymbol(owner, name, flags | PackageCreationFlags, initGSymbol)
+
+  def newImportSymbol(owner: Symbol, initGSymbol: GSymbol, coord: Coord = NoCoord) =
+    newSymbol(owner, nme.IMPORT, EmptyFlags, initGSymbol, coord = coord)
+
+  def newConstructor(cls: ClassSymbol, flags: FlagSet, initGSymbol: GSymbol, privateWithin: Symbol = NoSymbol, coord: Coord = NoCoord) =
+    newSymbol(cls, nme.CONSTRUCTOR, flags | Method, initGSymbol, privateWithin, coord)
+
+  def newDefaultConstructor(cls: ClassSymbol) =
+    newConstructor(cls, EmptyFlags, self.global.NoSymbol)
+
+  def newSelfSym(cls: ClassSymbol, name: TermName = nme.WILDCARD, initGSymbol: GSymbol): TermSymbol =
+    newSymbol(cls, name, SelfSymFlags, initGSymbol, coord = cls.coord)
 
   object Symbols {
-    class Symbol private[Symbols] (val coord: Coord) extends DotClass {
+    class Symbol private[TSymbols] (val coord: Coord) extends DotClass {
       type ThisName <: Name
 
       private[this] var myDenot: SymDenotation = _
       private[core] def denot_=(d: SymDenotation) = myDenot = d
-      final def denot: SymDenotation = myDenot
+      //TODO - should be only final - see the problem with denot
+      /*final*/ def denot: SymDenotation = myDenot
       final def asType: TypeSymbol = { assert(denot.isType, s"isType called on not-a-Type $this"); asInstanceOf[TypeSymbol] }
       final def name: ThisName = denot.name.asInstanceOf[ThisName]
       def pos: Position = if (coord.isPosition) coord.toPosition else NoPosition
@@ -49,7 +108,7 @@ trait TSymbols {
     type TermSymbol = Symbol { type ThisName = TermName }
     type TypeSymbol = Symbol { type ThisName = TypeName }
 
-    class ClassSymbol private[Symbols] (coord: Coord, val assocFile: AbstractFile)
+    class ClassSymbol private[TSymbols] (coord: Coord, val assocFile: AbstractFile)
       extends Symbol(coord) {
 
       type ThisName = TypeName
@@ -60,7 +119,11 @@ trait TSymbols {
       override protected def prefixString = "ClassSymbol"
     }
 
-    object NoSymbol extends Symbol(NoCoord)
+    object NoSymbol extends Symbol(NoCoord) {
+      override def denot = NoDenotation
+      //TODO problem with denot = ... (NoSymbol init)
+      //denot = NoDenotation
+    }
 
     implicit def toDenot(sym: Symbol): SymDenotation = sym.denot
     implicit def toClassDenot(cls: ClassSymbol): ClassDenotation = cls.classDenot

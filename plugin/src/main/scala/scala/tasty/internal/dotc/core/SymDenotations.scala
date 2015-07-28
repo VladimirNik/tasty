@@ -15,42 +15,53 @@ trait TSymDenotations {
   import annotation.tailrec
   import config.Printers._
 
-  trait L { this: Context =>
-    import SymDenotations._
+  import SymDenotations._
+  import self.global.{ Symbol => GSymbol }
 
-    def SymDenotation(
-      symbol: Symbol,
-      owner: Symbol,
-      name: Name,
-      initFlags: FlagSet,
-      initInfo: Type,
-      initPrivateWithin: Symbol = NoSymbol): SymDenotation = ???
+  def SymDenotation(
+    symbol: Symbol,
+    owner: Symbol,
+    name: Name,
+    initFlags: FlagSet,
+    initGSymbol: GSymbol,
+    initPrivateWithin: Symbol = NoSymbol): SymDenotation = {
+    val result =
+      if (symbol.isClass)
+        if (initFlags is Package) new PackageClassDenotation(symbol, owner, name, initFlags, initGSymbol, initPrivateWithin)
+        else new ClassDenotation(symbol, owner, name, initFlags, initGSymbol, initPrivateWithin)
+      else new SymDenotation(symbol, owner, name, initFlags, initGSymbol, initPrivateWithin)
+    result
   }
 
   object SymDenotations {
-    class SymDenotation private[SymDenotations] (
+    class SymDenotation private[TSymDenotations] (
       symbol: Symbol,
       ownerIfExists: Symbol,
       final val name: Name,
       initFlags: FlagSet,
-      initInfo: Type,
+      initGSymbol: GSymbol,
       initPrivateWithin: Symbol = NoSymbol) extends SingleDenotation(symbol) {
 
-      private[this] var myFlags: FlagSet = ??? //adaptFlags(initFlags)
+      private[SymDenotations] val myFlags: FlagSet = adaptFlags(initFlags)
 
-      private[this] var myInfo: Type = initInfo
+      def owner: Symbol = ownerIfExists
 
-      def owner: Symbol = ??? //ownerIfExists
-
-      final def flags: FlagSet = ???
+      final def flags: FlagSet = myFlags
 
       final def is(fs: FlagSet) = {
         (if (fs <= FromStartFlags) myFlags else flags) is fs
       }
 
-      final def info: Type = ???
+      private def adaptFlags(flags: FlagSet) = if (isType) flags.toTypeFlags else flags.toTermFlags
 
-      final def privateWithin: Symbol = ???
+      //private[this] var myInfo: Type = ???
+
+      //if initGSymbol == g.NoSymbol set to NoType
+      final def info: Type = 
+        if (initGSymbol == self.global.NoSymbol) NoType
+        else ??? // should be computed based on symbol's initGSymbol and set in myInfo (should be lazy)
+          
+      final def privateWithin: Symbol = ??? //TODO fix PrivateWithin
 
       final def annotations: List[Annotation] = ???
 
@@ -75,9 +86,9 @@ trait TSymDenotations {
       override def termRef: TermRef = ???
 
       final def moduleClass: Symbol = {
-        def notFound = { println(s"missing module class for $name: $myInfo"); NoSymbol }
+        def notFound = { println(s"missing module class for $name: $info"); NoSymbol }
         if (this is ModuleVal)
-          myInfo match {
+          info /*myInfo*/ match {
             case info: TypeRef           => info.symbol
             case ExprType(info: TypeRef) => info.symbol // needed after uncurry, when module terms might be accessor defs
             //TODO fix if required
@@ -104,35 +115,36 @@ trait TSymDenotations {
       }
     }
 
-    class ClassDenotation private[SymDenotations] (
+    class ClassDenotation private[TSymDenotations] (
       symbol: Symbol,
       ownerIfExists: Symbol,
       name: Name,
       initFlags: FlagSet,
-      initInfo: Type,
+      initGSymbol: GSymbol,
       initPrivateWithin: Symbol /*,
     initRunId: RunId*/ )
-      extends SymDenotation(symbol, ownerIfExists, name, initFlags, initInfo, initPrivateWithin)
+      extends SymDenotation(symbol, ownerIfExists, name, initFlags, initGSymbol, initPrivateWithin)
 
-    class PackageClassDenotation private[SymDenotations] (
+    class PackageClassDenotation private[TSymDenotations] (
       symbol: Symbol,
       ownerIfExists: Symbol,
       name: Name,
       initFlags: FlagSet,
-      initInfo: Type,
+      initGSymbol: GSymbol,
       initPrivateWithin: Symbol /*,
     initRunId: RunId*/ )
-      extends ClassDenotation(symbol, ownerIfExists, name, initFlags, initInfo, initPrivateWithin /*, initRunId*/ ) {
+      extends ClassDenotation(symbol, ownerIfExists, name, initFlags, initGSymbol, initPrivateWithin /*, initRunId*/ ) {
     }
 
     class NoDenotation extends SymDenotation(
-      NoSymbol, NoSymbol, "<none>".toTermName, Permanent, NoType) {
+      NoSymbol, NoSymbol, "<none>".toTermName, Permanent, self.global.NoSymbol) {
       override def exists = false
       override def isTerm = false
       override def isType = false
       override def owner: Symbol = throw new AssertionError("NoDenotation.owner")
     }
 
+    
     val NoDenotation = new NoDenotation
   }
 }
