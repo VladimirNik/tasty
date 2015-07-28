@@ -6,7 +6,7 @@ trait TTrees {
   self: API =>
 
   import scala.tasty.internal.dotc.core._
-  import Types._, Names._, Flags._, util.Positions._, Contexts._, Constants._, Symbols._
+  import Types._, Names._, Flags._, util.Positions._, Contexts._, Constants._, Symbols._, Denotations._, SymDenotations._
   import StdNames._
   import annotation.tailrec
   import language.higherKinds
@@ -43,15 +43,9 @@ trait TTrees {
           this.asInstanceOf[ThisTree[Type]]
         }
 
-        private[this] var mySym: Symbol = NoSymbol
+        def denot: Denotation = NoDenotation
 
-        final def symbol: Symbol = mySym
-
-        //TODO - maybe it's better to reuse denot.symbol
-        def withSymbol(sym: Symbol): ThisTree[Type] = {
-          mySym = sym
-          this.asInstanceOf[ThisTree[Type]]
-        }
+        final def symbol: Symbol = denot.symbol
 
         def isEmpty: Boolean = false
 
@@ -77,10 +71,22 @@ trait TTrees {
 
       abstract class DenotingTree[-T >: Untyped] extends Tree[T] {
         type ThisTree[-T >: Untyped] <: DenotingTree[T]
+        override def denot = tpe match {
+          case tpe: NamedType => tpe.denot
+          case tpe: ThisType  => tpe.cls.denot
+          case tpe: AnnotatedType => tpe.stripAnnots match {
+            case tpe: NamedType => tpe.denot
+            case tpe: ThisType  => tpe.cls.denot
+            case _              => NoDenotation
+          }
+          case _ => NoDenotation
+        }
       }
 
       abstract class ProxyTree[-T >: Untyped] extends Tree[T] {
         type ThisTree[-T >: Untyped] <: ProxyTree[T]
+        def forwardTo: Tree[T]
+        override def denot: Denotation = forwardTo.denot
       }
 
       abstract class NameTree[-T >: Untyped] extends DenotingTree[T] {
@@ -119,16 +125,26 @@ trait TTrees {
 
       case class This[-T >: Untyped] private[ast] (qual: TypeName) extends DenotingTree[T] with TermTree[T] {
         type ThisTree[-T >: Untyped] = This[T]
+        override def denot: Denotation = {
+          tpe match {
+            case tpe @ TermRef(pre, _) if tpe.symbol is Module =>
+              tpe.symbol.moduleClass.denot.asSeenFrom(pre)
+            case _ =>
+              super.denot
+          }
+        }
       }
 
       case class Super[-T >: Untyped] private[ast] (qual: Tree[T], mix: TypeName) extends ProxyTree[T] with TermTree[T] {
         type ThisTree[-T >: Untyped] = Super[T]
+        def forwardTo = qual
       }
 
       abstract class GenericApply[-T >: Untyped] extends ProxyTree[T] with TermTree[T] {
         type ThisTree[-T >: Untyped] <: GenericApply[T]
         val fun: Tree[T]
         val args: List[Tree[T]]
+        def forwardTo = fun
       }
 
       case class Apply[-T >: Untyped] private[ast] (fun: Tree[T], args: List[Tree[T]]) extends GenericApply[T] {
@@ -153,6 +169,7 @@ trait TTrees {
 
       case class Typed[-T >: Untyped] private[ast] (expr: Tree[T], tpt: Tree[T]) extends ProxyTree[T] with TermTree[T] {
         type ThisTree[-T >: Untyped] = Typed[T]
+        def forwardTo = expr
       }
 
       /** name = arg, in a parameter list */
@@ -217,6 +234,7 @@ trait TTrees {
       /** tpt[args] */
       case class AppliedTypeTree[-T >: Untyped] private[ast] (tpt: Tree[T], args: List[Tree[T]]) extends ProxyTree[T] with TypTree[T] {
         type ThisTree[-T >: Untyped] = AppliedTypeTree[T]
+        def forwardTo = tpt
       }
 
       /** => T */
@@ -272,11 +290,13 @@ trait TTrees {
 
       case class PackageDef[-T >: Untyped] private[ast] (pid: RefTree[T], stats: List[Tree[T]]) extends ProxyTree[T] {
         type ThisTree[-T >: Untyped] = PackageDef[T]
+        def forwardTo = pid
       }
 
       case class Annotated[-T >: Untyped] private[ast] (annot: Tree[T], arg: Tree[T])
         extends ProxyTree[T] {
         type ThisTree[-T >: Untyped] = Annotated[T]
+        def forwardTo = arg
       }
 
       trait WithoutTypeOrPos[-T >: Untyped] extends Tree[T] {

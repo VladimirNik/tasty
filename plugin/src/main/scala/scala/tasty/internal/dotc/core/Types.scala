@@ -22,6 +22,7 @@ trait TTypes {
   import annotation.tailrec
   import Flags.FlagSet
   import language.implicitConversions
+  import Denotations._
 
   object Types {
     abstract class Type extends DotClass {
@@ -43,6 +44,8 @@ trait TTypes {
       }
 
       def stripTypeVar: Type = this
+
+      def stripAnnots: Type = this
 
       final def isParameterless: Boolean = this match {
         case mt: MethodType => false
@@ -106,9 +109,18 @@ trait TTypes {
 
       protected def sig: Signature = Signature.NotAMethod
 
-      def symbol: Symbol = ???
+      def symbol: Symbol = denot.symbol
 
-      def info: Type = ??? //denot.info
+      def info: Type = denot.info
+
+      private[this] var myDenot: Denotation = _
+
+      final def denot: Denotation = myDenot
+
+      def withDenot(denot: Denotation): ThisType = {
+        myDenot = denot
+        this
+      }
 
       def isType = isInstanceOf[TypeRef]
       def isTerm = isInstanceOf[TermRef]
@@ -376,6 +388,8 @@ trait TTypes {
     case class AnnotatedType(annot: Annotation, tpe: Type)
       extends UncachedProxyType with ValueType {
       override def underlying: Type = tpe
+
+      override def stripAnnots: Type = tpe.stripAnnots
 
       override def stripTypeVar: Type = ???
     }

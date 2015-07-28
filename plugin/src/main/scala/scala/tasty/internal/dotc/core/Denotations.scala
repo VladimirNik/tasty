@@ -43,10 +43,21 @@ trait TDenotations {
 
       def typeRef: TypeRef = ???
       def termRef: TermRef = ???
+
+      type AsSeenFromResult = SingleDenotation
+      //TODO - rewrite if required
+      protected def computeAsSeenFrom(pre: Type): SingleDenotation = this
     }
 
     trait PreDenotation {
       def exists: Boolean
+
+      type AsSeenFromResult <: PreDenotation
+
+      final def asSeenFrom(pre: Type): AsSeenFromResult =
+        computeAsSeenFrom(pre)
+
+      protected def computeAsSeenFrom(pre: Type): AsSeenFromResult
     }
   }
 }

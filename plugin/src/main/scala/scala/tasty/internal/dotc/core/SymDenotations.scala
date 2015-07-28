@@ -38,6 +38,8 @@ trait TSymDenotations {
 
       private[this] var myFlags: FlagSet = ??? //adaptFlags(initFlags)
 
+      private[this] var myInfo: Type = initInfo
+
       def owner: Symbol = ??? //ownerIfExists
 
       final def flags: FlagSet = ???
@@ -71,6 +73,24 @@ trait TSymDenotations {
       override def typeRef: TypeRef = ???
 
       override def termRef: TermRef = ???
+
+      final def moduleClass: Symbol = {
+        def notFound = { println(s"missing module class for $name: $myInfo"); NoSymbol }
+        if (this is ModuleVal)
+          myInfo match {
+            case info: TypeRef           => info.symbol
+            case ExprType(info: TypeRef) => info.symbol // needed after uncurry, when module terms might be accessor defs
+            //TODO fix if required
+            //case info: LazyType          => info.moduleClass
+            case t: MethodType =>
+              t.resultType match {
+                case info: TypeRef => info.symbol
+                case _             => notFound
+              }
+            case _ => notFound
+          }
+        else NoSymbol
+      }
 
       override def toString = {
         val kindString =
