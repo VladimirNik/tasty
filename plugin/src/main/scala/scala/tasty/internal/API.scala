@@ -14,15 +14,13 @@ class API(val global: Global) extends TTrees
                               with TSymbols
                               with TSymDenotations
                               with TTypeApplications
-                              with TTypes {
+                              with TTypes
+                              with NameConverter
+                              with TreeConverter {
   lazy val g: global.type = global
-}
-
-class ConverterAPI(override val global: Global) extends API(global)
-                                       with NameConverter
-                                       with TreeConverter
+}                                    
                               
-class PicklerAPI(override val global: Global) extends ConverterAPI(global)
+class PicklerAPI(override val global: Global) extends API(global)
                                               with PositionPicklers
                                               with TastyPicklers
                                               with TastyPrinters

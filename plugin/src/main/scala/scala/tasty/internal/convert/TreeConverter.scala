@@ -2,7 +2,7 @@ package scala.tasty.internal
 package convert
 
 trait TreeConverter {
-  self: ConverterAPI =>
+  self: API =>
 
   import self.GlobalToTName._
   import self.ast.{ tpd => t }
