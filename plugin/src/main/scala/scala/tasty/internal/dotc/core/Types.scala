@@ -23,6 +23,7 @@ trait TTypes {
   import Flags.FlagSet
   import language.implicitConversions
   import Denotations._
+  import SymDenotations.SymDenotation
 
   object Types {
     abstract class Type extends DotClass {
@@ -113,14 +114,42 @@ trait TTypes {
 
       def info: Type = denot.info
 
+//      private def denotOfSym(sym: Symbol): Denotation = {
+//        val d = sym.denot
+//        val owner = d.owner
+//        if (owner.isTerm) d else d.asSeenFrom(prefix)
+//      }
+
       private[this] var myDenot: Denotation = _
 
       final def denot: Denotation = myDenot
 
-      def withDenot(denot: Denotation): ThisType = {
+      def withDenot(denot: Denotation): ThisType =
+        if (sig != denot.signature)
+          withSig(denot.signature).withDenot(denot).asInstanceOf[ThisType]
+        else {
+          setDenot(denot)
+          this
+        }
+
+      final def setDenot(denot: Denotation): Unit = {
         myDenot = denot
-        this
       }
+
+      def withSym(sym: Symbol, signature: Signature): ThisType =
+        if (sig != signature)
+          withSig(signature).withSym(sym, signature).asInstanceOf[ThisType]
+        else {
+          setSym(sym)
+          this
+        }
+
+      def setSym(sym: Symbol): Unit = {
+        myDenot = sym.denot
+      }
+
+      private def withSig(sig: Signature): NamedType =
+        TermRef.withSig(prefix, name.asTermName, sig)
 
       def isType = isInstanceOf[TypeRef]
       def isTerm = isInstanceOf[TermRef]
@@ -139,13 +168,19 @@ trait TTypes {
     abstract case class TermRef(override val prefix: Type, name: TermName) extends NamedType with SingletonType {
       type ThisType = TermRef
 
-      override def underlying: Type = ???
+      override def underlying: Type = {
+        val d = denot
+        //denot isOverloaded = isInstanceOf[MultiDenotation]
+        //if (d.isOverloaded) NoType else d.info
+        d.info
+      }
+
     }
 
     abstract case class TypeRef(override val prefix: Type, name: TypeName) extends NamedType {
       type ThisType = TypeRef
 
-      override def underlying: Type = ???
+      override def underlying: Type = info
     }
 
     final class TermRefWithSignature(prefix: Type, name: TermName, override val sig: Signature) extends TermRef(prefix, name) {
@@ -163,16 +198,125 @@ trait TTypes {
     }
 
     trait WithFixedSym extends NamedType {
-      override def equals(that: Any) = ???
+      def fixedSym: Symbol
+
+      override def withSym(sym: Symbol, signature: Signature): ThisType =
+        unsupported("withSym")
+
+      override def withDenot(denot: Denotation): ThisType = {
+        setDenot(denot)
+        this
+      }
+
+      override def equals(that: Any) = that match {
+        case that: WithFixedSym => this.prefix == that.prefix && (this.fixedSym eq that.fixedSym)
+        case _                  => false
+      }
+    }
+
+    final class CachedTermRef(prefix: Type, name: TermName /*, hc: Int */) extends TermRef(prefix, name) {
+      assert(prefix ne NoPrefix)
+    }
+
+    final class CachedTypeRef(prefix: Type, name: TypeName /*, hc: Int */) extends TypeRef(prefix, name) {
+      assert(prefix ne NoPrefix)
+    }
+
+    final class TermRefWithFixedSym(prefix: Type, name: TermName, val fixedSym: TermSymbol) extends TermRef(prefix, name) with WithFixedSym
+    final class TypeRefWithFixedSym(prefix: Type, name: TypeName, val fixedSym: TypeSymbol) extends TypeRef(prefix, name) with WithFixedSym
+
+    object NamedType {
+      def apply(prefix: Type, name: Name) =
+        if (name.isTermName) TermRef.all(prefix, name.asTermName)
+        else TypeRef(prefix, name.asTypeName)
+      def apply(prefix: Type, name: Name, denot: Denotation) =
+        if (name.isTermName) TermRef(prefix, name.asTermName, denot)
+        else TypeRef(prefix, name.asTypeName, denot)
+      def withFixedSym(prefix: Type, sym: Symbol) =
+        if (sym.isType) TypeRef.withFixedSym(prefix, sym.name.asTypeName, sym.asType)
+        else TermRef.withFixedSym(prefix, sym.name.asTermName, sym.asTerm)
+      def withSymAndName(prefix: Type, sym: Symbol, name: Name): NamedType =
+        if (sym.isType) TypeRef.withSymAndName(prefix, sym.asType, name.asTypeName)
+        else TermRef.withSymAndName(prefix, sym.asTerm, name.asTermName)
     }
 
     object TermRef {
-      def apply(prefix: Type, sym: TermSymbol): TermRef = ???
+      //phase is after resolve super
+      private def symbolicRefs = false
+
+      def all(prefix: Type, name: TermName): TermRef = {
+        new CachedTermRef(prefix, name)
+      }
+
+      def apply(prefix: Type, sym: TermSymbol): TermRef =
+        withSymAndName(prefix, sym, sym.name)
+
+      def apply(prefix: Type, name: TermName, denot: Denotation): TermRef = {
+        if ((prefix eq NoPrefix) || symbolicRefs)
+          apply(prefix, denot.symbol.asTerm)
+        else denot match {
+          case denot: SymDenotation /* if denot.isCompleted */ => withSig(prefix, name, denot.signature)
+          case _                                         => all(prefix, name)
+        }
+      } withDenot denot
+
+      def withFixedSym(prefix: Type, name: TermName, sym: TermSymbol): TermRef =
+        new TermRefWithFixedSym(prefix, name, sym)
+
+      def withSymAndName(prefix: Type, sym: TermSymbol, name: TermName): TermRef =
+        if ((prefix eq NoPrefix) || symbolicRefs)
+          withFixedSym(prefix, name, sym)
+        else //if (sym.isCompleted)
+          withSig(prefix, name, sym.signature) withSym (sym, sym.signature)
+//        else
+//          all(prefix, name) withSym (sym, Signature.NotAMethod)
+
+      def withSig(prefix: Type, sym: TermSymbol): TermRef =
+        if ((prefix eq NoPrefix) || symbolicRefs) withFixedSym(prefix, sym.name, sym)
+        else withSig(prefix, sym.name, sym.signature).withSym(sym, sym.signature)
+
+      def withSig(prefix: Type, name: TermName, sig: Signature): TermRef =
+        new TermRefWithSignature(prefix, name, sig)
+
+      def withSigAndDenot(prefix: Type, name: TermName, sig: Signature, denot: Denotation): TermRef = {
+        if ((prefix eq NoPrefix) || symbolicRefs)
+          withFixedSym(prefix, denot.symbol.asTerm.name, denot.symbol.asTerm)
+        else
+          withSig(prefix, name, sig)
+      } withDenot denot
+    }
+
+    object TypeRef {
+      def apply(prefix: Type, name: TypeName): TypeRef =
+        new CachedTypeRef(prefix, name)
+
+      def apply(prefix: Type, sym: TypeSymbol): TypeRef =
+        withSymAndName(prefix, sym, sym.name)
+
+      def withFixedSym(prefix: Type, name: TypeName, sym: TypeSymbol): TypeRef =
+        new TypeRefWithFixedSym(prefix, name, sym)
+
+      def withSymAndName(prefix: Type, sym: TypeSymbol, name: TypeName): TypeRef =
+        if (prefix eq NoPrefix) withFixedSym(prefix, name, sym)
+        else apply(prefix, name).withSym(sym, Signature.NotAMethod)
+
+      def apply(prefix: Type, name: TypeName, denot: Denotation): TypeRef = {
+        if (prefix eq NoPrefix) apply(prefix, denot.symbol.asType)
+        else apply(prefix, name)
+      } withDenot denot
     }
 
     abstract case class ThisType(tref: TypeRef) extends CachedProxyType with SingletonType {
-      def cls: ClassSymbol = ??? //tref.stableInRunSymbol.asClass
+      def cls: ClassSymbol = tref.symbol.asClass
       override def underlying: Type = ???
+    }
+
+    final class CachedThisType(tref: TypeRef) extends ThisType(tref)
+
+    object ThisType {
+      /** Normally one should use ClassSymbol#thisType instead */
+      def raw(tref: TypeRef) =
+        new CachedThisType(tref)
     }
 
     abstract case class SuperType(thistpe: Type, supertpe: Type) extends CachedProxyType with SingletonType {
@@ -181,6 +325,23 @@ trait TTypes {
 
     abstract case class ConstantType(value: Constant) extends CachedProxyType with SingletonType {
       override def underlying = value.tpe
+    }
+
+    final class CachedConstantType(value: Constant) extends ConstantType(value)
+
+    final class CachedSuperType(thistpe: Type, supertpe: Type) extends SuperType(thistpe, supertpe)
+
+    object SuperType {
+      def apply(thistpe: Type, supertpe: Type): Type = {
+        assert(thistpe != NoPrefix)
+        new CachedSuperType(thistpe, supertpe)
+      }
+    }
+
+    object ConstantType {
+      def apply(value: Constant) = {
+        new CachedConstantType(value)
+      }
     }
 
     case class LazyRef(refFn: () => Type) extends UncachedProxyType with ValueType {
@@ -212,6 +373,20 @@ trait TTypes {
       override def toString = s"RefinedType($parent, $refinedName, $refinedInfo | $hashCode)" // !!! TODO: remove
     }
 
+    class CachedRefinedType(parent: Type, refinedName: Name, infoFn: RefinedType => Type) extends RefinedType(parent, refinedName) {
+      val refinedInfo = infoFn(this)
+    }
+
+    object RefinedType {
+      def make(parent: Type, names: List[Name], infoFns: List[RefinedType => Type]): Type =
+        if (names.isEmpty) parent
+        else make(RefinedType(parent, names.head, infoFns.head), names.tail, infoFns.tail)
+
+      def apply(parent: Type, name: Name, infoFn: RefinedType => Type): RefinedType = {
+        new CachedRefinedType(parent, name, infoFn)
+      }
+    }
+
     trait AndOrType extends ValueType { // todo: check where we can simplify using AndOrType
       def tp1: Type
       def tp2: Type
@@ -219,7 +394,9 @@ trait TTypes {
     }
 
     trait MethodicType extends Type {
-      final override def signature: Signature = ???
+      //TODO add override methods to subtypes
+      protected def computeSignature: Signature = ???
+      final override def signature: Signature = computeSignature
     }
 
     trait MethodOrPoly extends MethodicType
@@ -227,6 +404,9 @@ trait TTypes {
     abstract case class MethodType(paramNames: List[TermName], paramTypes: List[Type])(resultTypeExp: MethodType => Type)
       extends CachedGroundType with BindingType with TermType with MethodOrPoly with NarrowCached { thisMethodType =>
       import MethodType._
+
+      def isJava = false
+      def isImplicit = false
 
       private[core] val resType = resultTypeExp(this)
       assert(resType.exists)
@@ -246,10 +426,59 @@ trait TTypes {
       override def toString = s"$prefixString($paramNames, $paramTypes, $resType)"
     }
 
+    final class CachedMethodType(paramNames: List[TermName], paramTypes: List[Type])(resultTypeExp: MethodType => Type)
+      extends MethodType(paramNames, paramTypes)(resultTypeExp) {
+      override def equals(that: Any) = super.equals(that) && that.isInstanceOf[CachedMethodType]
+    }
+
+    final class JavaMethodType(paramNames: List[TermName], paramTypes: List[Type])(resultTypeExp: MethodType => Type)
+      extends MethodType(paramNames, paramTypes)(resultTypeExp) {
+      override def isJava = true
+      override def equals(that: Any) = super.equals(that) && that.isInstanceOf[JavaMethodType]
+      override protected def prefixString = "JavaMethodType"
+    }
+
+    final class ImplicitMethodType(paramNames: List[TermName], paramTypes: List[Type])(resultTypeExp: MethodType => Type)
+      extends MethodType(paramNames, paramTypes)(resultTypeExp) {
+      override def isImplicit = true
+      override def equals(that: Any) = super.equals(that) && that.isInstanceOf[ImplicitMethodType]
+      override protected def prefixString = "ImplicitMethodType"
+    }
+
+    abstract class MethodTypeCompanion {
+      def apply(paramNames: List[TermName], paramTypes: List[Type])(resultTypeExp: MethodType => Type): MethodType
+      def apply(paramNames: List[TermName], paramTypes: List[Type], resultType: Type): MethodType =
+        apply(paramNames, paramTypes)(_ => resultType)
+    }
+
+    object MethodType extends MethodTypeCompanion {
+      def apply(paramNames: List[TermName], paramTypes: List[Type])(resultTypeExp: MethodType => Type) =
+        new CachedMethodType(paramNames, paramTypes)(resultTypeExp)
+    }
+
+    object JavaMethodType extends MethodTypeCompanion {
+      def apply(paramNames: List[TermName], paramTypes: List[Type])(resultTypeExp: MethodType => Type) =
+        new JavaMethodType(paramNames, paramTypes)(resultTypeExp)
+    }
+
+    object ImplicitMethodType extends MethodTypeCompanion {
+      def apply(paramNames: List[TermName], paramTypes: List[Type])(resultTypeExp: MethodType => Type) =
+        new ImplicitMethodType(paramNames, paramTypes)(resultTypeExp)
+    }
+
     abstract case class ExprType(resType: Type)
       extends CachedProxyType with TermType with MethodicType {
       override def resultType: Type = resType
       override def underlying: Type = resType
+    }
+
+    final class CachedExprType(resultType: Type) extends ExprType(resultType)
+
+    object ExprType {
+      def apply(resultType: Type) = {
+        //assertUnerased()
+        new CachedExprType(resultType)
+      }
     }
 
     case class PolyType(paramNames: List[TypeName])(paramBoundsExp: PolyType => List[TypeBounds], resultTypeExp: PolyType => Type)
@@ -297,6 +526,15 @@ trait TTypes {
       override def toString = s"MethodParam(${binder.paramNames(paramNum)})"
     }
 
+    class MethodParamImpl(binder: MethodType, paramNum: Int) extends MethodParam(binder, paramNum)
+
+    object MethodParam {
+      def apply(binder: MethodType, paramNum: Int): MethodParam = {
+        //assertUnerased()
+        new MethodParamImpl(binder, paramNum)
+      }
+    }
+
     case class PolyParam(binder: PolyType, paramNum: Int) extends ParamType {
       type BT = PolyType
       //def copyBoundType(bt: BT) = PolyParam(bt, paramNum)
@@ -333,6 +571,13 @@ trait TTypes {
       override def toString = s"Skolem($info)"
     }
 
+    final class CachedSkolemType(info: Type) extends SkolemType(info)
+
+    object SkolemType {
+      def apply(info: Type) =
+        new CachedSkolemType(info)
+    }
+
     final class TypeVar(val origin: PolyParam /*, creatorState: TyperState, val owningTree: untpd.Tree*/ , val owner: Symbol) extends CachedProxyType with ValueType {
       override def stripTypeVar: Type = ???
 
@@ -340,7 +585,9 @@ trait TTypes {
 
       override def equals(that: Any) = this eq that.asInstanceOf[AnyRef]
 
-      override def toString = ???
+      override def toString = {
+        s"TypeVar($origin)"
+      }
     }
 
     abstract case class ClassInfo(
@@ -353,6 +600,14 @@ trait TTypes {
       def typeRef: Type = ???
 
       override def toString = s"ClassInfo($prefix, $cls)"
+    }
+
+    final class CachedClassInfo(prefix: Type, cls: ClassSymbol, classParents: List[TypeRef], decls: Iterable[Symbol], selfInfo: DotClass)
+      extends ClassInfo(prefix, cls, classParents, decls, selfInfo)
+
+    object ClassInfo {
+      def apply(prefix: Type, cls: ClassSymbol, classParents: List[TypeRef], decls: Iterable[Symbol], selfInfo: DotClass = NoType) =
+        new CachedClassInfo(prefix, cls, classParents, decls, selfInfo)
     }
 
     abstract case class TypeBounds(lo: Type, hi: Type) extends CachedProxyType with TypeType {
@@ -375,10 +630,23 @@ trait TTypes {
         if (lo eq hi) s"TypeAlias($lo)" else s"TypeBounds($lo, $hi)"
     }
 
+    class RealTypeBounds(lo: Type, hi: Type) extends TypeBounds(lo, hi)
+
     abstract class TypeAlias(val alias: Type, override val variance: Int) extends TypeBounds(alias, alias)
 
     object TypeBounds {
-      def empty = ???
+      def NothTpe = convertType(self.global.definitions.NothingTpe)
+      def AnyTpe = convertType(self.global.definitions.AnyTpe)
+
+      def apply(lo: Type, hi: Type): TypeBounds =
+        new RealTypeBounds(lo, hi)
+      def empty = apply(NothTpe, AnyTpe)
+      def upper(hi: Type) = {
+        apply(NothTpe, hi)
+      }
+      def lower(lo: Type) = {
+        apply(lo, AnyTpe)
+      }
     }
 
     object TypeAlias {
@@ -394,13 +662,38 @@ trait TTypes {
       override def stripTypeVar: Type = ???
     }
 
+    object AnnotatedType {
+      def make(annots: List[Annotation], underlying: Type) =
+        if (annots.isEmpty) underlying
+        else (underlying /: annots)((tp, ann) => AnnotatedType(ann, tp))
+    }
+
+    abstract case class JavaArrayType(elemType: Type) extends CachedGroundType with ValueType
+    final class CachedJavaArrayType(elemType: Type) extends JavaArrayType(elemType)
+    object JavaArrayType {
+      def apply(elemType: Type) = new CachedJavaArrayType(elemType)
+    }
+
+    case class ImportType(expr: Tree) extends UncachedGroundType
+
     case object NoType extends CachedGroundType {
+      override def exists = false
+    }
+
+    //for usage during type conversion, can't be presented during tree pickling
+    case object IncompleteType extends CachedGroundType {
       override def exists = false
     }
 
     case object NoPrefix extends CachedGroundType
 
     abstract case class WildcardType(optBounds: Type) extends CachedGroundType with TermType
+
+    final class CachedWildcardType(optBounds: Type) extends WildcardType(optBounds)
+
+    object WildcardType extends WildcardType(NoType) {
+      def apply(bounds: TypeBounds) = new CachedWildcardType(bounds)
+    }
 
     implicit def decorateTypeApplications(tpe: Type): TypeApplications = new TypeApplications(tpe)
   }

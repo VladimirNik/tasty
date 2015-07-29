@@ -100,13 +100,15 @@ trait TSymbols {
 
       final def isClass: Boolean = isInstanceOf[ClassSymbol]
 
-      final def isTerm(implicit ctx: Context): Boolean =
+      final def isTerm: Boolean =
         denot.isTerm
 
-      final def isType(implicit ctx: Context): Boolean =
+      final def isType: Boolean =
         denot.isType
 
-      final def asType: TypeSymbol = { assert(denot.isType, s"isType called on not-a-Type $this"); asInstanceOf[TypeSymbol] }
+      final def asTerm: TermSymbol = { assert(isTerm, s"asTerm called on not-a-Term $this"); asInstanceOf[TermSymbol] }
+      final def asType: TypeSymbol = { assert(isType, s"isType called on not-a-Type $this"); asInstanceOf[TypeSymbol] }
+      final def asClass: ClassSymbol = asInstanceOf[ClassSymbol]
       final def name: ThisName = denot.name.asInstanceOf[ThisName]
       def pos: Position = if (coord.isPosition) coord.toPosition else NoPosition
 
