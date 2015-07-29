@@ -97,6 +97,15 @@ trait TSymbols {
       private[core] def denot_=(d: SymDenotation) = myDenot = d
       //TODO - should be only final - see the problem with denot
       /*final*/ def denot: SymDenotation = myDenot
+
+      final def isClass: Boolean = isInstanceOf[ClassSymbol]
+
+      final def isTerm(implicit ctx: Context): Boolean =
+        denot.isTerm
+
+      final def isType(implicit ctx: Context): Boolean =
+        denot.isType
+
       final def asType: TypeSymbol = { assert(denot.isType, s"isType called on not-a-Type $this"); asInstanceOf[TypeSymbol] }
       final def name: ThisName = denot.name.asInstanceOf[ThisName]
       def pos: Position = if (coord.isPosition) coord.toPosition else NoPosition
@@ -121,12 +130,14 @@ trait TSymbols {
 
     object NoSymbol extends Symbol(NoCoord) {
       override def denot = NoDenotation
+      override def toString = "NoSymbol"
       //TODO problem with denot = ... (NoSymbol init)
       //denot = NoDenotation
     }
 
     object IncompleteSymbol extends Symbol(NoCoord) {
       override def denot = NoDenotation
+      override def toString = "IncompleteSymbol"
     }
     
     implicit def toDenot(sym: Symbol): SymDenotation = sym.denot

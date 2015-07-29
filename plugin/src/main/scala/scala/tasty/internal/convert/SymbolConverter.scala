@@ -29,6 +29,7 @@ trait SymbolConverter {
         case _ => null
       }) match {
       case t.IncompleteSymbol => throw new Exception(s"IncompleteSymbol is found while converting $sym")
+      case res => res
     }
   }
   
@@ -38,10 +39,12 @@ trait SymbolConverter {
     val pos: tp.Position = sym.pos
     val coord: tp.Coord = pos
     val resSym = sym match {
-      case g.NoSymbol => t.NoSymbol
+      case g.NoSymbol => 
+        t.NoSymbol
       case _ if sym.hasPackageFlag =>
         val tOwner = convertSymbol(sym.owner)
-        newPackageSymbol(tOwner, convertToTermName(sym.name), flags, sym)
+        val tName = convertToTermName(sym.name)
+        newPackageSymbol(tOwner, tName, flags, sym)
       case _ if sym.isClass => 
         val tOwner = convertSymbol(sym.owner)
         //TODO fix privateWithin
