@@ -11,7 +11,7 @@ trait SymbolConverter {
 
   val symCache = new java.util.IdentityHashMap[g.Symbol, t.Symbol]();
 
-  def convertSymbols(symbol: List[g.Symbol]): List[t.Symbol] = symbol map convertSymbol
+  def convertSymbols(symbols: List[g.Symbol]): List[t.Symbol] = symbols map convertSymbol
 
   def convertSymbol(sym: g.Symbol): t.Symbol = {
     //if sym is null - return null
