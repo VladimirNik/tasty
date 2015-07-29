@@ -17,7 +17,8 @@ class API(val global: Global) extends TTrees
                               with TTypes
                               with NameConverter
                               with PositionConverter
-                              with TreeConverter {
+                              with TreeConverter
+                              with SymbolConverter {
   lazy val g: global.type = global
 }                                    
                               

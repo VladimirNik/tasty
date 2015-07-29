@@ -80,7 +80,7 @@ trait TSymbols {
   def newImportSymbol(owner: Symbol, initGSymbol: GSymbol, coord: Coord = NoCoord) =
     newSymbol(owner, nme.IMPORT, EmptyFlags, initGSymbol, coord = coord)
 
-  def newConstructor(cls: ClassSymbol, flags: FlagSet, initGSymbol: GSymbol, privateWithin: Symbol = NoSymbol, coord: Coord = NoCoord) =
+  def newConstructor(cls: Symbol, flags: FlagSet, initGSymbol: GSymbol, privateWithin: Symbol = NoSymbol, coord: Coord = NoCoord) =
     newSymbol(cls, nme.CONSTRUCTOR, flags | Method, initGSymbol, privateWithin, coord)
 
   def newDefaultConstructor(cls: ClassSymbol) =
@@ -125,6 +125,10 @@ trait TSymbols {
       //denot = NoDenotation
     }
 
+    object IncompleteSymbol extends Symbol(NoCoord) {
+      override def denot = NoDenotation
+    }
+    
     implicit def toDenot(sym: Symbol): SymDenotation = sym.denot
     implicit def toClassDenot(cls: ClassSymbol): ClassDenotation = cls.classDenot
 
