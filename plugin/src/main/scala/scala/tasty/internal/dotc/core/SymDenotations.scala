@@ -77,22 +77,40 @@ trait TSymDenotations {
 
       final def isEffectiveRoot = isRoot || isEmptyPackage
 
-      final def isSetter: Boolean = ???
+      final def isSetter: Boolean =
+        (this is Accessor) &&
+          //TODO - do we need original name here?
+          //if (initial is ExpandedName) initial.name.unexpandedName else initial.name
+          /*originalName*/ name.isSetterName
+          //(!isCompleted || info.firstParamTypes.nonEmpty)
 
       final def isConstructor = name.isConstructorName
 
-      override def typeRef: TypeRef = ???
+      def thisType: Type = NoPrefix
 
-      override def termRef: TermRef = ???
+      override def typeRef: TypeRef =
+        TypeRef(owner.thisType, name.asTypeName, this)
+
+      override def termRef: TermRef =
+        TermRef(owner.thisType, name.asTermName, this)
+
+      override def valRef: TermRef =
+        TermRef.withSigAndDenot(owner.thisType, name.asTermName, Signature.NotAMethod, this)
+
+      override def termRefWithSig: TermRef =
+        TermRef.withSigAndDenot(owner.thisType, name.asTermName, signature, this)
+
+      def nonMemberTermRef: TermRef =
+        TermRef.withFixedSym(owner.thisType, name.asTermName, symbol.asTerm)
 
       final def moduleClass: Symbol = {
         def notFound = { println(s"missing module class for $name: $info"); NoSymbol }
         if (this is ModuleVal)
           info /*myInfo*/ match {
-            case info: TypeRef           => info.symbol
+            case info: TypeRef => info.symbol
             case ExprType(info: TypeRef) => info.symbol // needed after uncurry, when module terms might be accessor defs
             //TODO fix if required
-            //case info: LazyType          => info.moduleClass
+            //case info: LazyType => info.moduleClass
             case t: MethodType =>
               t.resultType match {
                 case info: TypeRef => info.symbol
@@ -123,7 +141,25 @@ trait TSymDenotations {
       initGSymbol: GSymbol,
       initPrivateWithin: Symbol /*,
     initRunId: RunId*/ )
-      extends SymDenotation(symbol, ownerIfExists, name, initFlags, initGSymbol, initPrivateWithin)
+      extends SymDenotation(symbol, ownerIfExists, name, initFlags, initGSymbol, initPrivateWithin) {
+      private[this] var myThisType: Type = null
+
+      override def thisType: Type = {
+        if (myThisType == null) myThisType = computeThisType
+        myThisType
+      }
+
+      private def computeThisType: Type =
+        ThisType.raw(
+          TypeRef(if (this is Package) NoPrefix else owner.thisType, symbol.asType))
+
+      private[this] var myTypeRef: TypeRef = null
+
+      override def typeRef: TypeRef = {
+        if (myTypeRef == null) myTypeRef = super.typeRef
+        myTypeRef
+      }
+    }
 
     class PackageClassDenotation private[TSymDenotations] (
       symbol: Symbol,
@@ -142,9 +178,9 @@ trait TSymDenotations {
       override def isTerm = false
       override def isType = false
       override def owner: Symbol = throw new AssertionError("NoDenotation.owner")
+      override def computeAsSeenFrom(pre: Type): SingleDenotation = this
     }
 
-    
     val NoDenotation = new NoDenotation
   }
 }

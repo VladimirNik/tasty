@@ -41,8 +41,20 @@ trait TDenotations {
         }
       }
 
-      def typeRef: TypeRef = ???
-      def termRef: TermRef = ???
+      def typeRef: TypeRef =
+        TypeRef(symbol.owner.thisType, symbol.name.asTypeName, this)
+
+      def termRef: TermRef =
+        TermRef(symbol.owner.thisType, symbol.name.asTermName, this)
+
+      def valRef: TermRef =
+        TermRef.withSigAndDenot(symbol.owner.thisType, symbol.name.asTermName, Signature.NotAMethod, this)
+
+      def termRefWithSig: TermRef =
+        TermRef.withSigAndDenot(symbol.owner.thisType, symbol.name.asTermName, signature, this)
+
+      def namedType: NamedType =
+        if (isType) typeRef else termRefWithSig
 
       type AsSeenFromResult = SingleDenotation
       //TODO - rewrite if required
