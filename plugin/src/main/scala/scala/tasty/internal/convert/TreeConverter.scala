@@ -12,7 +12,7 @@ trait TreeConverter {
 
   def convertTree(tree: g.Tree): t.Tree = {
     //println(s"tree: ${g.showRaw(tree)}")
-    tree match {
+    val resTree = tree match {
       case g.Ident(name) =>
         t.Ident(name)
       case g.This(qual) =>
@@ -167,6 +167,8 @@ trait TreeConverter {
       case g.Throw(expr) => ???
       case tr => println(s"no implementation for: ${g.show(tr)}"); ???
     }
+    resTree withPos tree.pos
+    resTree
   }
 
   def convertSelectors(iss: List[g.ImportSelector]): List[t.Tree] = iss map convertSelector
