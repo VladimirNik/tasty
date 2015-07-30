@@ -182,7 +182,19 @@ trait TreeConverter {
       t.Ident(n)
   }
 
-  def convertConstant(constant: g.Constant): tc.Constant =
-    tc.Constant(constant.value)
-
+  def convertConstant(constant: g.Constant): tc.Constant = {
+    constant.tag match {
+      case g.ClazzTag => 
+        val gConstTpVal = constant.typeValue
+        val constTpeVal = convertType(gConstTpVal)
+        tc.Constant(constTpeVal) withGConstType(constant.tpe)
+      case g.EnumTag =>
+        val gSymVal = constant.symbolValue
+        val constSym = convertSymbol(gSymVal)
+        tc.Constant(constSym) withGConstType(constant.tpe)
+      case _ =>
+        tc.Constant(constant.value)
+    }
+  }
+    
 }

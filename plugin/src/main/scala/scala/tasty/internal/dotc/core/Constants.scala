@@ -5,7 +5,7 @@ package core
 trait TConstants {
   self: API =>
 
-  import Types._, Symbols._, Contexts._
+  import Types._, Symbols._
 
   object Constants {
 
@@ -56,7 +56,11 @@ trait TConstants {
       def isNonUnitAnyVal = BooleanTag <= tag && tag <= DoubleTag
       def isAnyVal = UnitTag <= tag && tag <= DoubleTag
 
-      def tpe: Type = ???
+      private[this] var gConstTpe: g.Type = g.NoType
+      def withGConstType(gTp: g.Type): Constant = { gConstTpe = gTp; this }
+
+      //TODO gConstType and gConstSym should be set during constant convertions
+      def tpe = getConstantTpe(this, gConstTpe)
 
       /**
        * We need the equals method to take account of tags as well as values.

@@ -45,9 +45,9 @@ trait TypeConverter {
     resTp
   }
 
-  def convertConstantTpe(const: g.Constant): t.Type = {
+  def getConstantTpe(const: self.Constants.Constant, gConstTpe: g.Type = g.NoType): t.Type = {
     import self.Constants._
-    import g.{definitions => d}
+    import g.{ definitions => d }
     const.tag match {
       case UnitTag    => convertType(d.UnitTpe)
       case BooleanTag => convertType(d.BooleanTpe)
@@ -60,8 +60,7 @@ trait TypeConverter {
       case DoubleTag  => convertType(d.DoubleTpe)
       case StringTag  => convertType(d.StringTpe)
       case NullTag    => convertType(d.NullTpe)
-      case ClazzTag   => convertType(d.ClassType(const.typeValue))
-      case EnumTag    => convertType(d.EnumType(const.symbolValue))
+      case ClazzTag | EnumTag   => convertType(gConstTpe)
     }
   }
 }
