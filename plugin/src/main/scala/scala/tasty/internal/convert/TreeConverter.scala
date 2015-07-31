@@ -14,12 +14,14 @@ trait TreeConverter {
     //println(s"tree: ${g.showRaw(tree)}")
     val resTree = tree match {
       case g.Ident(name) =>
-        t.Ident(name)
+        val tTpe = convertType(tree.tpe)
+        t.Ident(name) withType tTpe
       case g.This(qual) =>
         t.This(qual)
       case g.Select(qual, name) =>
+        val tTpe = convertType(tree.tpe)
         val tQual = convertTree(qual)
-        t.Select(tQual, name)
+        t.Select(tQual, name) withType tTpe
       case g.Apply(fun, args) =>
         val tFun = convertTree(fun)
         val tArgs = convertTrees(args)
@@ -92,20 +94,31 @@ trait TreeConverter {
         val tRhs = convertTree(rhs)
         t.ValDef(name, tTpt, tRhs)
       case tree @ g.DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
+        val defSym = convertSymbol(tree.symbol)
+        //TODO - this type should be persisted (maybe based on symbol as a key)
+        val defTp = defSym.termRef
+
         //TODO - add setMods
         val tTparams = convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
         val tVparamss = (vparamss map convertTrees).asInstanceOf[List[List[t.ValDef]]]
         val tTpt = convertTree(tpt)
         val tRhs = convertTree(rhs)
-        t.DefDef(name, tTparams, tVparamss, tTpt, tRhs)
+        t.DefDef(name, tTparams, tVparamss, tTpt, tRhs) withType(defTp)
       case tree @ g.TypeDef(mods, name, tparams, rhs) =>
         val tTparams = convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
         val tRhs = convertTree(rhs)
         t.TypeDef(name, tRhs)
       case tree @ g.ClassDef(mods, name, tparams, impl) =>
-        val tImpl = convertTree(impl)
+        val clsSym = convertSymbol(tree.symbol)
+        val dummySymbol = newLocalDummy(clsSym, clsSym.coord, clsSym.initGSymbol)
+        val dummyTpe = dummySymbol.termRef
+
+        val tImpl = convertTree(impl) withType dummyTpe
+
+        val tp = tree.symbol.tpe
+        val convertedType = convertType(tp)
         //TODO tparams should be processed
-        t.ClassDef(name, tImpl)
+        t.ClassDef(name, tImpl) withType(convertedType)
       case tree: g.ModuleDef =>
         //TODO fix (here two tree should be returned) - use Thicket
         //val modClSym = tree.symbol.moduleClass

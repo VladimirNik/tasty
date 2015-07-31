@@ -21,7 +21,7 @@ trait TContexts {
 
       def typerState: TyperState = throw new Exception("special case in TreePickler: def typerState in scala.tasty.internal.dotc.core.Context should be implemented!")
 
-      def log(msg: => String, pos: Position = NoPosition): Unit = ???
+      def log(msg: => String, pos: Position = NoPosition): Unit = println(msg)
     }
   }
 }

@@ -56,10 +56,15 @@ trait TSymDenotations {
 
       //private[this] var myInfo: Type = ???
 
+      private[this] var myInfo: Type = _
+
       //if initGSymbol == g.NoSymbol set to NoType
       final def info: Type = 
         if (initGSymbol == self.global.NoSymbol) NoType
-        else ??? // should be computed based on symbol's initGSymbol and set in myInfo (should be lazy)
+        else { // should be computed based on symbol's initGSymbol and set in myInfo (should be lazy)
+          myInfo = convertType(initGSymbol.info)
+          myInfo
+        }
           
       final def privateWithin: Symbol = ??? //TODO fix PrivateWithin
 

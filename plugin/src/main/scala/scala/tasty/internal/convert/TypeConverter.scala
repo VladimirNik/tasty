@@ -75,9 +75,18 @@ trait TypeConverter {
         val tParamTypes = convertTypes(mt.paramTypes)
         val tResultType = convertType(mt.resultType)
         t.MethodType(tParamNames, tParamTypes, tResultType)
-        throw new Exception(s"unimplemented conversion for MethodType: $tp")
       case g.PolyType(typeParams, resultType) =>
         throw new Exception(s"unimplemented conversion for PolyType: $tp")
+        //TODO move g.ClassInfoType to separate method (to be sure that this tpe is not evaluated during conversion - before pickling)
+      case g.ClassInfoType(parents, decls, typeSymbol) =>
+        //TODO - check prefix
+        val tPrefix = convertType(typeSymbol.tpe.prefix)
+        val tCls = convertSymbol(typeSymbol).asClass
+        val tParents = convertTypes(parents) map (_.asInstanceOf[t.TypeRef])
+        val tDecls = convertSymbols(decls.toList)
+        //TODO - fix it
+        val tClsInfo = t.NoType
+        t.ClassInfo(tPrefix, tCls, tParents, tDecls, tClsInfo)
       case g.NoType =>
         t.NoType
       case g.NoPrefix =>

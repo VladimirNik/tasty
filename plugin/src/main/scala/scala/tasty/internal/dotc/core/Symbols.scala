@@ -89,6 +89,12 @@ trait TSymbols {
   def newSelfSym(cls: ClassSymbol, name: TermName = nme.WILDCARD, initGSymbol: GSymbol): TermSymbol =
     newSymbol(cls, name, SelfSymFlags, initGSymbol, coord = cls.coord)
 
+  def localDummyName(clazz: Symbol): TermName =
+    StdNames.nme.LOCALDUMMY_PREFIX ++ clazz.name ++ ">"  
+    
+  def newLocalDummy(cls: Symbol, coord: Coord = NoCoord, initGSymbol: GSymbol) =
+    newSymbol(cls, localDummyName(cls), EmptyFlags, initGSymbol)
+ 
   object Symbols {
     class Symbol private[TSymbols] (val coord: Coord) extends DotClass {
       type ThisName <: Name

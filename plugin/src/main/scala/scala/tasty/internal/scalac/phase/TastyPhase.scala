@@ -65,23 +65,24 @@ trait TastyPhase extends TastyPhaseUtils {
             cls <- dropCompanionModuleClasses(topLevelClasses(unit.body))
             tree <- sliceTopLevel(unit.body, cls)
           } {
-            apiInstance.convertTree(unit.body.asInstanceOf[apiInstance.g.Tree])
-//            val pickler = new picklersInstance.TastyPickler
+            val tTree = apiInstance.convertTree(unit.body.asInstanceOf[apiInstance.g.Tree])
+            val pickler = new apiInstance.TastyPickler
 //            addPickler(unit, cls, pickler)
-//            val treePkl = new picklersInstance.TreePickler(pickler)
-//            treePkl.pickle(tree :: Nil)
-//
-//            pickler.addrOfTree = treePkl.buf.addrOfTree
-//            pickler.addrOfSym = treePkl.addrOfSym
-//            if (picklersInstance.exists(tree.pos)) {
-//              println(s"Pickle positions for $unit")
-//              println(s"pos: ${tree.pos}")
-//              println
-//              new picklersInstance.PositionPickler(pickler, treePkl.buf.addrOfTree).picklePositions(tree :: Nil, tree.pos)
-//            } else {
-//              println("No positions exist for pickling")
-//            }
-//            //add option for pickling tesing (if option - test - option pass to sbt tests subproject)
+            val treePkl = new apiInstance.TreePickler(pickler)
+            val emptyContext = new apiInstance.Contexts.Context{}
+            treePkl.pickle(tTree :: Nil)(emptyContext)
+
+            pickler.addrOfTree = treePkl.buf.addrOfTree
+            pickler.addrOfSym = treePkl.addrOfSym
+            if (tTree.pos.exists) {
+              println(s"Pickle positions for $unit")
+              println(s"pos: ${tree.pos}")
+              println
+              new apiInstance.PositionPickler(pickler, treePkl.buf.addrOfTree).picklePositions(tTree :: Nil, tTree.pos)(emptyContext)
+            } else {
+              println("No positions exist for pickling")
+            }
+//            //add option for pickling testing (if option - test - option pass to sbt tests subproject)
 //            val pickledInfo = treePkl.logInfo
 //            generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
 //            //testSame(pickledInfo, unit)
