@@ -60,7 +60,7 @@ trait TConstants {
       def withGConstType(gTp: g.Type): Constant = { gConstTpe = gTp; this }
 
       //TODO gConstType and gConstSym should be set during constant convertions
-      def tpe = getConstantTpe(this, gConstTpe)
+      def tpe = getConstantTpe(tag, gConstTpe)
 
       /**
        * We need the equals method to take account of tags as well as values.

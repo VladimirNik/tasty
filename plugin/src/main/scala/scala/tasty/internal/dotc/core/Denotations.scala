@@ -27,18 +27,20 @@ trait TDenotations {
     }
 
     abstract class SingleDenotation(symbol: Symbol) extends Denotation(symbol) with PreDenotation {
+      private[this] var mySignature = Signature.NotAMethod
       final def signature: Signature = {
         if (isType) Signature.NotAMethod // don't force info if this is a type SymDenotation
-        else info match {
-          case info: MethodicType =>
-            try info.signature
-            catch { // !!! DEBUG
-              case scala.util.control.NonFatal(ex) =>
-                println(s"cannot take signature of ${info /*.show*/ }")
-                throw ex
-            }
-          case _ => Signature.NotAMethod
-        }
+        else Signature(symbol.initGSymbol.tpe)
+//        else info match {
+//          case info: MethodicType =>
+//            try info.signature
+//            catch { // !!! DEBUG
+//              case scala.util.control.NonFatal(ex) =>
+//                println(s"cannot take signature of ${info /*.show*/ }")
+//                throw ex
+//            }
+//          case _ => Signature.NotAMethod
+//        }
       }
 
       def typeRef: TypeRef =

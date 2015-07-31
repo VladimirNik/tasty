@@ -160,9 +160,11 @@ trait TreeConverter {
         val tSelectors = convertSelectors(selectors)
         t.Import(tExpr, tSelectors)
       case g.PackageDef(pid, stats) =>
-        val tPid = convertTree(pid).asInstanceOf[t.RefTree]
+        val tp = pid.tpe
+        val tTp = convertType(tp)
+        val tPid = convertTree(pid).asInstanceOf[t.RefTree] withType(tTp)
         val tStats = convertTrees(stats)
-        t.PackageDef(tPid, tStats)
+        t.PackageDef(tPid, tStats) withType(tTp)
       case g.EmptyTree   => t.EmptyTree
       case g.Throw(expr) => ???
       case tr => println(s"no implementation for: ${g.show(tr)}"); ???

@@ -39,7 +39,7 @@ trait TSymDenotations {
       ownerIfExists: Symbol,
       final val name: Name,
       initFlags: FlagSet,
-      initGSymbol: GSymbol,
+      val initGSymbol: GSymbol,
       initPrivateWithin: Symbol = NoSymbol) extends SingleDenotation(symbol) {
 
       private[SymDenotations] val myFlags: FlagSet = adaptFlags(initFlags)

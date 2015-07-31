@@ -39,13 +39,18 @@ trait SymbolConverter {
     val pos: tp.Position = sym.pos
     val coord: tp.Coord = pos
     val resSym = sym match {
-      case g.NoSymbol => 
+      case g.NoSymbol =>
         t.NoSymbol
+      case _ if sym.isRoot => newClassSymbol(t.NoSymbol, dotc.core.StdNames.tpnme.ROOT, flags, sym)
+      case _ if sym.hasPackageFlag && sym.isPackageClass =>
+        val tOwner = convertSymbol(sym.owner)
+        val tName = convertToTypeName(sym.name)
+        newClassSymbol(tOwner, tName, flags, sym)
       case _ if sym.hasPackageFlag =>
         val tOwner = convertSymbol(sym.owner)
         val tName = convertToTermName(sym.name)
         newPackageSymbol(tOwner, tName, flags, sym)
-      case _ if sym.isClass => 
+      case _ if sym.isClass =>
         val tOwner = convertSymbol(sym.owner)
         //TODO fix privateWithin
         newClassSymbol(tOwner, convertToTypeName(sym.name), flags, sym, privateWithin = t.NoSymbol, coord, sym.associatedFile)

@@ -7,6 +7,7 @@ import scala.tasty.internal.dotc.core.tasty._
 import scala.tasty.internal.convert._
 
 class API(val global: Global) extends TTrees
+                              with Signatures
                               with TAnnotations
                               with TConstants
                               with TContexts

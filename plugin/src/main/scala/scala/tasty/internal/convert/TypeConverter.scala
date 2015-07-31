@@ -32,23 +32,65 @@ trait TypeConverter {
       case res => res
     }
   }
-  
+
   def convertTypeImpl(tp: g.Type): t.Type = {
     val resTp = tp match {
-      case g.NoType => 
+      case g.ConstantType(value) =>
+        convertType(value.tpe)
+      case tpe @ g.TypeRef(pre, sym, args) =>
+        tpe match {
+          case _ =>
+            val tPre = convertType(pre)
+            val tSym = convertSymbol(sym)
+            if (sym.isType) 
+              t.TypeRef(tPre, tSym.asType)
+            else t.TermRef(tPre, tSym.asTerm)
+        }
+      case tpe @ g.SingleType(pre, sym) =>
+        val tPre = convertType(pre)
+        val tSym = convertSymbol(sym)
+        if (sym.isType)
+          t.TypeRef(tPre, tSym.asType)
+        else t.TermRef(tPre, tSym.asTerm)
+      case tpe @ g.ThisType(sym) =>
+        val underlying = tpe.underlying.widen
+        println(s"underlying: ${underlying}")
+        println(s"showRaw(underlying): ${g.showRaw(underlying)}")
+        val tUnderlying =
+          convertType(underlying).asInstanceOf[t.TypeRef]
+        println(s"tUnderlying: $tUnderlying")
+        t.ThisType.raw(tUnderlying)
+      case g.SuperType(thisTp, superTp) =>
+        val tThisTp = convertType(thisTp)
+        val tSuperTp = convertType(superTp)
+        t.SuperType(tThisTp, tSuperTp)
+      case g.TypeBounds(lo, ho) =>
+        val tlo = convertType(lo)
+        val tho = convertType(ho)
+        t.TypeBounds(tlo, tho)
+      case tpe: g.AnnotatedType =>
+        throw new Exception(s"unimplemented conversion for AnnotatedType: $tp")
+      case mt @ g.MethodType(params, resultType) =>
+        val tParamNames: List[dotc.core.Names.TermName] = mt.params map { sym => convertToTermName(sym.name) }
+        val tParamTypes = convertTypes(mt.paramTypes)
+        val tResultType = convertType(mt.resultType)
+        t.MethodType(tParamNames, tParamTypes, tResultType)
+        throw new Exception(s"unimplemented conversion for MethodType: $tp")
+      case g.PolyType(typeParams, resultType) =>
+        throw new Exception(s"unimplemented conversion for PolyType: $tp")
+      case g.NoType =>
         t.NoType
       case g.NoPrefix =>
         t.NoPrefix
-      case _ =>
-        ???
+      case _ => throw new Exception(s"unimplemented conversion for type: $tp")
     }
     resTp
   }
 
-  def getConstantTpe(const: self.Constants.Constant, gConstTpe: g.Type = g.NoType): t.Type = {
+  def getConstantTpe(constTag: Int, gConstTpe: g.Type = g.NoType): t.Type = {
     import self.Constants._
     import g.{ definitions => d }
-    const.tag match {
+    constTag match {
       case UnitTag    => convertType(d.UnitTpe)
       case BooleanTag => convertType(d.BooleanTpe)
       case ByteTag    => convertType(d.ByteTpe)
