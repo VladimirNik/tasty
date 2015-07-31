@@ -72,11 +72,12 @@ trait TreeConverter {
         t.Try(tBlock, tCases, tFinalizer)
       case tt @ g.TypeTree() =>
         //TODO - do we need to persist tt.original?
-//        if (tt.original != null) {
-//          val orig = convertTree(tt.original)
-//          t.TypeTree(orig)
-//        } else {
-          t.TypeTree()
+        //        if (tt.original != null) {
+        //          val orig = convertTree(tt.original)
+        //          t.TypeTree(orig)
+        //        } else {
+        val tastyType = convertType(tt.tpe)
+        t.TypeTree() withType (tastyType)
 //        }
       case g.Bind(name, body) =>
         val tBody = convertTree(body)
