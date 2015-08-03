@@ -17,7 +17,8 @@ trait TreeConverter {
         val tTpe = convertType(tree.tpe)
         t.Ident(name) withType tTpe
       case g.This(qual) =>
-        t.This(qual)
+        val tTpe = convertType(tree.tpe)
+        t.This(qual) withType tTpe
       case g.Select(qual, name) =>
         val tTpe = convertType(tree.tpe)
         val tQual = convertTree(qual)
@@ -32,7 +33,7 @@ trait TreeConverter {
         t.TypeApply(tFun, tArgs)
       case g.Literal(const1) =>
         val tConst = convertConstant(const1)
-        t.Literal(tConst)
+        t.Literal(tConst) withType tConst.tpe
       case g.Super(qual, mix) =>
         val tQual = convertTree(qual)
         //TODO - check inConstrCall
@@ -74,13 +75,13 @@ trait TreeConverter {
         t.Try(tBlock, tCases, tFinalizer)
       case tt @ g.TypeTree() =>
         //TODO - do we need to persist tt.original?
-        //        if (tt.original != null) {
-        //          val orig = convertTree(tt.original)
-        //          t.TypeTree(orig)
-        //        } else {
+        //if (tt.original != null) {
+        //  val orig = convertTree(tt.original)
+        //  t.TypeTree(orig)
+        //} else {
         val tastyType = convertType(tt.tpe)
         t.TypeTree() withType (tastyType)
-//        }
+        //}
       case g.Bind(name, body) =>
         val tBody = convertTree(body)
         val tName = convertToTermName(name)
@@ -110,7 +111,8 @@ trait TreeConverter {
         t.TypeDef(name, tRhs)
       case tree @ g.ClassDef(mods, name, tparams, impl) =>
         val clsSym = convertSymbol(tree.symbol)
-        val dummySymbol = newLocalDummy(clsSym, clsSym.coord, clsSym.initGSymbol)
+        //TODO - this code can be moved to Template tree processing
+        val dummySymbol = newLocalDummy(clsSym, clsSym.coord, impl.symbol)
         val dummyTpe = dummySymbol.termRef
 
         val tImpl = convertTree(impl) withType dummyTpe
@@ -158,8 +160,9 @@ trait TreeConverter {
         }
         val tPrimaryCtr = convertTree(primaryCtr)
         val tParents = convertTrees(parents)
-        val tSelf = convertTree(self).asInstanceOf[t.ValDef]
-        val tBody = convertTrees(body)
+        val tSelf = 
+          if (self.symbol != g.NoSymbol) convertTree(self).asInstanceOf[t.ValDef]
+          else t.EmptyValDef
         val resTPrimaryCtr = {
           tPrimaryCtr match {
             case dd: t.DefDef => dd
@@ -168,7 +171,13 @@ trait TreeConverter {
             case _ => throw new Exception("Not correct constructed is found!")
           }
         }
-        t.Template(resTPrimaryCtr, tParents, tSelf, tBody)
+        rest match {
+          case constr :: tail => 
+            val tBody = convertTrees(tail)
+            t.Template(resTPrimaryCtr, tParents, tSelf, tBody)
+          case _ =>
+            t.Template(resTPrimaryCtr, tParents, tSelf, List(t.EmptyTree))
+        }
       case g.Import(expr, selectors) =>
         val tExpr = convertTree(expr)
         val tSelectors = convertSelectors(selectors)
