@@ -21,17 +21,17 @@ trait TastyPhase extends TastyPhaseUtils {
 //    val global: self.global.type = self.global
 //  } with TreePicklers
 
-//  import scala.collection.mutable.{ Map => MMap }
-//  private var picklers: MMap[global.CompilationUnit, MMap[global.ClassSymbol, picklersInstance.TastyPickler]] = MMap()
-//
-//  def addPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol, pickler: picklersInstance.TastyPickler) =
-//    picklers get unit match {
-//      case Some(picklersMap) => picklersMap += (classSymbol -> pickler)
-//      case None              => picklers += (unit -> MMap(classSymbol -> pickler))
-//    }
-//
-//  def findPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol): Option[picklersInstance.TastyPickler] =
-//    picklers(unit) get (classSymbol)
+  import scala.collection.mutable.{ Map => MMap }
+  private var picklers: MMap[global.CompilationUnit, MMap[global.ClassSymbol, apiInstance.TastyPickler]] = MMap()
+
+  def addPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol, pickler: apiInstance.TastyPickler) =
+    picklers get unit match {
+      case Some(picklersMap) => picklersMap += (classSymbol -> pickler)
+      case None              => picklers += (unit -> MMap(classSymbol -> pickler))
+    }
+
+  def findPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol): Option[apiInstance.TastyPickler] =
+    picklers(unit) get (classSymbol)
 
   object TastyComponent extends {
     val global: self.global.type = self.global
@@ -67,7 +67,7 @@ trait TastyPhase extends TastyPhaseUtils {
           } {
             val tTree = apiInstance.convertTree(unit.body.asInstanceOf[apiInstance.g.Tree])
             val pickler = new apiInstance.TastyPickler
-//            addPickler(unit, cls, pickler)
+            addPickler(unit, cls, pickler)
             val treePkl = new apiInstance.TreePickler(pickler)
             val emptyContext = new apiInstance.Contexts.Context{}
             treePkl.pickle(tTree :: Nil)(emptyContext)
@@ -82,10 +82,10 @@ trait TastyPhase extends TastyPhaseUtils {
             } else {
               println("No positions exist for pickling")
             }
-//            //add option for pickling testing (if option - test - option pass to sbt tests subproject)
-//            val pickledInfo = treePkl.logInfo
-//            generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
-//            //testSame(pickledInfo, unit)
+            //add option for pickling testing (if option - test - option pass to sbt tests subproject)
+            //val pickledInfo = treePkl.logInfo
+            //generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
+            //testSame(pickledInfo, unit)
           }
         }
       }
