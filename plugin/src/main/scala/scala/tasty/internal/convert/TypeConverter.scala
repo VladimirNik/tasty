@@ -43,8 +43,8 @@ trait TypeConverter {
             val tPre = convertType(pre)
             val tSym = convertSymbol(sym)
             if (sym.isType) 
-              t.TypeRef(tPre, tSym.asType)
-            else t.TermRef(tPre, tSym.asTerm)
+              t.TypeRef(tPre, tSym.name.asTypeName, tSym.asType)
+            else t.TermRef(tPre, tSym.name.asTermName, tSym.asTerm)
         }
       case tpe @ g.SingleType(pre, sym) =>
         val tPre = convertType(pre)
@@ -53,13 +53,14 @@ trait TypeConverter {
           t.TypeRef(tPre, tSym.asType)
         else t.TermRef(tPre, tSym.asTerm)
       case tpe @ g.ThisType(sym) =>
-        val underlying = tpe.underlying.widen
-        println(s"underlying: ${underlying}")
-        println(s"showRaw(underlying): ${g.showRaw(underlying)}")
-        val tUnderlying =
-          convertType(underlying).asInstanceOf[t.TypeRef]
-        println(s"tUnderlying: $tUnderlying")
-        t.ThisType.raw(tUnderlying)
+        sym match {
+          case _ if sym.isRoot => t.NoPrefix
+          case _ =>
+            val underlying = tpe.underlying.widen
+            val tUnderlying =
+              convertType(underlying).asInstanceOf[t.TypeRef]
+            t.ThisType.raw(tUnderlying)
+        }
       case g.SuperType(thisTp, superTp) =>
         val tThisTp = convertType(thisTp)
         val tSuperTp = convertType(superTp)
@@ -87,13 +88,13 @@ trait TypeConverter {
         //TODO - fix it
         val tClsInfo = t.NoType
         t.ClassInfo(tPrefix, tCls, tParents, tDecls, tClsInfo)
-      case g.NoType =>
-        t.NoType
       case g.NoPrefix =>
         t.NoPrefix
+      case g.NoType =>
+        t.NoType
       case _ => throw new Exception(s"unimplemented conversion for type: $tp")
     }
-    resTp
+    resTp withGType tp
   }
 
   def getConstantTpe(constTag: Int, gConstTpe: g.Type = g.NoType): t.Type = {
