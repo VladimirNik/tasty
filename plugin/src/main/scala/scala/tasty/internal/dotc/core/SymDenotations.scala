@@ -57,18 +57,23 @@ trait TSymDenotations {
       //private[this] var myInfo: Type = ???
 
       private[this] var myInfo: Type = _
+      private[this] var myAnnotations: List[Annotation] = Nil
 
       //if initGSymbol == g.NoSymbol set to NoType
-      final def info: Type = 
+      final def info: Type = {
         if (initGSymbol == self.global.NoSymbol) NoType
         else { // should be computed based on symbol's initGSymbol and set in myInfo (should be lazy)
           myInfo = convertType(initGSymbol.info)
           myInfo
         }
-          
-      final def privateWithin: Symbol = ??? //TODO fix PrivateWithin
+      }
 
-      final def annotations: List[Annotation] = ???
+      final def privateWithin: Symbol = initPrivateWithin
+
+      final def annotations: List[Annotation] = myAnnotations
+
+      private[core] final def annotations_=(annots: List[Annotation]): Unit =
+        myAnnotations = annots
 
       override def isType: Boolean = name.isTypeName
 

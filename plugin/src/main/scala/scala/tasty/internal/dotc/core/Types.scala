@@ -68,6 +68,12 @@ trait TTypes {
       }
 
       def signature: Signature = Signature.NotAMethod
+
+      protected[TTypes] var initGType: g.Type = g.NoType
+      def withGType(gType: g.Type): Type = {
+        initGType = gType
+        this
+      }
     } // end Type
 
     trait CachedType extends Type
@@ -167,7 +173,7 @@ trait TTypes {
 
     abstract case class TermRef(override val prefix: Type, name: TermName) extends NamedType with SingletonType {
       type ThisType = TermRef
-
+      override def signature: Signature = denot.signature
       override def underlying: Type = {
         val d = denot
         //denot isOverloaded = isInstanceOf[MultiDenotation]
@@ -199,6 +205,7 @@ trait TTypes {
 
     trait WithFixedSym extends NamedType {
       def fixedSym: Symbol
+      withDenot(fixedSym)
 
       override def withSym(sym: Symbol, signature: Signature): ThisType =
         unsupported("withSym")
@@ -394,9 +401,24 @@ trait TTypes {
     }
 
     trait MethodicType extends Type {
+
+      protected[TTypes] var mySignature: Signature = _
       //TODO add override methods to subtypes
-      protected def computeSignature: Signature = ???
-      final override def signature: Signature = computeSignature
+      protected def computeSignature: Signature
+      final override def signature: Signature =
+        if (mySignature ne null) {
+          mySignature
+        } else computeSignature
+
+      protected def resultSignature = try resultType match {
+        case rtp: MethodicType => rtp.signature
+        case tp => Signature(initGType)
+      }
+      catch {
+        case ex: AssertionError =>
+          println(i"failure while taking result signture of $this: $resultType")
+          throw ex
+      }
     }
 
     trait MethodOrPoly extends MethodicType
@@ -411,7 +433,20 @@ trait TTypes {
       private[core] val resType = resultTypeExp(this)
       assert(resType.exists)
 
-      override def resultType: Type = ???
+      override def resultType: Type = {      
+        //TODO - in dotty implementation there is a spicial processing for false dependencies
+        resType
+      }
+
+      //TODO - check correctness
+      protected def computeSignature: Signature = {
+        if (mySignature ne null) mySignature 
+        else {
+          mySignature = Signature(this.initGType)
+          mySignature
+        }
+      }
+        //resultSignature.prepend(paramTypes, isJava)
 
       override def equals(that: Any) = that match {
         case that: MethodType =>
@@ -468,6 +503,13 @@ trait TTypes {
 
     abstract case class ExprType(resType: Type)
       extends CachedProxyType with TermType with MethodicType {
+      protected def computeSignature: Signature = {
+        if (mySignature ne null) mySignature
+        else {
+          mySignature = resultSignature
+          mySignature
+        }
+      }
       override def resultType: Type = resType
       override def underlying: Type = resType
     }
@@ -488,6 +530,14 @@ trait TTypes {
       val resType = resultTypeExp(this)
 
       override def resultType = resType
+
+      protected def computeSignature = {
+        if (mySignature ne null) mySignature
+        else {
+          mySignature = resultSignature
+          mySignature
+        }
+      }
 
       // need to override hashCode and equals to be object identity
       // because paramNames by itself is not discriminatory enough
