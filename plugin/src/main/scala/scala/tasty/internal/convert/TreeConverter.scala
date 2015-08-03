@@ -110,8 +110,22 @@ trait TreeConverter {
         //TODO - add setMods
         val tTparams = convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
         val tVparamss = (vparamss map convertTrees).asInstanceOf[List[List[t.ValDef]]]
-        val tTpt = convertTree(tpt)
-        val tRhs = convertTree(rhs)
+        val tTpt =
+          if (tree.symbol.isConstructor) t.TypeTree withType convertType(g.definitions.UnitTpe)
+          else convertTree(tpt)
+        val tRhs =
+          rhs match {
+            //Remove super invocation from primary constructor
+            case g.Block(g.Apply(g.Select(g.Super(_, _), _), _) :: stats, expr) if tree.symbol.isPrimaryConstructor =>
+              if (stats.nonEmpty) {
+                val tStats = convertTrees(stats)
+                val tExpr = convertTree(expr)
+                t.Block(tStats, tExpr)
+              } else {
+                t.EmptyTree
+              }
+            case _ => convertTree(rhs)
+          }
         t.DefDef(name, tTparams, tVparamss, tTpt, tRhs) withType(defTp)
       case tree @ g.TypeDef(mods, name, tparams, rhs) =>
         val tTparams = convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
@@ -194,7 +208,7 @@ trait TreeConverter {
           tPrimaryCtr match {
             case dd: t.DefDef => dd
             //TODO - fix to correct constructor representation
-            case t.EmptyTree => t.DefDef(dotc.core.StdNames.nme.USCOREkw, Nil, List(Nil), t.TypeTree(), t.EmptyTree)
+            case t.EmptyTree => t.DefDef(dotc.core.StdNames.nme.CONSTRUCTOR, Nil, List(Nil), t.TypeTree(), t.EmptyTree)
             case _ => throw new Exception("Not correct constructed is found!")
           }
         }
