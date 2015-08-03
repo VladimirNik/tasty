@@ -10,6 +10,16 @@ trait TreeConverter {
 
   def convertTrees(tree: List[g.Tree]): List[t.Tree] = tree map convertTree
 
+  def convertSelect(qual: g.Tree, name: g.Name, tp: g.Type): t.Select = {
+    val tTpe = convertType(tp)
+    val tQual = convertTree(qual)
+    convertSelect(tQual, name, tTpe)
+  }
+
+  def convertSelect(tQual: t.Tree, name: dotc.core.Names.Name, tTpe: self.Types.Type): t.Select = {
+    t.Select(tQual, name) withType tTpe
+  }
+
   def convertTree(tree: g.Tree): t.Tree = {
     //println(s"tree: ${g.showRaw(tree)}")
     val resTree = tree match {
@@ -20,9 +30,7 @@ trait TreeConverter {
         val tTpe = convertType(tree.tpe)
         t.This(qual) withType tTpe
       case g.Select(qual, name) =>
-        val tTpe = convertType(tree.tpe)
-        val tQual = convertTree(qual)
-        t.Select(tQual, name) withType tTpe
+        convertSelect(qual, name, tree.tpe)
       case g.Apply(fun, args) =>
         val tFun = convertTree(fun)
         val tArgs = convertTrees(args)
@@ -153,13 +161,32 @@ trait TreeConverter {
           case Some(g.treeInfo.Applied(_, _, argss)) => argss
           case _                                     => Nil
         }
-        def isDefaultAnyRef(tree: g.Tree) = tree match {
-          case g.Select(g.Ident(sc), name) if name == g.tpnme.AnyRef && sc == g.nme.scala_ => true
-          case g.TypeTree() => tree.tpe =:= global.definitions.AnyRefTpe
-          case _ => false
+        //def isDefaultAnyRef(tree: g.Tree) = tree match {
+        //  case g.Select(g.Ident(sc), name) if name == g.tpnme.AnyRef && sc == g.nme.scala_ => true
+        //  case g.TypeTree() => tree.tpe =:= global.definitions.AnyRefTpe
+        //  case _ => false
+        //}
+
+        //lang.Object => (new lang.Object()).<init> 
+        //Apply(Select(New(TypeTree[tpe]), <init>), args)
+        val tParents = (tree.parents zip constrArgss) map {
+          case (gParent, gArgs) =>
+            val gParentTpe = gParent.tpe
+            val gParentConstructorTpe = gParent.tpe.member(g.nme.CONSTRUCTOR).tpe
+            val tParentConstructorTpe = convertType(gParentConstructorTpe)
+
+            val tNewTpe = convertType(gParentTpe)
+            val tNew = t.New(tNewTpe)
+
+            val tSelect = convertSelect(tNew, dotc.core.StdNames.nme.CONSTRUCTOR, tParentConstructorTpe)
+
+            val args = convertTrees(gArgs)
+            t.Apply(tSelect, args)
         }
+        //TODO tParents should be fixed
+        //val tParents = convertTrees(parents)
+
         val tPrimaryCtr = convertTree(primaryCtr)
-        val tParents = convertTrees(parents)
         val tSelf = 
           if (self.symbol != g.NoSymbol) convertTree(self).asInstanceOf[t.ValDef]
           else t.EmptyValDef
