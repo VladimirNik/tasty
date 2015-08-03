@@ -45,7 +45,7 @@ trait SymbolConverter {
       case _ if sym.hasPackageFlag && sym.isPackageClass =>
         val tOwner = convertSymbol(sym.owner)
         val tName = convertToTypeName(sym.name)
-        newClassSymbol(tOwner, tName, flags, sym)
+        newClassSymbol(tOwner, tName, dotc.core.Flags.PackageCreationFlags | flags, sym)
       case _ if sym.hasPackageFlag =>
         val tOwner = convertSymbol(sym.owner)
         val tName = convertToTermName(sym.name)
