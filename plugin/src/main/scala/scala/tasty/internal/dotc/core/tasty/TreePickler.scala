@@ -25,9 +25,11 @@ class TreePickler(pickler: TastyPickler) {
   private val pickledTypes = new java.util.IdentityHashMap[Type, Any] // Value type is really Addr, but that's not compatible with null
 
   private def withLength(op: => Unit) = {
+    log("==> wl")
     val lengthAddr = reserveRef(relative = true)
     op
     fillRef(lengthAddr, currentAddr, relative = true)
+    log("<== wl")
   }
 
   def addrOfSym(sym: Symbol): Option[Addr] = {
@@ -49,11 +51,46 @@ class TreePickler(pickler: TastyPickler) {
       case None =>
     }
   }
+    import buf.{ writeRef => bwriteRef, fillRef => bfillRef, writeByte => bwriteByte, _ }
+    private var logCond = false
+    private var pickledStr: StringBuffer = new StringBuffer("")
+    private def log(str: String) = {
+      import scala.reflect.internal.Chars.LF
+      pickledStr.append(str + LF)
+      if (logCond) {
+        println(str)
+      }
+    }
+    def logInfo = pickledStr.toString().trim().stripLineEnd
 
-  private def pickleName(name: Name): Unit = writeNat(nameIndex(name).index)
-  private def pickleName(name: TastyName): Unit = writeNat(nameIndex(name).index)
+    private def writeRef(target: Addr) = {
+      log(s"writeRef( target: $target )")
+      bwriteRef(target)
+    }
+
+    private def fillRef(at: Addr, target: Addr, relative: Boolean) = {
+      log(s"fillRef( at: $at, target: $target, relative $relative )")
+      bfillRef(at, target, relative)
+    }
+
+    private def writeByte(b: Int) = {
+      log(s"astTag: ${astTagToString(b)} ($b)")
+      bwriteByte(b)
+    }
+  
+  private def pickleName(name: Name): Unit = {
+    log(s"pickleName: ${name.toString()}")
+    writeNat(nameIndex(name).index)
+  }
+  private def pickleName(name: TastyName): Unit = {
+    log(s"pickleName(*): ${name.toString()}")
+    writeNat(nameIndex(name).index)
+  }
   private def pickleNameAndSig(name: Name, sig: Signature) = {
     val Signature(params, result) = sig
+      log(s"pickleNameAndSig, name: ${name.toString()}")
+      log(s"                  params: ${params.map(_.toString())}")
+      log(s"                  result: ${result.toString()}")
     pickleName(TastyName.Signed(nameIndex(name), params.map(fullNameIndex), fullNameIndex(result)))
   }
 
@@ -88,44 +125,47 @@ class TreePickler(pickler: TastyPickler) {
       if (sym.isRoot || sym.owner.isRoot) TastyName.Simple(sym.name.toTermName)
       else TastyName.Qualified(nameIndex(qualifiedName(sym.owner)), nameIndex(sym.name))
 
-    def pickleConstant(c: Constant): Unit = c.tag match {
-      case UnitTag =>
-        writeByte(UNITconst)
-      case BooleanTag =>
-        writeByte(if (c.booleanValue) TRUEconst else FALSEconst)
-      case ByteTag =>
-        writeByte(BYTEconst)
-        writeInt(c.byteValue)
-      case ShortTag =>
-        writeByte(SHORTconst)
-        writeInt(c.shortValue)
-      case CharTag =>
-        writeByte(CHARconst)
-        writeNat(c.charValue)
-      case IntTag =>
-        writeByte(INTconst)
-        writeInt(c.intValue)
-      case LongTag =>
-        writeByte(LONGconst)
-        writeLongInt(c.longValue)
-      case FloatTag =>
-        writeByte(FLOATconst)
-        writeInt(java.lang.Float.floatToRawIntBits(c.floatValue))
-      case DoubleTag =>
-        writeByte(DOUBLEconst)
-        writeLongInt(java.lang.Double.doubleToRawLongBits(c.doubleValue))
-      case StringTag =>
-        writeByte(STRINGconst)
-        writeNat(nameIndex(c.stringValue).index)
-      case NullTag =>
-        writeByte(NULLconst)
-      case ClazzTag =>
-        writeByte(CLASSconst)
-        pickleType(c.typeValue)
-      case EnumTag =>
-        writeByte(ENUMconst)
-        pickleType(c.symbolValue.termRef)
-    }
+      def pickleConstant(c: Constant): Unit = {
+        log(s"pickleConstant: ${c}")
+        c.tag match {
+          case UnitTag =>
+            writeByte(UNITconst)
+          case BooleanTag =>
+            writeByte(if (c.booleanValue) TRUEconst else FALSEconst)
+          case ByteTag =>
+            writeByte(BYTEconst)
+            writeInt(c.byteValue)
+          case ShortTag =>
+            writeByte(SHORTconst)
+            writeInt(c.shortValue)
+          case CharTag =>
+            writeByte(CHARconst)
+            writeNat(c.charValue)
+          case IntTag =>
+            writeByte(INTconst)
+            writeInt(c.intValue)
+          case LongTag =>
+            writeByte(LONGconst)
+            writeLongInt(c.longValue)
+          case FloatTag =>
+            writeByte(FLOATconst)
+            writeInt(java.lang.Float.floatToRawIntBits(c.floatValue))
+          case DoubleTag =>
+            writeByte(DOUBLEconst)
+            writeLongInt(java.lang.Double.doubleToRawLongBits(c.doubleValue))
+          case StringTag =>
+            writeByte(STRINGconst)
+            writeNat(nameIndex(c.stringValue).index)
+          case NullTag =>
+            writeByte(NULLconst)
+          case ClazzTag =>
+            writeByte(CLASSconst)
+            pickleType(c.typeValue)
+          case EnumTag =>
+            writeByte(ENUMconst)
+            pickleType(c.symbolValue.termRef)
+        }
+      }
 
     def pickleType(tpe0: Type, richTypes: Boolean = false): Unit = try {
       val tpe = tpe0.stripTypeVar
@@ -502,6 +542,7 @@ class TreePickler(pickler: TastyPickler) {
     }
 
     def pickleModifiers(sym: Symbol): Unit = {
+      log(s"     byte: pickleModifiers")
       import Flags._
       val flags = sym.flags
       val privateWithin = sym.privateWithin
