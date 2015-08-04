@@ -16,6 +16,7 @@ class API(val global: Global) extends TTrees
                               with TSymDenotations
                               with TTypeApplications
                               with TTypes
+                              with ModifierConverter
                               with NameConverter
                               with PositionConverter
                               with TreeConverter
