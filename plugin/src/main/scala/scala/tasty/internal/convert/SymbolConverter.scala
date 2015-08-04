@@ -35,7 +35,7 @@ trait SymbolConverter {
   
   def convertSymImpl(sym: g.Symbol): t.Symbol = {
     //TODO - fix flags
-    val flags = dotc.core.Flags.EmptyFlags
+    val flags = convertModifiers(sym)
     val pos: tp.Position = sym.pos
     val coord: tp.Coord = pos
     val resSym = sym match {
@@ -56,9 +56,11 @@ trait SymbolConverter {
         newClassSymbol(tOwner, convertToTypeName(sym.name), flags, sym, privateWithin = t.NoSymbol, coord, sym.associatedFile)
       case _ if sym.isConstructor =>
         val tOwner = convertSymbol(sym.owner)
+        //TODO fix privateWithin
         newConstructor(tOwner, flags, sym, privateWithin = t.NoSymbol, coord)
       case _ =>
         val tOwner = convertSymbol(sym.owner)
+        //TODO fix privateWithin
         newSymbol(tOwner, convertToName(sym.name), flags, sym, privateWithin = t.NoSymbol, coord)
     }
     resSym
