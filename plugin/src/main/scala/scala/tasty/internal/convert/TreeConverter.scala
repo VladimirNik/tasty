@@ -124,6 +124,8 @@ trait TreeConverter {
               } else {
                 t.EmptyTree
               }
+            //Change empty block to EmptyTree in constructor
+            case g.Block(Nil, g.Literal(g.Constant(()))) if tree.symbol.isConstructor => t.EmptyTree
             case _ => convertTree(rhs)
           }
         t.DefDef(name, tTparams, tVparamss, tTpt, tRhs) withType(defTp)
