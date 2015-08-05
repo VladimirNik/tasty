@@ -183,8 +183,10 @@ trait TreeConverter {
 
         //lang.Object => (new lang.Object()).<init> 
         //Apply(Select(New(TypeTree[tpe]), <init>), args)
-        val tParents = (tree.parents zip constrArgss) map {
-          case (gParent, gArgs) =>
+        val tParents = (tree.parents.zipWithIndex) map {
+          //case for parent of class which is a class
+          case (gParent, index) if !gParent.symbol.isTrait && !isTrait =>
+            val gArgs = constrArgss(index)
             val gParentTpe = gParent.tpe
             val gParentConstructorTpe = gParent.tpe.member(g.nme.CONSTRUCTOR).tpe
             val tParentConstructorTpe = convertType(gParentConstructorTpe)
@@ -196,6 +198,10 @@ trait TreeConverter {
 
             val args = convertTrees(gArgs)
             t.Apply(tSelect, args)
+          //case for all parents of trait and parent of class which is a trait 
+          case (gParent, _) => 
+            val parentType = convertType(gParent.tpe)
+            t.TypeTree() withType parentType
         }
         //TODO tParents should be fixed
         //val tParents = convertTrees(parents)
@@ -208,7 +214,13 @@ trait TreeConverter {
           tPrimaryCtr match {
             case dd: t.DefDef => dd
             //TODO - fix to correct constructor representation
-            case t.EmptyTree => t.DefDef(dotc.core.StdNames.nme.CONSTRUCTOR, Nil, List(Nil), t.TypeTree(), t.EmptyTree)
+            case t.EmptyTree =>
+              //TODO - move to standalone method (default constructor tree creation)
+              val unitTpe = convertType(g.definitions.UnitTpe)
+              val clsSym = convertSymbol(tree.symbol.owner).asClass
+              val dcSym = newDefaultConstructor(clsSym)
+              val dcType = dcSym.termRef
+              t.DefDef(dotc.core.StdNames.nme.CONSTRUCTOR, Nil, List(Nil), t.TypeTree() withType unitTpe, t.EmptyTree) withType dcType
             case _ => throw new Exception("Not correct constructed is found!")
           }
         }
