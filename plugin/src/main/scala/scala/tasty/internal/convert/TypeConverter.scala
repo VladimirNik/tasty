@@ -6,8 +6,27 @@ trait TypeConverter {
 
   import self.GlobalToTName._
   import self.{ Types => t }
+  import self.{ Symbols => tasty }
   import dotc.util.{ Positions => tp }
   import scala.collection.JavaConversions._
+
+  //Types that have no one to one correspondence in Scala and Dotty
+  //For example, TermRef in Dotty is not directly represented in Scala
+  private val generatedTypes = new java.util.IdentityHashMap[tasty.Symbol, t.Type]
+
+  def getTermRef(sym: tasty.Symbol): t.Type = {
+    generatedTypes.getOrElse(sym,
+      {
+        val genTp = sym.termRef
+        generatedTypes += (sym -> genTp)
+        genTp
+      })
+  }
+
+  def getTermRef(sym: g.Symbol): t.Type = {
+    val tSymbol = convertSymbol(sym)
+    getTermRef(tSymbol)
+  }
 
   val typeCache = new java.util.IdentityHashMap[g.Type, t.Type]();
 

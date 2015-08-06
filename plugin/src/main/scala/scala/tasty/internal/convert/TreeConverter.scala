@@ -24,7 +24,13 @@ trait TreeConverter {
     //println(s"tree: ${g.showRaw(tree)}")
     val resTree = tree match {
       case g.Ident(name) =>
-        val tTpe = convertType(tree.tpe)
+        val identSymbol = tree.symbol
+        //TODO check the cases when termRef is the tpe for Ident
+        val tTpe = if ((identSymbol ne null) && identSymbol.isTerm) {
+          getTermRef(identSymbol)
+        } else {
+          convertType(tree.tpe)
+        }
         t.Ident(name) withType tTpe
       case g.This(qual) =>
         val tTpe = convertType(tree.tpe)
@@ -98,14 +104,14 @@ trait TreeConverter {
         val tAlts = convertTrees(alts)
         t.Alternative(tAlts)
       case tree @ g.ValDef(mods, name, tpt, rhs) =>
+        val valTp = getTermRef(tree.symbol)
+
         //TODO - add setMods
         val tTpt = convertTree(tpt).asInstanceOf[t.TypeTree]
         val tRhs = convertTree(rhs)
-        t.ValDef(name, tTpt, tRhs)
+        t.ValDef(name, tTpt, tRhs) withType valTp
       case tree @ g.DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
-        val defSym = convertSymbol(tree.symbol)
-        //TODO - this type should be persisted (maybe based on symbol as a key)
-        val defTp = defSym.termRef
+        val defTp = getTermRef(tree.symbol)
 
         //TODO - add setMods
         val tTparams = convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
@@ -137,7 +143,7 @@ trait TreeConverter {
         val clsSym = convertSymbol(tree.symbol)
         //TODO - this code can be moved to Template tree processing
         val dummySymbol = newLocalDummy(clsSym, clsSym.coord, impl.symbol)
-        val dummyTpe = dummySymbol.termRef
+        val dummyTpe = getTermRef(dummySymbol)
 
         val tImpl = convertTree(impl) withType dummyTpe
 
@@ -221,7 +227,7 @@ trait TreeConverter {
               val unitTpe = convertType(g.definitions.UnitTpe)
               val clsSym = convertSymbol(tree.symbol.owner).asClass
               val dcSym = newDefaultConstructor(clsSym)
-              val dcType = dcSym.termRef
+              val dcType = getTermRef(dcSym)
               t.DefDef(dotc.core.StdNames.nme.CONSTRUCTOR, Nil, List(Nil), t.TypeTree() withType unitTpe, t.EmptyTree) withType dcType
             case _ => throw new Exception("Not correct constructed is found!")
           }
