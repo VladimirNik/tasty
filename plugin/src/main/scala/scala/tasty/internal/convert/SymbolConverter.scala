@@ -50,6 +50,12 @@ trait SymbolConverter {
         val tOwner = convertSymbol(sym.owner)
         val tName = convertToTermName(sym.name)
         newPackageSymbol(tOwner, tName, flags, sym)
+      // if sym.isModuleClass its name should be changed: '$'originalName
+      case _ if sym.isModuleClass =>
+        val tOwner = convertSymbol(sym.owner)
+        //TODO fix privateWithin
+        import dotc.core.Flags
+        newClassSymbol(tOwner, convertToTypeName(syntheticName(sym.name)), flags | Flags.Module, sym, privateWithin = t.NoSymbol, coord, sym.associatedFile)
       case _ if sym.isClass =>
         val tOwner = convertSymbol(sym.owner)
         //TODO fix privateWithin

@@ -586,6 +586,8 @@ trait TTrees {
       def Annotated(annot: Tree, arg: Tree): Annotated =
         new Annotated(annot, arg)
 
+      def Thicket(trees: List[Tree]): Thicket =
+        new Thicket(trees)
 //      def Throw(expr: Tree): Tree =
 //        ref(defn.throwMethod).appliedTo(expr)
     }

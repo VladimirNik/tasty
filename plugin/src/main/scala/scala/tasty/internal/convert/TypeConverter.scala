@@ -14,18 +14,29 @@ trait TypeConverter {
   //For example, TermRef in Dotty is not directly represented in Scala
   private val generatedTypes = new java.util.IdentityHashMap[tasty.Symbol, t.Type]
 
-  def getTermRef(sym: tasty.Symbol): t.Type = {
+  private def getRefType(sym: tasty.Symbol)(fn: tasty.Symbol => t.Type): t.Type = {
     generatedTypes.getOrElse(sym,
       {
-        val genTp = sym.termRef
+        val genTp = fn(sym)
         generatedTypes += (sym -> genTp)
         genTp
       })
   }
 
+  def getTermRef(sym: tasty.Symbol): t.Type =
+    getRefType(sym)(_.termRef)
+
   def getTermRef(sym: g.Symbol): t.Type = {
     val tSymbol = convertSymbol(sym)
     getTermRef(tSymbol)
+  }
+
+  def getTypeRef(sym: tasty.Symbol): t.Type =
+    getRefType(sym)(_.typeRef)
+
+  def getTypeRef(sym: g.Symbol): t.Type = {
+    val tSymbol = convertSymbol(sym)
+    getTypeRef(tSymbol)
   }
 
   val typeCache = new java.util.IdentityHashMap[g.Type, t.Type]();

@@ -8,7 +8,16 @@ trait TreeConverter {
   import self.ast.{ tpd => t }
   import self.{ Constants => tc }
 
-  def convertTrees(tree: List[g.Tree]): List[t.Tree] = tree map convertTree
+  def convertTrees(tree: List[g.Tree]): List[t.Tree] = {
+    val convertedList = tree map convertTree
+    import scala.collection.mutable.ArrayBuffer
+    var resList: ArrayBuffer[t.Tree] = ArrayBuffer() 
+    convertedList foreach {
+      case th: t.Thicket => resList ++= th.trees
+      case tr => resList += tr
+    }
+    resList.toList
+  }
 
   def convertSelect(qual: g.Tree, name: g.Name, tp: g.Type): t.Select = {
     val tTpe = convertType(tp)
@@ -138,7 +147,10 @@ trait TreeConverter {
       case tree @ g.TypeDef(mods, name, tparams, rhs) =>
         val tTparams = convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
         val tRhs = convertTree(rhs)
-        t.TypeDef(name, tRhs)
+
+        val tp = tree.symbol.tpe
+        val convertedType = convertType(tp)
+        t.TypeDef(name, tRhs) withType convertedType
       case tree @ g.ClassDef(mods, name, tparams, impl) =>
         val clsSym = convertSymbol(tree.symbol)
         //TODO - this code can be moved to Template tree processing
@@ -151,15 +163,37 @@ trait TreeConverter {
         val convertedType = convertType(tp)
         //TODO tparams should be processed
         t.ClassDef(name, tImpl) withType(convertedType)
-      case tree: g.ModuleDef =>
-        //TODO fix (here two tree should be returned) - use Thicket
-        //val modClSym = tree.symbol.moduleClass
-        //def syntheticName(name: g.Name) = name.append('$')
-        //val synthName = syntheticName(modClSym.name)
+      case tree @ g.ModuleDef(_, name, impl) =>
+        val modClSym = tree.symbol.moduleClass
+        val tModClSym = convertSymbol(modClSym)
+        val modClSymTpe = modClSym.tpe
+        //generate type with synthetic name (should be ..$)
+        //add method to change name/add modifiers
+        val tModClSymTpe = convertType(modClSymTpe)
+        val modSym = tree.symbol
+
+        //typeDef
+        val synthName = syntheticName(modClSym.name).toTypeName
+        //TODO - this code can be moved to Template tree processing
+        val dummySymbol = newLocalDummy(tModClSym, tModClSym.coord, impl.symbol)
+        val dummyTpe = getTermRef(dummySymbol)
+        val tImpl = convertTree(impl) withType dummyTpe
+        val tp = tree.symbol.tpe
+        val convertedType = convertType(tp)
+        //TODO - check constructor type
+        val genTypeDef = t.TypeDef(convertToTypeName(synthName), tImpl) withType tModClSymTpe
+
+        //valDef
+        import dotc.core.StdNames.nme
+        //val tIdent = t.Ident(synthName) withType tModClSymTpe
+        val tNew = t.New(tModClSymTpe)
+        val tSelectTpe = getTermRef(convertSymbol(modClSymTpe.member(g.nme.CONSTRUCTOR)))
+        val tSelect = t.Select(tNew, nme.CONSTRUCTOR) withType tSelectTpe
         
-        //pickleDef(TYPEDEF, tree.symbol, tree.impl, name = synthName)
-        //emulate ValDef
-        ???
+        val genVDRhs = t.Apply(tSelect, List())
+        val genValDef = t.ValDef(name.toTermName, t.TypeTree() withType tModClSymTpe, genVDRhs) withType getTermRef(modSym)
+
+        t.Thicket(List(genValDef, genTypeDef))
       case tree @ g.Template(parents, self, body) =>
         val (params, rest) = tree.body partition {
           case stat: g.TypeDef => stat.symbol.isParameter

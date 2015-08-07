@@ -20,6 +20,8 @@ trait NameConverter {
       }).asInstanceOf[TN]
   }
 
+  def syntheticName(name: g.Name) = name.append('$')
+
   object GlobalToTName {
     //TODO StdNames mapping (between reflect.StdNames and tasty.StdNames
 
