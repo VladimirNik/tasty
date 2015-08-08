@@ -14,6 +14,4 @@ trait PositionConverter {
       case _ => t.Position(pos.start, pos.end, pos.point)
     }
   }
-
-  implicit def convertToTCoord(pos: g.Position): t.Coord = convertToTPosition(pos) 
 }

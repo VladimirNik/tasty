@@ -23,8 +23,6 @@ trait NameConverter {
   def syntheticName(name: g.Name) = name.append('$')
 
   object GlobalToTName {
-    //TODO StdNames mapping (between reflect.StdNames and tasty.StdNames
-
     implicit def convertToName(name: g.Name): t.Name =
       if (name.isTermName) convertToTermName(name) else convertToTypeName(name)
 
