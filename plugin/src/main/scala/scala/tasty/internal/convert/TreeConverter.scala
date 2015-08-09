@@ -29,6 +29,11 @@ trait TreeConverter {
     t.Select(tQual, name) withType tTpe
   }
 
+  def getTemplateTpe(clsSym: self.Symbols.Symbol, implSym: g.Symbol) = {
+    val dummySymbol = newLocalDummy(clsSym, clsSym.coord, implSym)
+    getTermRef(dummySymbol)
+  }
+  
   def convertTree(tree: g.Tree): t.Tree = {
     //println(s"tree: ${g.showRaw(tree)}")
     val resTree = tree match {
@@ -146,17 +151,15 @@ trait TreeConverter {
         t.DefDef(name, tTparams, tVparamss, tTpt, tRhs) withType(defTp)
       case tree @ g.TypeDef(mods, name, tparams, rhs) =>
         val tTparams = convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
-        val tRhs = convertTree(rhs)
+        val dummyTpe = getTemplateTpe(convertSymbol(tree.symbol), rhs.symbol)
+        val tRhs = convertTree(rhs) withType dummyTpe
 
         val tp = tree.symbol.tpe
         val convertedType = convertType(tp)
         t.TypeDef(name, tRhs) withType convertedType
       case tree @ g.ClassDef(mods, name, tparams, impl) =>
         val clsSym = convertSymbol(tree.symbol)
-        //TODO - this code can be moved to Template tree processing
-        val dummySymbol = newLocalDummy(clsSym, clsSym.coord, impl.symbol)
-        val dummyTpe = getTermRef(dummySymbol)
-
+        val dummyTpe = getTemplateTpe(clsSym, impl.symbol)
         val tImpl = convertTree(impl) withType dummyTpe
 
         val tp = tree.symbol.tpe
@@ -174,9 +177,8 @@ trait TreeConverter {
 
         //typeDef
         val synthName = syntheticName(modClSym.name).toTypeName
-        //TODO - this code can be moved to Template tree processing
-        val dummySymbol = newLocalDummy(tModClSym, tModClSym.coord, impl.symbol)
-        val dummyTpe = getTermRef(dummySymbol)
+
+        val dummyTpe = getTemplateTpe(tModClSym, impl.symbol)
         val tImpl = convertTree(impl) withType dummyTpe
         val tp = tree.symbol.tpe
         val convertedType = convertType(tp)
