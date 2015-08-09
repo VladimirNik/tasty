@@ -108,7 +108,7 @@ trait TreeConverter {
         //  t.TypeTree(orig)
         //} else {
         val tastyType = convertType(tt.tpe)
-        t.TypeTree() withType (tastyType)
+        t.TypeTree(tastyType)
         //}
       case g.Bind(name, body) =>
         val tBody = convertTree(body)
@@ -190,10 +190,10 @@ trait TreeConverter {
         //val tIdent = t.Ident(synthName) withType tModClSymTpe
         val tNew = t.New(tModClSymTpe)
         val tSelectTpe = getTermRef(convertSymbol(modClSymTpe.member(g.nme.CONSTRUCTOR)))
-        val tSelect = t.Select(tNew, nme.CONSTRUCTOR) withType tSelectTpe
+        val tSelect = convertSelect(tNew, nme.CONSTRUCTOR, tSelectTpe)
         
         val genVDRhs = t.Apply(tSelect, List())
-        val genValDef = t.ValDef(name.toTermName, t.TypeTree() withType tModClSymTpe, genVDRhs) withType getTermRef(modSym)
+        val genValDef = t.ValDef(name.toTermName, t.TypeTree(tModClSymTpe), genVDRhs) withType getTermRef(modSym)
 
         t.Thicket(List(genValDef, genTypeDef))
       case tree @ g.Template(parents, self, body) =>
@@ -245,7 +245,7 @@ trait TreeConverter {
           //case for all parents of trait and parent of class which is a trait 
           case (gParent, _) => 
             val parentType = convertType(gParent.tpe)
-            t.TypeTree() withType parentType
+            t.TypeTree(parentType)
         }
         //TODO tParents should be fixed
         //val tParents = convertTrees(parents)
@@ -264,7 +264,7 @@ trait TreeConverter {
               val clsSym = convertSymbol(tree.symbol.owner).asClass
               val dcSym = newDefaultConstructor(clsSym)
               val dcType = getTermRef(dcSym)
-              t.DefDef(dotc.core.StdNames.nme.CONSTRUCTOR, Nil, List(Nil), t.TypeTree() withType unitTpe, t.EmptyTree) withType dcType
+              t.DefDef(dotc.core.StdNames.nme.CONSTRUCTOR, Nil, List(Nil), t.TypeTree(unitTpe), t.EmptyTree) withType dcType
             case _ => throw new Exception("Not correct constructed is found!")
           }
         }
