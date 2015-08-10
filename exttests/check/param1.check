@@ -1,5 +1,5 @@
 package <empty> {
-  class Test() extends Object() { 
+  class Test() extends AnyRef() { 
     def testDef(y: T): T = y
   }
 }

@@ -1,5 +1,5 @@
 package aaa.bbb.ccc {
   package aaa.bbb.ccc.ddd.eee.fff {
-    class Test() extends Object() {}
+    class Test() extends AnyRef() {}
   }
 }

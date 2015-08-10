@@ -5,7 +5,7 @@ package <empty> {
     private[this] val y: Int
     private[this] val yy: String
     private[this] implicit val zx: Double
-    class B() extends Object() { 
+    class B() extends AnyRef() { 
       def ggg(y: String): String = y
     }
     private[this] val r : String = "ttt"

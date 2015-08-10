@@ -1,5 +1,5 @@
 package <empty> {
-  <trait> trait X2() extends Object { 
+  <trait> trait X2() extends AnyRef { 
     42
   }
 }
