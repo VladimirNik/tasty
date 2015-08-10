@@ -45,15 +45,17 @@ def checkTasty( testName, testClass, fromTastyName ):
   (out, err) = proc.communicate()
 
   #print result
-  if data != '' and data in out and not 'error' in out:
+  if data != '' and ((data in out) or (data in err)): # and not 'error' in out:
     okStr = 'Test: ' + testName + ' completed'
     print '\033[1;32m' + okStr + '\033[1;m'
   else:
     badStr = 'Test: ' + testName + ' failed'
     print '\033[1;31m' + badStr + '\033[1;m'
-
-  #print out
-  #print data
+  
+  if not(data in out) and not(data in err):
+    print out
+    print err
+    print data
 
 #TODO
 #repackage the plugin before running
