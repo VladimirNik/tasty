@@ -2,4 +2,7 @@ target
 .cache
 .classpath
 .project
+.settings
+.worksheet
+*.class
 *~
