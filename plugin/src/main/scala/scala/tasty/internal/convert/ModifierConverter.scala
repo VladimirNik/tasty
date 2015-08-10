@@ -13,6 +13,7 @@ trait ModifierConverter {
 
     //TODO - What to do with Flags.BindDefinedType, Flags.ExpandedName?
     if (sym.isParameter) setFlags(Param)
+    if (sym.isParamAccessor) setFlags(ParamAccessor)
     if (sym.isPrivate) setFlags(Private)
     if (sym.isProtected) setFlags(Protected)
     if (sym.isFinal) setFlags(Final)

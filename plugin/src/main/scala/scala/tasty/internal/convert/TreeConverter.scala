@@ -270,7 +270,7 @@ trait TreeConverter {
         }
         rest match {
           case constr :: tail => 
-            val tBody = convertTrees(tail)
+            val tBody = convertTrees(params ::: tail)
             t.Template(resTPrimaryCtr, tParents, tSelf, tBody)
           case _ =>
             t.Template(resTPrimaryCtr, tParents, tSelf, List(t.EmptyTree))
