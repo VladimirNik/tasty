@@ -52,6 +52,9 @@ trait TSymDenotations {
         (if (fs <= FromStartFlags) myFlags else flags) is fs
       }
 
+      final def is(fs: FlagSet, butNot: FlagSet) =
+        (if (fs <= FromStartFlags && butNot <= FromStartFlags) myFlags else flags) is (fs, butNot)
+
       private def adaptFlags(flags: FlagSet) = if (isType) flags.toTypeFlags else flags.toTermFlags
 
       //private[this] var myInfo: Type = ???
@@ -75,6 +78,34 @@ trait TSymDenotations {
       private[core] final def annotations_=(annots: List[Annotation]): Unit =
         myAnnotations = annots
 
+      final def originalName =
+        if (hasExpandedName) name.unexpandedName else name // !!!DEBUG, was: effectiveName
+
+      def fullNameSeparated(separator: String): Name = {
+        var sep = separator
+        var stopAtPackage = false
+        if (sep.isEmpty) {
+          sep = "$"
+          stopAtPackage = true
+        }
+        if (symbol == NoSymbol ||
+          owner == NoSymbol ||
+          owner.isEffectiveRoot ||
+          stopAtPackage && owner.is(PackageClass)) name
+        else {
+          var encl = owner
+          while (!encl.isClass && !encl.isPackageObject) {
+            encl = encl.owner
+            sep += "~"
+          }
+          if (owner.is(ModuleClass, butNot = Package) && sep == "$") sep = "" // duplicate scalac's behavior: don't write a double '$$' for module class members.
+          val fn = encl.fullNameSeparated(separator) ++ sep ++ name
+          if (isType) fn.toTypeName else fn.toTermName
+        }
+      }
+
+      final def hasExpandedName: Boolean = name.contains(StdNames.nme.EXPAND_SEPARATOR)
+
       override def isType: Boolean = name.isTypeName
 
       final def isClass: Boolean = isInstanceOf[ClassDenotation]
@@ -95,6 +126,11 @@ trait TSymDenotations {
           //(!isCompleted || info.firstParamTypes.nonEmpty)
 
       final def isConstructor = name.isConstructorName
+
+      def isPackageObject: Boolean = {
+        val poName = if (isType) nme.PACKAGE_CLS else nme.PACKAGE
+        (name.toTermName == poName) && (owner is Package) && (this is Module)
+      }
 
       def thisType: Type = NoPrefix
 
