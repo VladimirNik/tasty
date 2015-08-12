@@ -151,8 +151,14 @@ trait TreeConverter {
         t.DefDef(name, tTparams, tVparamss, tTpt, tRhs) withType(defTp)
       case tree @ g.TypeDef(mods, name, tparams, rhs) =>
         val tTparams = convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
-        val dummyTpe = getTemplateTpe(convertSymbol(tree.symbol), rhs.symbol)
-        val tRhs = convertTree(rhs) withType dummyTpe
+
+        val rhsTp = rhs match {
+          case _: g.Template =>
+            getTemplateTpe(convertSymbol(tree.symbol), rhs.symbol)
+          case _ =>
+            convertType(rhs.tpe)            
+        }
+        val tRhs = convertTree(rhs) withType rhsTp
 
         val tp = tree.symbol.tpe
         val convertedType = convertType(tp)
@@ -268,13 +274,15 @@ trait TreeConverter {
             case _ => throw new Exception("Not correct constructed is found!")
           }
         }
-        rest match {
-          case constr :: tail => 
-            val tBody = convertTrees(params ::: tail)
-            t.Template(resTPrimaryCtr, tParents, tSelf, tBody)
+        val tBody = rest match {
+          case constr :: tail if constr.symbol.isPrimaryConstructor => 
+            convertTrees(params ::: tail)
+          case _ if body.nonEmpty =>
+            convertTrees(body)
           case _ =>
-            t.Template(resTPrimaryCtr, tParents, tSelf, List(t.EmptyTree))
+            List(t.EmptyTree)
         }
+        t.Template(resTPrimaryCtr, tParents, tSelf, tBody)
       case g.Import(expr, selectors) =>
         val tExpr = convertTree(expr)
         val tSelectors = convertSelectors(selectors)

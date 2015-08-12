@@ -32,8 +32,8 @@ trait ModifierConverter {
       if (sym.isCaseAccessor) setFlags(CaseAccessor)
     } else {
       if (sym.isSealed) setFlags(Sealed)
-      //Don't set Abstract flag to trait (in Scala traits have the abstract flag)
-      if (sym.isAbstract && !sym.isTrait) setFlags(Abstract)
+      //Don't set Abstract flag to trait and abstract type (in Scala traits have the abstract flag)
+      if (sym.isAbstract && !sym.isTrait && !sym.isAbstractType) setFlags(Abstract)
       if (sym.isTrait) setFlags(Trait)
       if (sym.isCovariant) setFlags(Covariant)
       if (sym.isContravariant) setFlags(Contravariant)
