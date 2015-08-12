@@ -111,6 +111,9 @@ trait TypeConverter {
         t.TypeBounds(tlo, tho)
       case tpe: g.AnnotatedType =>
         throw new Exception(s"unimplemented conversion for AnnotatedType: $tp")
+      case nmt @ g.NullaryMethodType(resultType) =>
+        val tResultType = convertType(resultType)
+        t.MethodType(Nil, Nil, tResultType)
       case mt @ g.MethodType(params, resultType) =>
         val tParamNames: List[dotc.core.Names.TermName] = mt.params map { sym => convertToTermName(sym.name) }
         val tParamTypes = convertTypes(mt.paramTypes)

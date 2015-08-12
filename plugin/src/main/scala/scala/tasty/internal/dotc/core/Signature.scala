@@ -13,7 +13,7 @@ trait Signatures {
     //TODO - try to create signature based on t.Type
     def apply(tpe: self.g.Type): Signature = {
       tpe match {
-        case _: self.g.MethodType | _: self.g.PolyType =>
+        case _: self.g.MethodType | _: self.g.PolyType | _: self.g.NullaryMethodType =>
           //TODO - add erasure
           import self.GlobalToTName._
           val paramsSig = tpe.paramss.flatten map { param => convertToTypeName(param.tpe.erasure.typeSymbol.fullNameAsName('.')) }
