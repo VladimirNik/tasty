@@ -684,6 +684,8 @@ trait TTypes {
 
     abstract class TypeAlias(val alias: Type, override val variance: Int) extends TypeBounds(alias, alias)
 
+    class CachedTypeAlias(alias: Type, variance: Int) extends TypeAlias(alias, variance)
+
     object TypeBounds {
       def NothTpe = convertType(self.global.definitions.NothingTpe)
       def AnyTpe = convertType(self.global.definitions.AnyTpe)
@@ -700,7 +702,8 @@ trait TTypes {
     }
 
     object TypeAlias {
-      def apply(alias: Type, variance: Int = 0) = ???
+      def apply(alias: Type, variance: Int = 0) = new CachedTypeAlias(alias, variance)
+      def unapply(tp: TypeAlias): Option[Type] = Some(tp.alias)
     }
 
     case class AnnotatedType(annot: Annotation, tpe: Type)

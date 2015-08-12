@@ -63,6 +63,20 @@ trait TypeConverter {
     }
   }
 
+  private def convertScalaTypeRef(tr: g.TypeRef): t.Type = {
+    val g.TypeRef(pre, sym, args) = tr
+    val tPre = convertType(pre)
+    val tSym = convertSymbol(sym)
+    if (sym.isType)
+      t.TypeRef(tPre, tSym.name.asTypeName, tSym.asType)
+    else t.TermRef(tPre, tSym.name.asTermName, tSym.asTerm)
+  }
+
+  def convertTypeAlias(tp: g.Type): t.Type = {
+    val tAlias = convertType(tp)
+    t.TypeAlias(tAlias) withGType tp
+  } 
+
   def convertTypeImpl(tp: g.Type): t.Type = {
     val resTp = tp match {
       case g.ConstantType(value) =>
@@ -70,11 +84,7 @@ trait TypeConverter {
       case tpe @ g.TypeRef(pre, sym, args) =>
         tpe match {
           case _ =>
-            val tPre = convertType(pre)
-            val tSym = convertSymbol(sym)
-            if (sym.isType) 
-              t.TypeRef(tPre, tSym.name.asTypeName, tSym.asType)
-            else t.TermRef(tPre, tSym.name.asTermName, tSym.asTerm)
+            convertScalaTypeRef(tpe)
         }
       case tpe @ g.SingleType(pre, sym) =>
         val tPre = convertType(pre)

@@ -155,6 +155,8 @@ trait TreeConverter {
         val rhsTp = rhs match {
           case _: g.Template =>
             getTemplateTpe(convertSymbol(tree.symbol), rhs.symbol)
+          case _ if tree.symbol.isAliasType =>
+            convertTypeAlias(rhs.tpe)
           case _ =>
             convertType(rhs.tpe)            
         }
