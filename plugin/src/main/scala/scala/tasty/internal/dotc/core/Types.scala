@@ -546,6 +546,19 @@ trait TTypes {
       override def toString = s"PolyType($paramNames, $paramBounds, $resType)"
     }
 
+    object PolyType {
+      def fromSymbols(tparams: List[(Symbol, TypeBounds)], resultType: Type) =
+        if (tparams.isEmpty) resultType
+        else {
+          //TODO PolyParam (how to process subst)
+          //def transform(pt: PolyType, tp: Type) =
+          //  tp.subst(tparams, (0 until tparams.length).toList map (PolyParam(pt, _)))
+          apply(tparams map (_._1.name.asTypeName))( //names
+            pt => tparams map (_._2), //type bounds
+            pt => resultType)
+        }
+    }
+
     abstract class BoundType extends CachedProxyType with ValueType {
       type BT <: Type
       def binder: BT

@@ -116,9 +116,19 @@ trait TypeConverter {
         val tParamTypes = convertTypes(mt.paramTypes)
         val tResultType = convertType(mt.resultType)
         t.MethodType(tParamNames, tParamTypes, tResultType)
-      case g.PolyType(typeParams, resultType) =>
-        throw new Exception(s"unimplemented conversion for PolyType: $tp")
-        //TODO move g.ClassInfoType to separate method (to be sure that this tpe is not evaluated during conversion - before pickling)
+      case pt@g.PolyType(typeParams, resultType) =>
+        println(s"bounds: ${typeParams map {_.tpe.bounds}}")
+        val typeParamsWithBounds = typeParams map { typeParam => 
+          (typeParam, typeParam.tpe.bounds)
+        }
+        val tTypeParams = typeParamsWithBounds map {
+          case (typeParam, typeBounds) =>
+            (convertSymbol(typeParam), convertType(typeBounds).asInstanceOf[t.TypeBounds])
+        }
+        val tResultType = convertType(resultType)
+
+        t.PolyType.fromSymbols(tTypeParams, tResultType)
+      //TODO move g.ClassInfoType to separate method (to be sure that this tpe is not evaluated during conversion - before pickling)
       case g.ClassInfoType(parents, decls, typeSymbol) =>
         //TODO - check prefix
         val tPrefix = convertType(typeSymbol.tpe.prefix)
@@ -132,7 +142,7 @@ trait TypeConverter {
         t.NoPrefix
       case g.NoType =>
         t.NoType
-      case _ => throw new Exception(s"unimplemented conversion for type: $tp")
+      case _ => throw new Exception(s"unimplemented conversion for type: ${g.showRaw(tp)}")
     }
     resTp withGType tp
   }
