@@ -1,0 +1,3 @@
+trait Test {
+  type DDD
+}
