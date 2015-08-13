@@ -66,7 +66,9 @@ trait TypeConverter {
   private def convertScalaTypeRef(tr: g.TypeRef): t.Type = {
     val g.TypeRef(pre, sym, args) = tr
     val tPre = convertType(pre)
-    val tSym = convertSymbol(sym)
+    //TODO - fix deSkolemize here, example def test[U, L <: U] = ... , hi TypeBounds U is Skolem in Scala
+    //but not in Dotty
+    val tSym = convertSymbol(sym.deSkolemize)
     if (sym.isType)
       t.TypeRef(tPre, tSym.name.asTypeName, tSym.asType)
     else t.TermRef(tPre, tSym.name.asTermName, tSym.asTerm)
