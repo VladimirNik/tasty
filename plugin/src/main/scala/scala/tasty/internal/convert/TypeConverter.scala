@@ -77,7 +77,24 @@ trait TypeConverter {
   def convertTypeAlias(tp: g.Type): t.Type = {
     val tAlias = convertType(tp)
     t.TypeAlias(tAlias) withGType tp
-  } 
+  }
+
+  def convertClassInfoType(parents: List[g.Type], decls: Iterable[g.Symbol], typeSymbol: g.Symbol): t.ClassInfo = {
+    //TODO - check prefix
+    val tPrefix = convertType(typeSymbol.tpe.prefix)
+    val tCls = convertSymbol(typeSymbol).asClass
+    val tParents = convertTypes(parents) map (_.asInstanceOf[t.TypeRef])
+    val tDecls = convertSymbols(decls.toList)
+    //TODO - fix it
+    val tClsInfo = t.NoType
+    t.ClassInfo(tPrefix, tCls, tParents, tDecls, tClsInfo)
+  }
+
+  def convertClassInfoType(cit: g.ClassInfoType): t.ClassInfo = {
+    val g.ClassInfoType(parents, decls, typeSymbol) = cit
+    //TODO - check prefix
+    convertClassInfoType(parents, decls, typeSymbol)
+  }
 
   def convertTypeImpl(tp: g.Type): t.Type = {
     val resTp = tp match {
@@ -121,28 +138,25 @@ trait TypeConverter {
         val tParamTypes = convertTypes(mt.paramTypes)
         val tResultType = convertType(mt.resultType)
         t.MethodType(tParamNames, tParamTypes, tResultType)
-      case pt@g.PolyType(typeParams, resultType) =>
-        println(s"bounds: ${typeParams map {_.tpe.bounds}}")
-        val typeParamsWithBounds = typeParams map { typeParam => 
-          (typeParam, typeParam.tpe.bounds)
-        }
-        val tTypeParams = typeParamsWithBounds map {
-          case (typeParam, typeBounds) =>
-            (convertSymbol(typeParam), convertType(typeBounds).asInstanceOf[t.TypeBounds])
-        }
-        val tResultType = convertType(resultType)
+      case pt @ g.PolyType(typeParams, resultType) =>
+        resultType match {
+          case g.ClassInfoType(parents, decls, typeSymbol) =>
+            convertClassInfoType(parents, typeParams ::: decls.toList, typeSymbol)
+          case _ =>
+            val typeParamsWithBounds = typeParams map { typeParam =>
+              (typeParam, typeParam.tpe.bounds)
+            }
+            val tTypeParams = typeParamsWithBounds map {
+              case (typeParam, typeBounds) =>
+                (convertSymbol(typeParam), convertType(typeBounds).asInstanceOf[t.TypeBounds])
+            }
+            val tResultType = convertType(resultType)
 
-        t.PolyType.fromSymbols(tTypeParams, tResultType)
-      //TODO move g.ClassInfoType to separate method (to be sure that this tpe is not evaluated during conversion - before pickling)
-      case g.ClassInfoType(parents, decls, typeSymbol) =>
-        //TODO - check prefix
-        val tPrefix = convertType(typeSymbol.tpe.prefix)
-        val tCls = convertSymbol(typeSymbol).asClass
-        val tParents = convertTypes(parents) map (_.asInstanceOf[t.TypeRef])
-        val tDecls = convertSymbols(decls.toList)
-        //TODO - fix it
-        val tClsInfo = t.NoType
-        t.ClassInfo(tPrefix, tCls, tParents, tDecls, tClsInfo)
+            t.PolyType.fromSymbols(tTypeParams, tResultType)
+        }
+      //TODO invoke g.ClassInfoType conversion in a separate method (to be sure that this tpe is not evaluated during conversion - before pickling)
+      case cit@g.ClassInfoType(parents, decls, typeSymbol) =>        
+        convertClassInfoType(cit)
       case g.NoPrefix =>
         t.NoPrefix
       case g.NoType =>
