@@ -104,7 +104,8 @@ trait TSymDenotations {
         }
       }
 
-      final def hasExpandedName: Boolean = name.contains(StdNames.nme.EXPAND_SEPARATOR)
+      //TODO check/improve this implementation
+      final def hasExpandedName: Boolean = isExpandedName(name)
 
       override def isType: Boolean = name.isTypeName
 
@@ -167,6 +168,8 @@ trait TSymDenotations {
         else NoSymbol
       }
 
+      def typeParamCreationFlags: FlagSet = TypeParam
+
       override def toString = {
         val kindString =
           if (myFlags is ModuleClass) "module class"
@@ -186,7 +189,7 @@ trait TSymDenotations {
       initFlags: FlagSet,
       initGSymbol: GSymbol,
       initPrivateWithin: Symbol /*,
-    initRunId: RunId*/ )
+      initRunId: RunId*/ )
       extends SymDenotation(symbol, ownerIfExists, name, initFlags, initGSymbol, initPrivateWithin) {
       private[this] var myThisType: Type = null
 
@@ -205,6 +208,8 @@ trait TSymDenotations {
         if (myTypeRef == null) myTypeRef = super.typeRef
         myTypeRef
       }
+
+      final override def typeParamCreationFlags = ClassTypeParamCreationFlags
     }
 
     class PackageClassDenotation private[TSymDenotations] (
