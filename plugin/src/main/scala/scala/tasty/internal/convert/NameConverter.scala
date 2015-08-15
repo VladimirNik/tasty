@@ -23,8 +23,12 @@ trait NameConverter {
   def syntheticName(name: g.Name) = name.append('$')
 
   import StdNames.nme.EXPAND_SEPARATOR
+
+  //TODO check/improve this implementation
+  def isExpandedName(name: t.Name) = name.contains(EXPAND_SEPARATOR)
+
   def expandedName(base: self.Symbols.Symbol, name: t.Name, separator: t.Name): t.Name =
-    expandedName(if (base.hasExpandedName) base.name else base.fullNameSeparated("$"), separator)
+    expandedName(if (base.hasExpandedName) base.name else base.fullNameSeparated("$"), name, separator)
 
   def expandedName(base: self.Symbols.Symbol, name: t.Name): t.Name = expandedName(base, name, EXPAND_SEPARATOR)
 
