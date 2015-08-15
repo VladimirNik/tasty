@@ -94,7 +94,17 @@ trait TSymbols {
     
   def newLocalDummy(cls: Symbol, coord: Coord = NoCoord, initGSymbol: GSymbol) =
     newSymbol(cls, localDummyName(cls), EmptyFlags, initGSymbol)
- 
+
+  def newTypeParamSymbol(
+    owner: Symbol,
+    name: TypeName,
+    flags: FlagSet,
+    initGSymbol: g.Symbol): TypeSymbol = {
+    val tparam = newNakedSymbol[TypeName](NoCoord)
+    tparam.denot = SymDenotation(tparam, owner, name, flags | TypeParam /*owner.typeParamCreationFlags*/, initGSymbol)
+    tparam
+  }
+
   object Symbols {
     class Symbol private[TSymbols] (val coord: Coord) extends DotClass {
       type ThisName <: Name

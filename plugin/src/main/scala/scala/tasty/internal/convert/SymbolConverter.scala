@@ -56,6 +56,12 @@ trait SymbolConverter {
         //TODO fix privateWithin
         import dotc.core.Flags
         newClassSymbol(tOwner, convertToTypeName(syntheticName(sym.name)), flags | Flags.Module, sym, privateWithin = t.NoSymbol, coord, sym.associatedFile)
+      case _ if sym.isTypeParameter =>
+        val tOwner = convertSymbol(sym.owner)
+        //TODO fix privateWithin
+        val bufName = convertToTypeName(sym.name)
+        val newName = if (sym.owner.isMethod) bufName else expandedName(tOwner, bufName).toTypeName
+        newTypeParamSymbol(tOwner, newName, flags, sym)
       case _ if sym.isClass =>
         val tOwner = convertSymbol(sym.owner)
         //TODO fix privateWithin
