@@ -112,6 +112,13 @@ object Names {
 
     def firstChar = chrs(start)
 
+    // ----- Collections integration -------------------------------------
+
+    override protected[this] def thisCollection: WrappedString = new WrappedString(repr.toString)
+    override protected[this] def toCollection(repr: Name): WrappedString = new WrappedString(repr.toString)
+
+    override protected[this] def newBuilder: Builder[Char, Name] = unsupported("newBuilder")
+
     override def apply(index: Int): Char = chrs(start + index)
 
     override def slice(from: Int, until: Int): ThisName =
@@ -120,8 +127,6 @@ object Names {
     override def equals(that: Any) = this eq that.asInstanceOf[AnyRef]
 
     override def seq = toCollection(this)
-
-    override protected[this] def newBuilder: Builder[Char, Name] = unsupported("newBuilder")
   }
 
   class TermName(val start: Int, val length: Int, private[Names] var next: TermName) extends Name {
