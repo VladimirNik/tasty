@@ -25,7 +25,7 @@ trait NameConverter {
   import StdNames.nme.EXPAND_SEPARATOR
 
   //TODO check/improve this implementation
-  def isExpandedName(name: t.Name) = name.contains(EXPAND_SEPARATOR)
+  def isExpandedName(name: t.Name) = name.lastIndexOfSlice(EXPAND_SEPARATOR) > 0
 
   def expandedName(base: self.Symbols.Symbol, name: t.Name, separator: t.Name): t.Name =
     expandedName(if (base.hasExpandedName) base.name else base.fullNameSeparated("$"), name, separator)
