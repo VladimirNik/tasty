@@ -129,7 +129,7 @@ trait TSymbols {
       def pos: Position = if (coord.isPosition) coord.toPosition else NoPosition
 
       protected def prefixString = "Symbol"
-      override def toString: String = myDenot.toString()
+      override def toString: String = myDenot.toString() + s"#${this.hashCode()}"
     }
 
     type TermSymbol = Symbol { type ThisName = TermName }
