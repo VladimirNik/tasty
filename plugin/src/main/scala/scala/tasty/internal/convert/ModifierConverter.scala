@@ -23,6 +23,10 @@ trait ModifierConverter {
     if (sym.hasLocalFlag) setFlags(Local)
     if (sym.isSynthetic) setFlags(Synthetic)
     if (sym.isArtifact) setFlags(Artifact)
+    //type parameters inside TypeDef (classes, traits) have expanded name
+    //TODO - pass new name and check if this name contains '$$'
+    //TODO - or move this flag generation to SymbolConverter
+    if (isExpandedSym(sym)) setFlags(ExpandedName)
     if (sym.isTerm) {
       if (sym.isImplicit) setFlags(Implicit)
       if (sym.isLazy) setFlags(Lazy)
