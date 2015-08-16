@@ -1,0 +1,25 @@
+package <empty> {
+  class Test[X, M, U <: L]() extends Object() { 
+    type Test$$X
+    private[this] type X = Test$$X
+    type Test$$M
+    private[this] type M = Test$$M
+    type Test$$U <: L
+    private[this] type U = Test$$U
+    type Y = String
+    type Z
+    type Q <: Test$$X
+    type W >: L
+    def <init>[X, M, U <: L](x: Int): Unit = {
+      this[Nothing, Nothing, Nothing]()
+      null.asInstanceOf[X]
+      ()
+    }
+    def test: Test$$X = null.asInstanceOf[Test$$X]
+    def <init>[X, M, U <: L](x: Int, y: Int): Unit = {
+      this[Nothing, Nothing, Nothing](y)
+      null.asInstanceOf[X]
+      ()
+    }
+  }
+}
