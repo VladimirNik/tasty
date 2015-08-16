@@ -8,6 +8,23 @@ trait TreeConverter {
   import self.ast.{ tpd => t }
   import self.{ Constants => tc }
 
+  private[convert] val scopeStack = scala.collection.mutable.Stack[g.Symbol]()
+  def addToScope(tree: g.Tree)(fn: => t.Tree): t.Tree = {
+    tree match {
+      case _: g.DefTree =>
+        scopeStack push tree.symbol
+        val res = fn
+        scopeStack.pop
+        res
+      case _ => fn
+    }
+  }
+  def currentScope = scopeStack.headOption match {
+    case Some(scope) => scope
+    case None => g.NoSymbol
+  }
+
+  //TODO code alignment is required
   def convertTrees(tree: List[g.Tree]): List[t.Tree] = {
     val convertedList = tree map convertTree
     import scala.collection.mutable.ArrayBuffer
@@ -33,9 +50,37 @@ trait TreeConverter {
     val dummySymbol = newLocalDummy(clsSym, clsSym.coord, implSym)
     getTermRef(dummySymbol)
   }
-  
+
+  def processClassTypeParams(typeParams: List[g.Symbol], base: self.Symbols.Symbol): List[t.TypeDef] = {
+    typeParams.map {
+      typeParam =>
+        val isExpandedSymbol = isExpandedSym(typeParam)
+        val tSym = convertSymbol(typeParam)
+        val tTypeParam = tSym.typeRef
+        val tRhs = t.TypeTree(convertType(typeParam.tpe.bounds))
+        val tBase = base
+        val firstName = if (isExpandedSymbol) self.expandedName(tBase, typeParam.name).toTypeName else convertToTypeName(typeParam.name)
+        val t1 = t.TypeDef(firstName, tRhs) withType tTypeParam
+        if (isExpandedSymbol) {
+          import dotc.core._
+          val tOwnerSym = convertSymbol(typeParam.owner)
+          val secondTypeDefSym = newSymbol(tOwnerSym, convertToTypeName(typeParam.name), Flags.PrivateLocal | Flags.Synthetic, g.NoSymbol)
+          val secondTypeDefTpe = secondTypeDefSym.typeRef
+          val secondRhsTpe = self.Types.TypeAlias(tTypeParam) withGType typeParam.tpe //convertTypeAlias(typeParam.tpe)
+          val t2 = t.TypeDef(convertToTypeName(typeParam.name), t.TypeTree(secondRhsTpe)) withType secondTypeDefTpe
+          List(t1, t2)
+        } else List(t1)
+    }.flatten
+  }
+
+  def processClassTypeParams(typeParams: List[g.Symbol], base: g.Symbol): List[t.TypeDef] = {
+    val convBase = convertSymbol(base)
+    processClassTypeParams(typeParams, convBase)
+  }
+
   def convertTree(tree: g.Tree): t.Tree = {
     //println(s"tree: ${g.showRaw(tree)}")
+    addToScope(tree) {
     val resTree = tree match {
       case g.Ident(name) =>
         val identSymbol = tree.symbol
@@ -120,15 +165,16 @@ trait TreeConverter {
       case tree @ g.ValDef(mods, name, tpt, rhs) =>
         val valTp = getTermRef(tree.symbol)
 
-        //TODO - add setMods
         val tTpt = convertTree(tpt).asInstanceOf[t.TypeTree]
         val tRhs = convertTree(rhs)
         t.ValDef(name, tTpt, tRhs) withType valTp
       case tree @ g.DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         val defTp = getTermRef(tree.symbol)
 
-        //TODO - add setMods
-        val tTparams = convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
+        val tTparams = {
+          if (tree.symbol.isConstructor) processClassTypeParams(tree.symbol.owner.typeParams, tree.symbol)
+          else convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
+        }
         val tVparamss = (vparamss map convertTrees).asInstanceOf[List[List[t.ValDef]]]
         val tTpt =
           if (tree.symbol.isConstructor) t.TypeTree withType convertType(g.definitions.UnitTpe)
@@ -146,6 +192,17 @@ trait TreeConverter {
               }
             //Change empty block to EmptyTree in constructor
             case g.Block(Nil, g.Literal(g.Constant(()))) if tree.symbol.isConstructor => t.EmptyTree
+            //Add Type parameters application to constructors
+            case g.Block((g.Apply(sel, args) :: other), expr) if tree.symbol.isConstructor && !tree.symbol.isPrimaryConstructor && tree.symbol.owner.typeParams.nonEmpty =>
+              val tSel = convertTree(sel)
+              val tArgs = convertTrees(args)
+              val tTypeParams = tree.symbol.owner.typeParams map {tp => t.TypeTree(convertType(g.definitions.NothingTpe))}
+              val tTypeApply = t.TypeApply(tSel, tTypeParams)
+              val tApply = t.Apply(tTypeApply, tArgs)
+
+              val tStats = tApply :: convertTrees(other)
+              val tExpr = convertTree(expr)
+              t.Block(tStats, tExpr)
             case _ => convertTree(rhs)
           }
         t.DefDef(name, tTparams, tVparamss, tTpt, tRhs) withType(defTp)
@@ -160,7 +217,9 @@ trait TreeConverter {
           case _ =>
             convertType(rhs.tpe)            
         }
-        val tRhs = convertTree(rhs) withType rhsTp
+        val tTree = convertTree(rhs)
+        //TODO - fix: rhsTp overrides already computed tpt in convertTree
+        val tRhs = tTree withType rhsTp
 
         val tp = tree.symbol.tpe
         val convertedType = convertType(tp)
@@ -204,7 +263,7 @@ trait TreeConverter {
         val genValDef = t.ValDef(name.toTermName, t.TypeTree(tModClSymTpe), genVDRhs) withType getTermRef(modSym)
 
         t.Thicket(List(genValDef, genTypeDef))
-      case tree @ g.Template(parents, self, body) =>
+      case tree @ g.Template(parents, selftree, body) =>
         val (params, rest) = tree.body partition {
           case stat: g.TypeDef => stat.symbol.isParameter
           case stat: g.ValOrDefDef =>
@@ -260,8 +319,9 @@ trait TreeConverter {
 
         val tPrimaryCtr = convertTree(primaryCtr)
         val tSelf = 
-          if (self.symbol != g.NoSymbol) convertTree(self).asInstanceOf[t.ValDef]
+          if (selftree.symbol != g.NoSymbol) convertTree(selftree).asInstanceOf[t.ValDef]
           else t.EmptyValDef
+        val typeParams = tree.symbol.owner.typeParams
         val resTPrimaryCtr = {
           tPrimaryCtr match {
             case dd: t.DefDef => dd
@@ -272,15 +332,23 @@ trait TreeConverter {
               val clsSym = convertSymbol(tree.symbol.owner).asClass
               val dcSym = newDefaultConstructor(clsSym)
               val dcType = getTermRef(dcSym)
-              t.DefDef(dotc.core.StdNames.nme.CONSTRUCTOR, Nil, List(Nil), t.TypeTree(unitTpe), t.EmptyTree) withType dcType
+              val tparams = processClassTypeParams(typeParams, dcSym)
+              t.DefDef(dotc.core.StdNames.nme.CONSTRUCTOR, tparams, List(Nil), t.TypeTree(unitTpe), t.EmptyTree) withType dcType
             case _ => throw new Exception("Not correct constructed is found!")
           }
         }
+        //Index out of bounds exception occurs here if invoke typeParams(0) for example:
+        //class Test[X <: L]
+
         val tBody = rest match {
-          case constr :: tail if constr.symbol.isPrimaryConstructor => 
-            convertTrees(params ::: tail)
-          case _ if body.nonEmpty =>
-            convertTrees(body)
+          case constr :: tail if constr.symbol.isPrimaryConstructor =>
+            //TODO - check order of typeParams
+            val tDefs = processClassTypeParams(typeParams, tree.symbol.owner)
+            tDefs ::: convertTrees(params ::: tail)
+          case _ if body.nonEmpty || /*TODO - check: */ typeParams.nonEmpty =>
+            //TODO check order of typeParams
+            val tDefs = processClassTypeParams(typeParams, tree.symbol.owner)
+            tDefs ::: convertTrees(body)
           case _ =>
             List(t.EmptyTree)
         }
@@ -301,6 +369,7 @@ trait TreeConverter {
     }
     resTree withPos tree.pos
     resTree
+    }
   }
 
   def convertSelectors(iss: List[g.ImportSelector]): List[t.Tree] = iss map convertSelector
