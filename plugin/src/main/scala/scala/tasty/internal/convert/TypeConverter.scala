@@ -49,17 +49,23 @@ trait TypeConverter {
     //is sym is not in the map - write IncompleteSymbol to the map, convert symbol, update the value in the map
     //if resSymbol is incomplete symbol throw new Exception
 
-    typeCache.getOrElse(tp,
-      tp match {
-        case _ if tp ne null => 
-          typeCache += (tp -> t.IncompleteType)
-          val convertedTp = convertTypeImpl(tp)
-          typeCache += (tp -> convertedTp)
-          convertedTp
-        case _ => null
-      }) match {
-      case t.IncompleteType => throw new Exception(s"IncompleteType is found while converting $tp")
-      case res => res
+    //types of type parameters shouldn't be cached
+    //TODO - rewrite typeCache
+    if (!tp.typeSymbol.isTypeParameter) {
+      typeCache.getOrElse(tp,
+        tp match {
+          case _ if tp ne null =>
+            typeCache += (tp -> t.IncompleteType)
+            val convertedTp = convertTypeImpl(tp)
+            typeCache += (tp -> convertedTp)
+            convertedTp
+          case _ => null
+        }) match {
+          case t.IncompleteType => throw new Exception(s"IncompleteType is found while converting $tp")
+          case res              => res
+        }
+    } else {
+      convertTypeImpl(tp)
     }
   }
 
@@ -102,6 +108,9 @@ trait TypeConverter {
         convertType(value.tpe)
       case tpe @ g.TypeRef(pre, sym, args) =>
         tpe match {
+          case _ if sym.isTypeParameter =>
+            val tSym = convertSymbol(sym)
+            if (sym.isType) tSym.typeRef else tSym.termRef
           case _ =>
             convertScalaTypeRef(tpe)
         }
