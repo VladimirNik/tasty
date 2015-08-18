@@ -75,9 +75,11 @@ trait TypeConverter {
     //TODO - fix deSkolemize here, example def test[U, L <: U] = ... , hi TypeBounds U is Skolem in Scala
     //but not in Dotty
     val tSym = convertSymbol(sym.deSkolemize)
-    if (sym.isType)
+    val basedType = if (sym.isType)
       t.TypeRef(tPre, tSym.name.asTypeName, tSym.asType)
     else t.TermRef(tPre, tSym.name.asTermName, tSym.asTerm)
+    //TODO process non empty args
+    if (args.nonEmpty) ??? else basedType
   }
 
   def convertTypeAlias(tp: g.Type): t.Type = {
