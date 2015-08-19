@@ -78,8 +78,17 @@ trait TypeConverter {
     val basedType = if (sym.isType)
       t.TypeRef(tPre, tSym.name.asTypeName, tSym.asType)
     else t.TermRef(tPre, tSym.name.asTermName, tSym.asTerm)
-    //TODO process non empty args
-    if (args.nonEmpty) ??? else basedType
+    if (args.nonEmpty) {
+      val tSym = convertSymbol(sym)
+      args.zip(sym.typeParams).foldLeft[t.Type](basedType){
+        (basedType, argTypeWithTypeParam) =>
+          val argType = argTypeWithTypeParam._1
+          val typeParamSymbol = argTypeWithTypeParam._2
+          val tParamName = convertToTypeName(typeParamSymbol.name)
+          val name = expandedName(tSym, tParamName)
+          t.RefinedType(basedType, name, t.TypeAlias(convertType(argType)))
+      }
+    } else basedType
   }
 
   def convertTypeAlias(tp: g.Type): t.Type = {
@@ -91,7 +100,12 @@ trait TypeConverter {
     //TODO - check prefix
     val tPrefix = convertType(typeSymbol.tpe.prefix)
     val tCls = convertSymbol(typeSymbol).asClass
-    val tParents = convertTypes(parents) map (_.asInstanceOf[t.TypeRef])
+    //In Dotty parents have form of TypeRef(pre, sym), that's why typeConstructor is used here
+    val tParents = parents map {parent => convertType(parent.typeConstructor)} map {
+      case tr: t.TypeRef => tr
+      case tr => throw new Exception(s"Converted parent (${g.showRaw(tr)}) of $typeSymbol is not t.TypeRef")
+    }
+
     val tDecls = convertSymbols(decls.toList)
     //TODO - fix it
     val tClsInfo = t.NoType
@@ -128,7 +142,10 @@ trait TypeConverter {
           case _ =>
             val underlying = tpe.underlying.widen
             val tUnderlying =
-              convertType(underlying).asInstanceOf[t.TypeRef]
+              convertType(underlying.typeConstructor) match {
+                case tr: t.TypeRef => tr
+                case tr => throw new Exception(s"Converted underlying ($tr) of ${g.showRaw(tpe)} is not t.TypeRef")
+              }
             t.ThisType.raw(tUnderlying)
         }
       case g.SuperType(thisTp, superTp) =>

@@ -229,7 +229,8 @@ trait TreeConverter {
           val dummyTpe = getTemplateTpe(clsSym, impl.symbol)
           val tImpl = convertTree(impl) withType dummyTpe
 
-          val tp = tree.symbol.tpe
+          //TODO - in Dotty typedef.tpe is TypeDef(pre, sym)
+          val tp = tree.symbol.tpe.typeConstructor
           val convertedType = convertType(tp)
           //TODO tparams should be processed
           t.ClassDef(name, tImpl) withType (convertedType)
@@ -247,6 +248,7 @@ trait TreeConverter {
 
           val dummyTpe = getTemplateTpe(tModClSym, impl.symbol)
           val tImpl = convertTree(impl) withType dummyTpe
+          //TODO - be careful with this type, it's better to create type with converted sym
           val tp = tree.symbol.tpe
           val convertedType = convertType(tp)
           //TODO - check constructor type
