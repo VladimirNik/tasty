@@ -97,8 +97,16 @@ trait TreeConverter {
         case g.Select(qual, name) =>
           convertSelect(qual, name, tree.tpe)
         case g.Apply(fun, args) =>
-          val tFun = convertTree(fun)
           val tArgs = convertTrees(args)
+          val tSel = convertTree(fun)
+          val tFun = fun match {
+            //type arguments should be added to constructor invocation (if class/trait has type parameters)
+            case sel: g.Select if sel.symbol.isConstructor && sel.qualifier.tpe.typeArgs.nonEmpty =>
+              val tTypeArgs = sel.qualifier.tpe.typeArgs map { tp => t.TypeTree(convertType(tp)) }
+              t.TypeApply(tSel, tTypeArgs)
+            case _ =>
+              tSel
+          }
           t.Apply(tFun, tArgs)
         case g.TypeApply(fun, args) =>
           val tFun = convertTree(fun)
