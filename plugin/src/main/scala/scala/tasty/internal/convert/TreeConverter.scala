@@ -304,13 +304,19 @@ trait TreeConverter {
               val gParentConstructorTpe = gParent.tpe.member(g.nme.CONSTRUCTOR).tpe
               val tParentConstructorTpe = convertType(gParentConstructorTpe)
 
-              val tNewTpe = convertType(gParentTpe)
+              val tNewTpe = convertType(gParentTpe.typeConstructor)
               val tNew = t.New(tNewTpe)
 
               val tSelect = convertSelect(tNew, dotc.core.StdNames.nme.CONSTRUCTOR, tParentConstructorTpe)
-
               val args = convertTrees(gArgs)
-              t.Apply(tSelect, args)
+
+              val typeArgs = gParent.tpe.typeArgs
+              val fn = if (typeArgs.nonEmpty) {
+                val tTypeArgs = convertTypes(typeArgs) map {t.TypeTree(_)}
+                t.TypeApply(tSelect, tTypeArgs)
+              } else tSelect
+
+              t.Apply(fn, args)
             //case for all parents of trait and parent of class which is a trait 
             case (gParent, _) =>
               val parentType = convertType(gParent.tpe)
