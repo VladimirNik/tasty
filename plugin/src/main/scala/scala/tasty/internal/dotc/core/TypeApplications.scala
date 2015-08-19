@@ -19,7 +19,13 @@ trait TTypeApplications {
   class TypeApplications(val self: Type) /*extends AnyVal*/ {
     def isInstantiatedLambda: Boolean = ???
 
-    final def argInfos(interpolate: Boolean): List[Type] = ???
+    final def argInfos(interpolate: Boolean): List[Type] = {
+      val initType = self.initType
+      initType match {
+        case g.NoType => Nil
+        case _ => convertTypes(initType.typeArgs)
+      }
+    }
 
     final def argInfos: List[Type] = argInfos(interpolate = true)
 

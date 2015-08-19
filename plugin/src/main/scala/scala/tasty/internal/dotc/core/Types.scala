@@ -74,6 +74,7 @@ trait TTypes {
         initGType = gType
         this
       }
+      def initType = initGType
     } // end Type
 
     trait CachedType extends Type
@@ -384,6 +385,9 @@ trait TTypes {
       val refinedInfo = infoFn(this)
     }
 
+    class PreHashedRefinedType(parent: Type, refinedName: Name, override val refinedInfo: Type)
+      extends RefinedType(parent, refinedName)
+
     object RefinedType {
       def make(parent: Type, names: List[Name], infoFns: List[RefinedType => Type]): Type =
         if (names.isEmpty) parent
@@ -391,6 +395,10 @@ trait TTypes {
 
       def apply(parent: Type, name: Name, infoFn: RefinedType => Type): RefinedType = {
         new CachedRefinedType(parent, name, infoFn)
+      }
+
+      def apply(parent: Type, name: Name, info: Type): RefinedType = {
+        new PreHashedRefinedType(parent, name, info)
       }
     }
 
