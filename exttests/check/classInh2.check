@@ -1,0 +1,6 @@
+package <empty> {
+  class Test[T]() extends X[Test$$T, String]() { 
+    type Test$$T
+    private[this] type T = Test$$T
+  }
+}
