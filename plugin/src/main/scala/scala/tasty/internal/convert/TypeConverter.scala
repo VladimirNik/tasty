@@ -156,6 +156,29 @@ trait TypeConverter {
         val tlo = convertType(lo)
         val tho = convertType(ho)
         t.TypeBounds(tlo, tho)
+      case rt @ g.RefinedType(parents, decls) =>
+        //TODO - fix - add AndType to support 'X with Y'
+        val parent0 = parents(0)
+        val basedType = convertType(parent0)
+        decls.foldLeft[t.Type](basedType) {
+          (basedType, decl) =>
+            val name = decl.name
+            val resTpe = decl.tpe.resultType
+            val resSym = resTpe match {
+              case tr: g.TypeRef => tr.sym
+              //TODO - check this case (typeSymbol returns normalized symbol)
+              case _ => resTpe.typeSymbol
+            }
+            //references to typeParams of enclosing class shouldn't be dealiased, only types defined in RefinedType should be
+            val declTpe = if (resSym.owner.isStructuralRefinement) resTpe.dealias else resTpe
+            val tDeclTpe = if (decl.isTerm) {
+              convertType(declTpe)
+            } else {
+              val tTpe = convertType(declTpe)
+              t.TypeAlias(tTpe) withGType declTpe
+            }
+            t.RefinedType(basedType, name, tDeclTpe)
+        }
       case tpe: g.AnnotatedType =>
         throw new Exception(s"unimplemented conversion for AnnotatedType: $tp")
       case nmt @ g.NullaryMethodType(resultType) =>

@@ -1,0 +1,8 @@
+package <empty> {
+  class Test[O]() extends AnyRef() { 
+    type Test$$O
+    private[this] type O = Test$$O
+    type Z = scala.collection.immutable.List[Double]
+    private[this] val x: X{v = U[Y]; a: U[Y]; b: Test.this.Z; c: Test$$O} = null
+  }
+}
