@@ -1,0 +1,35 @@
+package <empty> {
+  class Test() extends Object() { 
+    def test(x: Int): Int = x
+    {
+      def $anonfun(x: Int): Int = this.test(x)
+      closure($anonfun)
+    }.==(5)
+    private[this] val a: Int => Double => Double = {
+      def $anonfun(x: Int): Double => Double = {
+        def $anonfun(y: Double): Double = x.+(y)
+        closure($anonfun)
+      }
+      closure($anonfun)
+    }
+    private[this] val b: (String, String) => String = {
+      def $anonfun(y: String, g: String): String = y.toString().+(g)
+      closure($anonfun)
+    }
+    private[this] val c: scala.collection.immutable.List[Int] = null
+    private[this] val d: scala.collection.immutable.List[String] = 
+      this.c.map[String, scala.collection.immutable.List[String]]({
+        def $anonfun(x$1: Int): String = x$1.toString()
+        closure($anonfun)
+      })(scala.collection.immutable.List.canBuildFrom[String])
+    private[this] val e: () => String = {
+      def $anonfun(): String = "rrr"
+      closure($anonfun)
+    }
+    private[this] var x: Int = 0
+    private[this] val f: Int => Unit = {
+      def $anonfun(y: Int): Unit = this.x = y
+      closure($anonfun)
+    }
+  }
+}
