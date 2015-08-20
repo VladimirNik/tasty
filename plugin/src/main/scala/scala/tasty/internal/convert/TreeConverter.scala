@@ -12,12 +12,15 @@ trait TreeConverter {
   def addToScope(tree: g.Tree)(fn: => t.Tree): t.Tree = {
     tree match {
       case _: g.DefTree =>
-        scopeStack push tree.symbol
-        val res = fn
-        scopeStack.pop
-        res
+        addToScope(tree.symbol)(fn)
       case _ => fn
     }
+  }
+  def addToScope(symbol: g.Symbol)(fn: => t.Tree): t.Tree = {
+    scopeStack push symbol
+    val res = fn
+    scopeStack.pop
+    res
   }
   def currentScope = scopeStack.headOption match {
     case Some(scope) => scope
@@ -344,13 +347,17 @@ trait TreeConverter {
               //TODO - fix to correct constructor representation
               case t.EmptyTree =>
                 //TODO - move to standalone method (default constructor tree creation)
-                val unitTpe = convertType(g.definitions.UnitTpe)
+
                 val clsSym = convertSymbol(tree.symbol.owner).asClass
+                val constrSymbol = tree.symbol.owner.newConstructor(g.NoPosition) //g.Symbol(g.nme.CONSTRUCTOR)
                 val dcSym = newDefaultConstructor(clsSym)
                 val dcType = getTermRef(dcSym)
-                val tparams = processClassTypeParams(typeParams, dcSym)
-                t.DefDef(dotc.core.StdNames.nme.CONSTRUCTOR, tparams, List(Nil), t.TypeTree(unitTpe), t.EmptyTree) withType dcType
-              case _ => throw new Exception("Not correct constructed is found!")
+                val unitTpe = convertType(g.definitions.UnitTpe)
+                addToScope(constrSymbol) {
+                  val tparams = processClassTypeParams(typeParams, dcSym)
+                  t.DefDef(dotc.core.StdNames.nme.CONSTRUCTOR, tparams, List(Nil), t.TypeTree(unitTpe), t.EmptyTree) withType dcType
+                }.asInstanceOf[t.DefDef]
+              case _ => throw new Exception("Not correct constructor is found!")
             }
           }
           //Index out of bounds exception occurs here if invoke typeParams(0) for example:
