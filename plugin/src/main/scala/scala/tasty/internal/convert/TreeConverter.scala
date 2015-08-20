@@ -134,9 +134,13 @@ trait TreeConverter {
           val tRhs = convertTree(rhs)
           t.Assign(tLhs, tRhs)
         case g.Block(stats, expr) =>
-          val tStats = convertTrees(stats)
-          val tExpr = convertTree(expr)
-          t.Block(tStats, tExpr)
+          expr match {
+            case func: g.Function if stats.isEmpty => convertTree(func)
+            case _ =>
+              val tStats = convertTrees(stats)
+              val tExpr = convertTree(expr)
+              t.Block(tStats, tExpr)
+          }
         case g.If(cond, thenp, elsep) =>
           val tCond = convertTree(cond)
           val tThenp = convertTree(thenp)
@@ -217,6 +221,17 @@ trait TreeConverter {
               case _ => convertTree(rhs)
             }
           t.DefDef(name, tTparams, tVparamss, tTpt, tRhs) withType (defTp)
+        case fun @ g.Function(vparams, body) => 
+          val tparams: List[t.TypeDef] = Nil
+          val vparamss = List(convertTrees(vparams) map {_.asInstanceOf[t.ValDef]})
+          val tTpt = t.TypeTree(convertType(body.tpe))
+          val tRhs = convertTree(body)
+          val defTp = convertSymbol(fun.symbol).termRef
+          val dd = t.DefDef(convertToTermName(fun.symbol.name), tparams, vparamss, tTpt, tRhs) withType defTp
+          val tIdent = t.Ident(dd.name) withType defTp
+          val clTpe = convertType(fun.tpe)
+          val cl = t.Closure(List(), tIdent, t.EmptyTree) withType clTpe
+          t.Block(List(dd), cl)
         case tree @ g.TypeDef(mods, name, tparams, rhs) =>
           val tTparams = convertTrees(tparams).asInstanceOf[List[t.TypeDef]]
 
