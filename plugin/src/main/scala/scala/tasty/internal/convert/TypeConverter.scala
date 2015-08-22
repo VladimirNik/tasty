@@ -157,9 +157,12 @@ trait TypeConverter {
         val tho = convertType(ho)
         t.TypeBounds(tlo, tho)
       case rt @ g.RefinedType(parents, decls) =>
-        //TODO - fix - add AndType to support 'X with Y'
-        val parent0 = parents(0)
-        val basedType = convertType(parent0)
+        val basedType = parents match {
+          case List(parent) => convertType(parent)
+          case list :+ last => list.foldRight[t.Type](convertType(last)){
+            (tp1, tp2) => t.AndType.make(convertType(tp1), tp2)
+          }
+        }
         decls.foldLeft[t.Type](basedType) {
           (basedType, decl) =>
             val name = decl.name

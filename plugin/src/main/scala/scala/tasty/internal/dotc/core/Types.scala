@@ -408,6 +408,33 @@ trait TTypes {
       def isAnd: Boolean
     }
 
+    abstract case class AndType(tp1: Type, tp2: Type) extends CachedGroundType with AndOrType {
+
+      def isAnd = true
+
+      def derivedAndType(tp1: Type, tp2: Type): Type =
+        if ((tp1 eq this.tp1) && (tp2 eq this.tp2)) this
+        else AndType.make(tp1, tp2)
+
+      def derivedAndOrType(tp1: Type, tp2: Type): Type =
+        derivedAndType(tp1, tp2)
+    }
+
+    final class CachedAndType(tp1: Type, tp2: Type) extends AndType(tp1, tp2)
+
+    object AndType {
+      def apply(tp1: Type, tp2: Type) = {
+        assert(tp1.isInstanceOf[ValueType] && tp2.isInstanceOf[ValueType])
+        unchecked(tp1, tp2)
+      }
+
+      def unchecked(tp1: Type, tp2: Type) =
+        new CachedAndType(tp1, tp2)
+
+      def make(tp1: Type, tp2: Type): Type =
+        if (tp1 eq tp2) tp1 else apply(tp1, tp2)
+    }
+
     trait MethodicType extends Type {
 
       protected[TTypes] var mySignature: Signature = _
