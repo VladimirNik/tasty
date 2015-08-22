@@ -353,8 +353,10 @@ trait TreeConverter {
 
           val tPrimaryCtr = convertTree(primaryCtr)
           val tSelf =
-            if (selftree.symbol != g.NoSymbol) convertTree(selftree).asInstanceOf[t.ValDef]
-            else t.EmptyValDef
+            if (selftree.symbol != g.NoSymbol) {
+              val convSelfType = convertType(selftree.symbol.tpe)
+              convertTree(selftree).asInstanceOf[t.ValDef] withType (convSelfType)
+            } else t.EmptyValDef
           val typeParams = tree.symbol.owner.typeParams
           val resTPrimaryCtr = {
             tPrimaryCtr match {

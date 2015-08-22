@@ -107,8 +107,13 @@ trait TypeConverter {
     }
 
     val tDecls = convertSymbols(decls.toList)
-    //TODO - fix it
-    val tClsInfo = t.NoType
+    val selfType = typeSymbol.selfType
+    val tClsInfo = selfType match {
+      case st if st =:= typeSymbol.tpe => t.NoType
+      //TODO remove typeSymbol.tpe from selfType (class Test {self: this.Test with X with Y} - this.Test should be removed)
+      //invoke convertRefinedType directly if passed type is RefinedType (excluding typeSymbol.tpe)
+      case _ => convertType(selfType)
+    }
     t.ClassInfo(tPrefix, tCls, tParents, tDecls, tClsInfo)
   }
 

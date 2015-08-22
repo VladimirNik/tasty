@@ -1,0 +1,6 @@
+package <empty> {
+  class Test() extends AnyRef() { self: Test & X & Y => 
+    private[this] val a: X & Y & Z = null
+    private[this] val b: (X & Z){c: Int; z = String; d: String} = null
+  }
+}
