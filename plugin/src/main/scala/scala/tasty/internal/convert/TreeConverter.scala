@@ -433,7 +433,7 @@ trait TreeConverter {
   def convertSelector(is: g.ImportSelector): t.Tree = {
     val n = is.name
     val r = is.rename
-    if (n == r)
+    if (n != r && r != null)
       t.Pair(t.Ident(n), t.Ident(r))
     else
       t.Ident(n)

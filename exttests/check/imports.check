@@ -1,0 +1,11 @@
+package <empty> {
+  class Test() extends AnyRef() { 
+    import scala.collection.mutable
+    import scala.collection.mutable.Set
+    import scala.collection.mutable.{Set, ArrayBuffer}
+    import scala.collection.mutable.{Set => KSet}
+    import scala.collection._
+    import scala.collection.mutable.{ArrayBuffer, Set, _}
+    import scala.collection.mutable.{ArrayBuffer, Set => KSet, _}
+  }
+}
