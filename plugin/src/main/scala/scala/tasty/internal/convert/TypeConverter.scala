@@ -71,24 +71,32 @@ trait TypeConverter {
 
   private def convertScalaTypeRef(tr: g.TypeRef): t.Type = {
     val g.TypeRef(pre, sym, args) = tr
-    val tPre = convertType(pre)
-    //TODO - fix deSkolemize here, example def test[U, L <: U] = ... , hi TypeBounds U is Skolem in Scala
-    //but not in Dotty
-    val tSym = convertSymbol(sym.deSkolemize)
-    val basedType = if (sym.isType)
-      t.TypeRef(tPre, tSym.name.asTypeName, tSym.asType)
-    else t.TermRef(tPre, tSym.name.asTermName, tSym.asTerm)
-    if (args.nonEmpty) {
-      val tSym = convertSymbol(sym)
-      args.zip(sym.typeParams).foldLeft[t.Type](basedType){
-        (basedType, argTypeWithTypeParam) =>
-          val argType = argTypeWithTypeParam._1
-          val typeParamSymbol = argTypeWithTypeParam._2
-          val tParamName = convertToTypeName(typeParamSymbol.name)
-          val name = expandedName(tSym, tParamName)
-          t.RefinedType(basedType, name, t.TypeAlias(convertType(argType)))
-      }
-    } else basedType
+    tr match {
+      case _ if g.definitions.isByNameParamType(tr) =>
+        if (args.size == 1)
+          t.ExprType(convertType(args(0)))
+        else throw new Exception(s"not implemented: ByNameParamType has ${args.size} args")
+      case _ =>
+        val tPre = convertType(pre)
+        //TODO - fix deSkolemize here, example def test[U, L <: U] = ... , hi TypeBounds U is Skolem in Scala
+        //but not in Dotty
+        val tSym = convertSymbol(sym.deSkolemize)
+        val basedType = sym match {
+          case _ if sym.isType => t.TypeRef(tPre, tSym.name.asTypeName, tSym.asType)
+          case _               => t.TermRef(tPre, tSym.name.asTermName, tSym.asTerm)
+        }
+        if (args.nonEmpty) {
+          val tSym = convertSymbol(sym)
+          args.zip(sym.typeParams).foldLeft[t.Type](basedType) {
+            (basedType, argTypeWithTypeParam) =>
+              val argType = argTypeWithTypeParam._1
+              val typeParamSymbol = argTypeWithTypeParam._2
+              val tParamName = convertToTypeName(typeParamSymbol.name)
+              val name = expandedName(tSym, tParamName)
+              t.RefinedType(basedType, name, t.TypeAlias(convertType(argType)))
+          }
+        } else basedType
+    }
   }
 
   def convertTypeAlias(tp: g.Type): t.Type = {

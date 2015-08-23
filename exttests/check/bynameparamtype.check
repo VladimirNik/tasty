@@ -1,0 +1,5 @@
+package <empty> {
+  class Test() extends AnyRef() { 
+    def test(x: => Int, y: => scala.collection.immutable.List[Double]): Int = x
+  }
+}
