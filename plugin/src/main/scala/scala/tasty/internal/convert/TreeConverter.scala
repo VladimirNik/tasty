@@ -405,7 +405,23 @@ trait TreeConverter {
           t.PackageDef(tPid, tStats) withType (tTp)
         case g.EmptyTree   => t.EmptyTree
         case g.Throw(expr) => ???
-        case tr => println(s"no implementation for: ${g.show(tr)}"); ???
+        case ld @ g.LabelDef(name, vparams, rhs) =>
+          if (name.startsWith(g.nme.WHILE_PREFIX) || name.startsWith(g.nme.DO_WHILE_PREFIX)) {
+            //TODO - generalize DefDef conversion
+            val tparams: List[t.TypeDef] = Nil
+            val vparamss = List(convertTrees(vparams) map { _.asInstanceOf[t.ValDef] })
+            val tTpt = t.TypeTree(convertType(rhs.tpe))
+            val tRhs = convertTree(rhs)
+            val defTp = convertSymbol(ld.symbol).termRef
+            val dd = t.DefDef(convertToTermName(ld.name), tparams, vparamss, tTpt, tRhs) withType defTp
+            val tIdent = t.Ident(dd.name) withType defTp
+            val ap = t.Apply(tIdent, List())
+            t.Block(List(dd), ap)
+          } else {
+            //LabelDef processing in pattern matching
+            println(s"no implementation for LabelDef: ${g.showRaw(ld)}"); ???
+          }
+        case tr => println(s"no implementation for: ${g.showRaw(tr)}"); ???
       }
       resTree withPos tree.pos
       resTree

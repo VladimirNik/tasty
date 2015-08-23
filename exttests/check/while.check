@@ -1,0 +1,20 @@
+package <empty> {
+  class Test() extends AnyRef() { 
+    private[this] val b: Int = 5
+    {
+      def while$1(): Unit = 
+        if this.b.>(4) then {
+          scala.Predef.println("yyy")
+          while$1()
+        } else ()
+      while$1()
+    }
+    {
+      def doWhile$1(): Unit = {
+        scala.Predef.println("kk")
+        if this.b.<(5) then doWhile$1() else ()
+      }
+      doWhile$1()
+    }
+  }
+}
