@@ -29,6 +29,7 @@ trait TDenotations {
     abstract class SingleDenotation(symbol: Symbol) extends Denotation(symbol) with PreDenotation {
       private[this] var mySignature = Signature.NotAMethod
       final def signature: Signature = {
+        //TODO if initGSymbol == g.NoSymbol - construct signature based on passed params
         if (isType) Signature.NotAMethod // don't force info if this is a type SymDenotation
         else Signature(symbol.initGSymbol.tpe)
 //        else info match {

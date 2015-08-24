@@ -170,10 +170,11 @@ trait TreeConverter {
           val tastyType = convertType(tt.tpe)
           t.TypeTree(tastyType)
           //}
-        case g.Bind(name, body) =>
+        case b @ g.Bind(name, body) =>
           val tBody = convertTree(body)
           val tName = convertToTermName(name)
-          t.Bind(tName, tBody)
+          val tTpe = convertSymbol(b.symbol).termRef
+          t.Bind(tName, tBody) withType tTpe
         case g.Alternative(alts) =>
           val tAlts = convertTrees(alts)
           t.Alternative(tAlts)

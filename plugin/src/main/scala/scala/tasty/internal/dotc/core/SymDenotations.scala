@@ -62,12 +62,14 @@ trait TSymDenotations {
       private[this] var myInfo: Type = _
       private[this] var myAnnotations: List[Annotation] = Nil
 
-      //if initGSymbol == g.NoSymbol set to NoType
       final def info: Type = {
-        if (initGSymbol == self.global.NoSymbol) NoType
-        else { // should be computed based on symbol's initGSymbol and set in myInfo (should be lazy)
-          myInfo = convertType(initGSymbol.info)
-          myInfo
+        initGSymbol match {
+          //if initGSymbol == g.NoSymbol set to NoType
+          case self.global.NoSymbol => NoType
+          case _ =>
+            // should be computed based on symbol's initGSymbol and set in myInfo (should be lazy)
+            myInfo = convertType(initGSymbol.info)
+            myInfo
         }
       }
 
