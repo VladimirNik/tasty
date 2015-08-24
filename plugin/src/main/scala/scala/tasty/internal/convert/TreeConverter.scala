@@ -405,7 +405,23 @@ trait TreeConverter {
           val tStats = convertTrees(stats)
           t.PackageDef(tPid, tStats) withType (tTp)
         case g.EmptyTree   => t.EmptyTree
-        case g.Throw(expr) => ???
+        case thr @ g.Throw(expr) =>
+          //TODO - fix problem with Throw unpickling inside FromTasty
+          val throwName = dotc.core.StdNames.nme.throw_
+          val prefixSym = newPackageSymbol(convertSymbol(g.RootClass), g.newTermName("<special-ops>"), dotc.core.Flags.Package, g.NoSymbol)
+          val throwIdentSym = newSymbol(prefixSym, throwName, dotc.core.Flags.Method, g.NoSymbol)
+          //TODO unify type creation with explicit signature
+          //generic symbol representing throw
+          //pickleNameAndSig, name: throw
+          //params: List(java.lang.Throwable)
+          //result: scala.Nothing
+          val throwIdentTpe = self.Types.TermRef.withSig(prefixSym.termRef, throwName,
+            //TODO - rewrite name creation
+            self.Signature(List(g.newTypeName("java.lang.Throwable")), g.newTypeName("scala.Nothing")))
+          throwIdentTpe setSym throwIdentSym
+          val throwIdent = t.Ident(throwName) withType throwIdentTpe
+          val args = List(convertTree(expr))
+          t.Apply(throwIdent, args)
         case ld @ g.LabelDef(name, vparams, rhs) =>
           if (name.startsWith(g.nme.WHILE_PREFIX) || name.startsWith(g.nme.DO_WHILE_PREFIX)) {
             //TODO - generalize DefDef conversion
