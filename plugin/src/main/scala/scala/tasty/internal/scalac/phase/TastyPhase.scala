@@ -80,8 +80,8 @@ trait TastyPhase extends TastyPhaseUtils {
               println("No positions exist for pickling")
             }
             //add option for pickling testing (if option - test - option pass to sbt tests subproject)
-            val pickledInfo = treePkl.logInfo
-            generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
+            //val pickledInfo = treePkl.logInfo
+            //generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
             //testSame(pickledInfo, unit)
 
             analyzer.addBackendPlugin(new TastyBackendPlugin)

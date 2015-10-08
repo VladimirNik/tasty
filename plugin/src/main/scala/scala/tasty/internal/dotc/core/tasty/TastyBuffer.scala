@@ -2,7 +2,6 @@ package scala.tasty.internal.dotc
 package core
 package tasty
 
-
 import util.Util.dble
 
 object TastyBuffer {
