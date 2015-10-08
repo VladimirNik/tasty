@@ -76,6 +76,9 @@ trait TypeConverter {
         if (args.size == 1)
           t.ExprType(convertType(args(0)))
         else throw new Exception(s"not implemented: ByNameParamType has ${args.size} args")
+      //TODO - add RepeatedParamType support
+      //case _ if g.definitions.isRepeatedParamType(tr) =>
+      //  ???
       case _ =>
         val tPre = convertType(pre)
         //TODO - fix deSkolemize here, example def test[U, L <: U] = ... , hi TypeBounds U is Skolem in Scala

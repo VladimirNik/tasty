@@ -22,16 +22,13 @@ trait TastyPhase extends TastyPhaseUtils {
 //  } with TreePicklers
 
   import scala.collection.mutable.{ Map => MMap }
-  private var picklers: MMap[global.CompilationUnit, MMap[global.ClassSymbol, apiInstance.TastyPickler]] = MMap()
+  private var picklers: MMap[global.ClassSymbol, apiInstance.TastyPickler] = MMap()
 
-  def addPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol, pickler: apiInstance.TastyPickler) =
-    picklers get unit match {
-      case Some(picklersMap) => picklersMap += (classSymbol -> pickler)
-      case None              => picklers += (unit -> MMap(classSymbol -> pickler))
-    }
+  def addPickler(classSymbol: global.ClassSymbol, pickler: apiInstance.TastyPickler) =
+    picklers += (classSymbol -> pickler)
 
-  def findPickler(unit: global.CompilationUnit, classSymbol: global.ClassSymbol): Option[apiInstance.TastyPickler] =
-    picklers(unit) get (classSymbol)
+  def findPickler(classSymbol: global.ClassSymbol): Option[apiInstance.TastyPickler] =
+    picklers get (classSymbol)
 
   object TastyComponent extends {
     val global: self.global.type = self.global
@@ -67,7 +64,7 @@ trait TastyPhase extends TastyPhaseUtils {
           } {
             val tTree = apiInstance.convertTree(tree.asInstanceOf[apiInstance.g.Tree])
             val pickler = new apiInstance.TastyPickler
-            addPickler(unit, cls, pickler)
+            addPickler(cls, pickler)
             val treePkl = new apiInstance.TreePickler(pickler)
             val emptyContext = new apiInstance.Contexts.Context{}
             treePkl.pickle(tTree :: Nil)(emptyContext)
@@ -83,10 +80,27 @@ trait TastyPhase extends TastyPhaseUtils {
               println("No positions exist for pickling")
             }
             //add option for pickling testing (if option - test - option pass to sbt tests subproject)
-            //val pickledInfo = treePkl.logInfo
-            //generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
+            val pickledInfo = treePkl.logInfo
+            generateTestFile(s"/home/vova/tasty-logs/${cls.name + ".tasty"}", pickledInfo)
             //testSame(pickledInfo, unit)
+
+            analyzer.addBackendPlugin(new TastyBackendPlugin)
           }
+        }
+      }
+
+      class TastyBackendPlugin extends analyzer.BackendPlugin {
+    	import analyzer.ClassAttr
+        override def isActive(): Boolean = true
+        override def pluginsCustomAttributes(sym: ClassSymbol): List[ClassAttr] = {
+            findPickler(sym) match {
+              case Some(pickler) =>
+                val binary = pickler.assembleParts()
+                println(s"cls: $sym")
+                println(s"binary.length: ${binary.length}\n")
+                List(new ClassAttr(TastyComponent.TASTYATTR, binary))
+              case _ => Nil
+            }
         }
       }
     }

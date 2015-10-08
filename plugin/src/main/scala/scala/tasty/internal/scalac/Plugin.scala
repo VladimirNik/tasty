@@ -10,36 +10,11 @@ import scala.tools.nsc.Phase
 import scala.tools.nsc.backend.jvm.GenBCode
 import scala.tools.nsc.typechecker.Analyzer
 import scala.tools.nsc.transform.Erasure
-import scala.tasty.internal.scalac.gencode.TastyGenPhase
 
-class Plugin(val global: Global) extends NscPlugin with TastyPhase with TastyGenPhase {
+class Plugin(val global: Global) extends NscPlugin with TastyPhase {
   val name = "tasty"
   val description = """Pickles Scala trees (tasty format).
   For more information visit https://github.com/VladimirNik/tasty"""
-
-  object tastyGenBCode extends {
-    override val global: Plugin.this.global.type = Plugin.this.global
-  } with TastyGenBCode(global) //with scala.tools.nsc.Global$genBCode$(global) with scala.tasty.internal.scalac.gencode.GenBCode2
-
-  val genBCodeField = classOf[Global].getDeclaredField("genBCode$module")
-  genBCodeField.setAccessible(true)
-  genBCodeField.set(global, tastyGenBCode)
-
-  // update genBCode (jvm) in phasesSet
-  val phasesSetMapGetter = classOf[Global].getDeclaredMethod("phasesSet")
-  val phasesDescMapGetter = classOf[Global].getDeclaredMethod("phasesDescMap")
-  val phasesDescMap = phasesDescMapGetter.invoke(global).asInstanceOf[mutable.Map[SubComponent, String]]
-  val phasesSet = phasesSetMapGetter.invoke(global).asInstanceOf[mutable.Set[SubComponent]]
-  if (phasesSet.exists(_.phaseName.contains("jvm"))) { // `scalac -help` doesn't instantiate standard phases
-    def subcomponentNamed(name: String) = phasesSet.find(_.phaseName == name).head
-    val oldScs @ List(oldJVM) = List(subcomponentNamed("jvm"))
-    val newScs = List(tastyGenBCode)
-    def hijackDescription(pt: SubComponent, sc: SubComponent) = phasesDescMap(sc) = phasesDescMap(pt) + " with tasty"
-    oldScs zip newScs foreach { case (pt, sc) => hijackDescription(pt, sc) }
-    phasesSet --= oldScs
-    phasesSet ++= newScs
-  }
-  ()
 
   def changePhasesOrder(runsAfterPhase: String, phaseClass: Class[_], fieldToModify: Object) = {
     val newRunsAfter = List(runsAfterPhase)

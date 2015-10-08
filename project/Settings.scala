@@ -10,6 +10,7 @@ object Settings {
 
   lazy val sharedSettings: Seq[sbt.Def.Setting[_]] = Defaults.defaultSettings ++ Seq(
     scalaVersion := languageVersion,
+    scalaHome := Some(file("/home/vova/scala-projects/backendPlugin/scala/build/pack")),
     crossVersion := CrossVersion.full,
     version := tastyVersion,
     organization := "org.tasty",

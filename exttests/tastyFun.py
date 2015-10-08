@@ -2,9 +2,11 @@
 
 #FromTasty should be in classpath (TODO as a param)
 projectPath = '/home/vova/scala-projects/new-tasty/tasty/'
+scalacPath = '/home/vova/scala-projects/backendPlugin/scala/build/quick/bin/scalac'
 exttestsFolder = projectPath + 'exttests/'
 checkFolder = exttestsFolder + 'check/'
 testFolder = exttestsFolder + 'tests/'
+useGenBCode = False #True
 
 def checkTasty( testName, testClass, fromTastyName ):
   #testName = test1
@@ -26,7 +28,7 @@ def checkTasty( testName, testClass, fromTastyName ):
 
   #commands to run
   cleanCommand = 'cd ' + testPath + " && find . -type f -name '*.class' -delete"
-  scalacCommand = '/home/vova/scala/scala-2.11.7/bin/scalac -Ybackend:GenBCode ' +\
+  scalacCommand = scalacPath + (' -Ybackend:GenBCode ' if useGenBCode else ' ') +\
   '-Xplugin:' + projectPath + 'plugin/target/scala-2.11/tasty_2.11.7-0.1.0-SNAPSHOT.jar ' + testClass
   fromTastyCommand = 'java -Xmx768m -Xms768m ' +\
   '-Xbootclasspath/a:/home/vova/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.11.5.jar:/home/vova/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.11.5.jar:/home/vova/.ivy2/cache/me.d-d/scala-compiler/jars/scala-compiler-2.11.5-20150416-144435-09c4a520e1.jar:/home/vova/.ivy2//cache/jline/jline/jars/jline-2.12.jar:/home/vova/scala-projects/my-dotty/dotty/bin/../target/scala-2.11/dotty_2.11-0.1-SNAPSHOT.jar ' +\
@@ -52,10 +54,11 @@ def checkTasty( testName, testClass, fromTastyName ):
     badStr = 'Test: ' + testName + ' failed'
     print '\033[1;31m' + badStr + '\033[1;m'
   
+  #print 'scalacCommand: ' + scalacCommand
   if not(data in out) and not(data in err):
-    print out
-    print err
-    print data
+    print 'out: ' + out
+    print 'err: ' + err
+    print 'data: ' + data
 
 #TODO
 #repackage the plugin before running
