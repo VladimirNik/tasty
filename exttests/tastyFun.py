@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
 #FromTasty should be in classpath (TODO as a param)
-projectPath = '/home/vova/scala-projects/new-tasty/tasty/'
+projectPath = '/home/vova/scala-projects/new-tasty/tasty'
 scalacPath = '/home/vova/scala-projects/backendPlugin/scala/build/quick/bin/scalac'
-exttestsFolder = projectPath + 'exttests/'
+dotcPath = '/home/vova/scala-projects/my-dotty/dotty/bin/dotc'
+exttestsFolder = projectPath + '/exttests/'
 checkFolder = exttestsFolder + 'check/'
 testFolder = exttestsFolder + 'tests/'
-useGenBCode = False #True
+useGenBCode = True
 
 def checkTasty( testName, testClass, fromTastyName ):
   #testName = test1
@@ -29,11 +30,8 @@ def checkTasty( testName, testClass, fromTastyName ):
   #commands to run
   cleanCommand = 'cd ' + testPath + " && find . -type f -name '*.class' -delete"
   scalacCommand = scalacPath + (' -Ybackend:GenBCode ' if useGenBCode else ' ') +\
-  '-Xplugin:' + projectPath + 'plugin/target/scala-2.11/tasty_2.11.7-0.1.0-SNAPSHOT.jar ' + testClass
-  fromTastyCommand = 'java -Xmx768m -Xms768m ' +\
-  '-Xbootclasspath/a:/home/vova/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.11.5.jar:/home/vova/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.11.5.jar:/home/vova/.ivy2/cache/me.d-d/scala-compiler/jars/scala-compiler-2.11.5-20150416-144435-09c4a520e1.jar:/home/vova/.ivy2//cache/jline/jline/jars/jline-2.12.jar:/home/vova/scala-projects/my-dotty/dotty/bin/../target/scala-2.11/dotty_2.11-0.1-SNAPSHOT.jar ' +\
-  '-classpath /home/vova/scala-projects/my-dotty/dotty/bin/../target/scala-2.11/dotty_2.11-0.1-SNAPSHOT.jar:/home/vova/scala-projects/my-dotty/dotty/bin/../target/scala-2.11/dotty_2.11-0.1-SNAPSHOT-tests.jar -Dscala.usejavacp=true dotty.tools.dotc.FromTasty ' +\
-  '-Xprint:front ' + fromTastyName
+  '-Xplugin:' + projectPath + '/plugin/target/scala-2.11/tasty_2.11.7-0.1.0-SNAPSHOT.jar ' + testClass
+  fromTastyCommand = dotcPath + ' -tasty ' + ' -Xprint:front ' + fromTastyName
 
   runCommand = cleanCommand + '&&' + scalacCommand + '&&' + fromTastyCommand + '&&' + cleanCommand
 
