@@ -94,8 +94,9 @@ trait TreeConverter {
             convertType(tree.tpe)
           }
           t.Ident(name) withType tTpe
-        case g.This(qual) =>
-          val tTpe = convertType(tree.tpe)
+        case th @ g.This(qual) =>
+          //TODO - if there will be problems - try to add - if (th.symbol.isClass && !th.symbol.isPackageClass)
+          val tTpe = getThisType(th.symbol)
           t.This(qual) withType tTpe
         case g.Select(qual, name) =>
           convertSelect(qual, name, tree.tpe)

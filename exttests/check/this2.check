@@ -1,0 +1,7 @@
+package <empty> {
+  class Test() extends AnyRef() { 
+    def a: Test = this
+    def b(c: Test): Test = c
+    this.b(this.a)
+  }
+}
