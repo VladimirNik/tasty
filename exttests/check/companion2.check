@@ -1,0 +1,10 @@
+package <empty> {
+  class Test() extends Object() { 
+    class Xprivate() extends Object() {}
+    final lazy module val X: Test.this.X$ = new Test.this.X$()
+    final module class X$() extends Object() { 
+      def getInstance: Test.this.X = new Test.this.X()
+    }
+    this.X.getInstance
+  }
+}
