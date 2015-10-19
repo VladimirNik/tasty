@@ -1,0 +1,23 @@
+package <empty> {
+  class Test() extends Object() { 
+    final lazy module val Test1: Test.this.Test1$ = new Test.this.Test1$()
+    final module class Test1$() extends Object() { this: Test.this.Test1.type =>
+       
+      class Test2() extends Object() { 
+        class Test3() extends Object() { 
+          final lazy module val Test4: Test3.this.Test4$ = 
+            new Test3.this.Test4$()
+          final module class Test4$() extends Object() { 
+            this: Test3.this.Test4.type =>
+           
+            final lazy module val Test5: Test.Test1.Test2.Test3.Test4.Test5$ = 
+              new Test.Test1.Test2.Test3.Test4.Test5$()
+            final module class Test5$() extends Object() { 
+              this: Test.Test1.Test2.Test3.Test4.Test5.type =>
+            }
+          }
+        }
+      }
+    }
+  }
+}

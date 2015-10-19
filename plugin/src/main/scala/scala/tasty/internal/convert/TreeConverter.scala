@@ -358,6 +358,9 @@ trait TreeConverter {
             if (selftree.symbol != g.NoSymbol) {
               val convSelfType = convertType(selftree.symbol.tpe)
               convertTree(selftree).asInstanceOf[t.ValDef] withType (convSelfType)
+            } else if (tree.symbol.owner.isModuleClass) {
+              val termRef = getTermRef(tree.symbol.owner.companionModule)
+              t.ValDef(dotc.core.StdNames.nme.USCOREkw, t.TypeTree(termRef), t.EmptyTree) withType self.Types.NoType
             } else t.EmptyValDef
           val typeParams = tree.symbol.owner.typeParams
           val resTPrimaryCtr = {
@@ -381,9 +384,8 @@ trait TreeConverter {
           }
           //Index out of bounds exception occurs here if invoke typeParams(0) for example:
           //class Test[X <: L]
-
           val tBody = rest match {
-            case constr :: tail if constr.symbol.isPrimaryConstructor =>
+            case constr :: tail if constr.nonEmpty && constr.symbol.isPrimaryConstructor =>
               //TODO - check order of typeParams
               val tDefs = processClassTypeParams(typeParams, tree.symbol.owner)
               tDefs ::: convertTrees(params ::: tail)

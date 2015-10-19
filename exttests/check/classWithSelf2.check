@@ -1,0 +1,7 @@
+package <empty> {
+  class Test() extends Object() { self: Test & Y => 
+    def b: Int = 9
+    this.b
+    this.u
+  }
+}

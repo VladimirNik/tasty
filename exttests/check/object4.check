@@ -1,0 +1,7 @@
+package <empty> {
+  final lazy module val Test: Test$ = new Test$()
+  final module class Test$() extends AnyRef() { this: Test.type => 
+    final lazy module val A: Test.A$ = new Test.A$()
+    final module class A$() extends AnyRef() { this: Test.A.type =>}
+  }
+}

@@ -1,0 +1,18 @@
+package <empty> {
+  final lazy module val Test: Test$ = new Test$()
+  final module class Test$() extends Object() { self1: Test.type => 
+    class Test2() extends AnyRef() { 
+      final lazy module val Test3: Test2.this.Test3$ = new Test2.this.Test3$()
+      final module class Test3$() extends AnyRef() { 
+        this: Test2.this.Test3.type =>
+       
+        final lazy module val A: Test.Test2.Test3.A$ = new Test.Test2.Test3.A$()
+        final module class A$() extends Object() { 
+          self2: Test.Test2.Test3.A.type =>
+         
+          private[this] val a: Test.type = Test$.this
+        }
+      }
+    }
+  }
+}

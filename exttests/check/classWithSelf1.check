@@ -1,0 +1,3 @@
+package <empty> {
+  class Test() extends Object() { self: Test & X =>}
+}

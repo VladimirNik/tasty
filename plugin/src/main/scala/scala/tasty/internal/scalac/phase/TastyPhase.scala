@@ -50,7 +50,10 @@ trait TastyPhase extends TastyPhaseUtils {
       /** Drop any elements of this list that are linked module classes of other elements in the list */
       private def dropCompanionModuleClasses(clss: List[ClassSymbol]): List[ClassSymbol] = {
         val companionModuleClasses =
-          clss.filterNot(_.isModule).map(_.linkedClassOfClass) /*.filterNot(_.isAbsent)*/
+          // TODO - why isAbsent is required in Dotty
+          // remove all module classes, get classes and then get their companion module classes
+          clss.filterNot(_.isModuleClass).map(_.linkedClassOfClass) /*.filterNot(_.isAbsent)*/
+        // remove all companion module classes
         clss.filterNot(companionModuleClasses.contains)
       }
 

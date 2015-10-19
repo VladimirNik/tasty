@@ -1,0 +1,7 @@
+package aaa.bbb.ccc {
+  final lazy module val Test: aaa.bbb.ccc.Test$ = new aaa.bbb.ccc.Test$()
+  final module class Test$() extends AnyRef() { this: aaa.bbb.ccc.Test.type => 
+    final lazy module val A: aaa.bbb.ccc.Test.A$ = new aaa.bbb.ccc.Test.A$()
+    final module class A$() extends AnyRef() { this: aaa.bbb.ccc.Test.A.type =>}
+  }
+}

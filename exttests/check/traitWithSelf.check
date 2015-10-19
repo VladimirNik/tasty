@@ -1,0 +1,5 @@
+package <empty> {
+  <trait> interface trait Test() extends Object { 
+    self: Test & Y[scala.collection.immutable.List[Int]] =>
+  }
+}
