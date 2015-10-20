@@ -1,0 +1,31 @@
+package <empty> {
+  import scala.runtime.ScalaRunTime
+  class Test() extends AnyRef() with Product with Serializable { 
+    def copy(): Test = new Test()
+    override def productPrefix: String = "Test"
+    def productArity: Int = 0
+    def productElement(x$1: Int): Any = 
+      x$1 match {
+        case _ => scala.Predef.???
+      }
+    override def productIterator: scala.collection.Iterator[Any] = 
+      scala.runtime.ScalaRunTime.typedProductIterator[Any](this)
+    def canEqual(x$1: Any): Boolean = x$1.isInstanceOf[Test]
+    override def hashCode(): Int = scala.runtime.ScalaRunTime._hashCode(this)
+    override def toString(): String = scala.runtime.ScalaRunTime._toString(this)
+    override def equals(x$1: Any): Boolean = 
+      (x$1 match {
+        case _: Test => true
+        case _ => false
+      }).&&(x$1.asInstanceOf[Test].canEqual(this))
+  }
+  final lazy module val Test: Test$ = new Test$()
+  final module class Test$() extends runtime.AbstractFunction0[Test]() with 
+    Serializable
+   { this: Test.type => 
+    override final def toString(): String = "Test"
+    def apply(): Test = new Test()
+    def unapply(x$0: Test): Boolean = if x$0.==(null) then false else true
+    private def readResolve(): Object = Test
+  }
+}
