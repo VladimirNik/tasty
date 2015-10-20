@@ -16,7 +16,7 @@ trait Signatures {
         case _: self.g.MethodType | _: self.g.PolyType | _: self.g.NullaryMethodType =>
           //TODO - add erasure
           import self.GlobalToTName._
-          val paramsSig = tpe.paramss.flatten map { param => convertToTypeName(param.tpe.erasure.typeSymbol.fullNameAsName('.')) }
+          val paramsSig = tpe.paramss.flatten map { param => convertTypeName(genTypeName(param.tpe.erasure.typeSymbol)) }
           val frts = tpe.finalResultType.erasure.typeSymbol
           val resSig = genTypeName(frts)
           Signature(paramsSig, resSig)

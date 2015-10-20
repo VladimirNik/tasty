@@ -1,0 +1,15 @@
+package <empty> {
+  class Test() extends Object() { 
+    final lazy module val Test2: Test.this.Test2$ = new Test.this.Test2$()
+    final module class Test2$() extends Object() { this: Test.this.Test2.type =>
+       
+      final lazy module val Test: Test.Test2.Test$ = new Test.Test2.Test$()
+      final module class Test$() extends Object() { 
+        this: Test.Test2.Test.type =>
+       
+        def a(x: Test.Test2.Test.type, y: Test.this.Test2.type, z: Test): Int = 
+          5
+      }
+    }
+  }
+}
