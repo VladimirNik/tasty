@@ -1,0 +1,21 @@
+package <empty> {
+  class Test() extends Object() { 
+    def a: Any = 
+      try {
+        null
+        null.toString()
+      } catch {
+        case _ => 
+          scala.Predef.println("1")
+          scala.Predef.println("Hello")
+      }
+    def b: Unit = 
+      try {
+        null
+        scala.Predef.println("42")
+      } finally {
+        scala.Predef.println("2")
+        scala.Predef.println("443")
+      }
+  }
+}
