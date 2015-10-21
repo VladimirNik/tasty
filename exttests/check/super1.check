@@ -1,0 +1,7 @@
+package <empty> {
+  class Test() extends X() with Y { 
+    override def a: Int = 7.+(super.a)
+    def b: Int = super[X].a
+    def c: Int = super[Y].a
+  }
+}

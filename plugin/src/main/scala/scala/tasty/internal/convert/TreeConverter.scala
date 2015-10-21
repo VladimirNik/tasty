@@ -119,10 +119,11 @@ trait TreeConverter {
         case g.Literal(const1) =>
           val tConst = convertConstant(const1)
           t.Literal(tConst) withType tConst.tpe
-        case g.Super(qual, mix) =>
+        case s@g.Super(qual, mix) =>
           val tQual = convertTree(qual)
           //TODO - check inConstrCall
-          t.Super(tQual, mix, inConstrCall = false)
+          val tSupType = convertType(s.tpe)
+          t.Super(tQual, mix, inConstrCall = false) withType tSupType
         case g.New(tpt) =>
           val tTpt = convertTree(tpt)
           t.New(tTpt)
