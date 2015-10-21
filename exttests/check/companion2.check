@@ -1,6 +1,6 @@
 package <empty> {
-  class Test() extends Object() { 
-    class Xprivate() extends Object() {}
+  class Test() extends Object() { this: Test => 
+    class Xprivate() extends Object() { this: Test.this.X =>}
     final lazy module val X: Test.this.X$ = new Test.this.X$()
     final module class X$() extends Object() { this: Test.this.X.type => 
       def getInstance: Test.this.X = new Test.this.X()

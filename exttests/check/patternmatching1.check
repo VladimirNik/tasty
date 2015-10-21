@@ -1,5 +1,5 @@
 package <empty> {
-  class Test() extends AnyRef() { 
+  class Test() extends AnyRef() { this: Test => 
     private[this] val x: scala.collection.immutable.List[Int] = null
     this.x match {
       case b @ _: scala.collection.immutable.List[Int] if this.x.size.>(0) => 

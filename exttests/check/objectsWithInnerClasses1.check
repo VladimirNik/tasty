@@ -1,10 +1,10 @@
 package <empty> {
-  class Test() extends Object() { 
+  class Test() extends Object() { this: Test => 
     final lazy module val Test1: Test.this.Test1$ = new Test.this.Test1$()
     final module class Test1$() extends Object() { this: Test.this.Test1.type =>
        
-      class Test2() extends Object() { 
-        class Test3() extends Object() { 
+      class Test2() extends Object() { this: Test.Test1.Test2 => 
+        class Test3() extends Object() { this: Test2.this.Test3 => 
           final lazy module val Test4: Test3.this.Test4$ = 
             new Test3.this.Test4$()
           final module class Test4$() extends Object() { 

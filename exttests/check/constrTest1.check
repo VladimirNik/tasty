@@ -1,5 +1,5 @@
 package <empty> {
-  class Test(x: Int, y: Double) extends Object() { 
+  class Test(x: Int, y: Double) extends Object() { this: Test => 
     private[this] val x: Int
     private[this] val y: Double
     def <init>(v: Int): Unit = {

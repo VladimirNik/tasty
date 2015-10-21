@@ -1,11 +1,11 @@
 package <empty> {
-  class Test() extends Object() { 
-    class W() extends Object() {}
-    class Y[T]() extends Object() { 
+  class Test() extends Object() { this: Test => 
+    class W() extends Object() { this: Test.this.W =>}
+    class Y[T]() extends Object() { this: Test.this.Y[Test$Y$$T] => 
       type Test$Y$$T
       private[this] type T = Test$Y$$T
     }
-    class F() extends Object() { 
+    class F() extends Object() { this: Test.this.F => 
       private[this] val u: Test.this.Y[Test.this.W] = 
         new Test.this.Y[Test.this.W][Test.this.W]()
     }

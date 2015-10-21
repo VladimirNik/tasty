@@ -1,0 +1,10 @@
+package <empty> {
+  class Test() extends AnyRef() { self: Test => 
+    final lazy module val Test2: Test.this.Test2$ = new Test.this.Test2$()
+    final module class Test2$() extends AnyRef() { this: Test.this.Test2.type =>
+       
+      def a: Test = Test.this
+    }
+    def b: Test = this
+  }
+}

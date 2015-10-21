@@ -1,6 +1,6 @@
 package <empty> {
   import scala.runtime.ScalaRunTime
-  class Test() extends AnyRef() with Product with Serializable { 
+  class Test() extends AnyRef() with Product with Serializable { this: Test => 
     def copy(): Test = new Test()
     override def productPrefix: String = "Test"
     def productArity: Int = 0

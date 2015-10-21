@@ -1,5 +1,7 @@
 package <empty> {
   <trait> interface trait Test[T]() extends A[Test$$T] with Y[Int] { 
+    this: Test[Test$$T] =>
+   
     type Test$$T
     private[this] type T = Test$$T
     type X = Test$$T

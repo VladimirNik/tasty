@@ -1,5 +1,5 @@
 package <empty> {
-  class Test() extends AnyRef() { 
+  class Test() extends AnyRef() { this: Test => 
     this
   }
 }

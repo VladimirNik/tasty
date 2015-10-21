@@ -1,5 +1,5 @@
 package <empty> {
-  class Test() extends AnyRef() { 
+  class Test() extends AnyRef() { this: Test => 
     private[this] val b: Int = 5
     {
       def while$1(): Unit = 

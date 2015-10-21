@@ -1,5 +1,5 @@
 package <empty> {
-  class Test[O]() extends AnyRef() { 
+  class Test[O]() extends AnyRef() { this: Test[Test$$O] => 
     type Test$$O
     private[this] type O = Test$$O
     type Z = scala.collection.immutable.List[Double]

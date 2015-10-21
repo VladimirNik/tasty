@@ -1,5 +1,7 @@
 package <empty> {
   class Test[X, M, U <: L]() extends Object() { 
+    this: Test[Test$$X, Test$$M, Test$$U] =>
+   
     type Test$$X
     private[this] type X = Test$$X
     type Test$$M

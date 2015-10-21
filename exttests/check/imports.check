@@ -1,5 +1,5 @@
 package <empty> {
-  class Test() extends AnyRef() { 
+  class Test() extends AnyRef() { this: Test => 
     import scala.collection.mutable
     import scala.collection.mutable.Set
     import scala.collection.mutable.{Set, ArrayBuffer}

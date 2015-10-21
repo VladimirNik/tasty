@@ -1,5 +1,5 @@
 package <empty> {
-  class Test() extends Object() { 
+  class Test() extends Object() { this: Test => 
     def test(x: Int): Int = x
     {
       def $anonfun(x: Int): Int = this.test(x)

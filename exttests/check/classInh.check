@@ -1,11 +1,11 @@
 package <empty> {
   class Test(y: Int, yy: String)(implicit zx: Double) extends T(5) with 
     TestTrait
-   with TestTrait2 { 
+   with TestTrait2 { this: Test => 
     private[this] val y: Int
     private[this] val yy: String
     private[this] implicit val zx: Double
-    class B() extends AnyRef() { 
+    class B() extends AnyRef() { this: Test.this.B => 
       def ggg(y: String): String = y
     }
     private[this] val r : String = "ttt"

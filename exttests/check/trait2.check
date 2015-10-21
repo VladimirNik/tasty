@@ -1,5 +1,5 @@
 package <empty> {
-  <trait> trait X2() extends AnyRef { 
+  <trait> trait X2() extends AnyRef { this: X2 => 
     42
   }
 }

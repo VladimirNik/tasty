@@ -1,5 +1,5 @@
 package <empty> {
-  class Test() extends X[String]() { 
+  class Test() extends X[String]() { this: Test => 
     private[this] val test1: X[K] = null
     private[this] val test2: G[K, String, Int] = null
     private[this] val test3: G[Int, scala.collection.immutable.List[String], K]

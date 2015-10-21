@@ -1,6 +1,6 @@
 package <empty> {
-  class Test() extends AnyRef() { 
-    class X() extends AnyRef() { 
+  class Test() extends AnyRef() { this: Test => 
+    class X() extends AnyRef() { this: Test.this.X => 
       def a(p: Test): Test = p
       def b(p: Test.this.X): Test.this.X = p
       this.a(Test.this)

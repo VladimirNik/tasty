@@ -1,5 +1,5 @@
 package <empty> {
-  class Test() extends AnyRef() { 
+  class Test() extends AnyRef() { this: Test => 
     final lazy module val x: Test.this.x$ = new Test.this.x$()
     final module class x$() extends AnyRef() { this: Test.this.x.type => 
       def ddd: Int = 5

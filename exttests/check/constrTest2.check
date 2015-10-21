@@ -1,5 +1,5 @@
 package <empty> {
-  class Test[T](k: Int, m: Int) extends Y[Test$$T](k) { 
+  class Test[T](k: Int, m: Int) extends Y[Test$$T](k) { this: Test[Test$$T] => 
     type Test$$T
     private[this] type T = Test$$T
     private[this] val k: Int

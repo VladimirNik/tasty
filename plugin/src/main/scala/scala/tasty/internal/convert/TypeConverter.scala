@@ -130,7 +130,6 @@ trait TypeConverter {
     val selfType = typeSymbol.selfType
     val tClsInfo = selfType match {
       case _ if typeSymbol.isModuleClass && selfType != g.NoType => getTermRef(convertSymbol(typeSymbol.module))
-      case st if st =:= typeSymbol.tpe => t.NoType
       //TODO remove typeSymbol.tpe from selfType (class Test {self: this.Test with X with Y} - this.Test should be removed)
       //invoke convertRefinedType directly if passed type is RefinedType (excluding typeSymbol.tpe)
       case _ => convertType(selfType)

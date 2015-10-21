@@ -1,5 +1,5 @@
 package <empty> {
-  <trait> interface trait Test() extends AnyRef { 
+  <trait> interface trait Test() extends AnyRef { this: Test => 
     type DDD
   }
 }

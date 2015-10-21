@@ -1,9 +1,9 @@
 package <empty> {
-  class Test() extends Object() { 
+  class Test() extends Object() { this: Test => 
     final lazy module val Test1: Test.this.Test1$ = new Test.this.Test1$()
     final module class Test1$() extends Object() { this: Test.this.Test1.type =>
        
-      class Test2() extends Object() { 
+      class Test2() extends Object() { this: Test.Test1.Test2 => 
         private[this] val y1: Test2.this.A1.type = this.A1
         private[this] val y2: Test2.this.A1.A2.type = this.A1.A2
         final lazy module val A1: Test2.this.A1$ = new Test2.this.A1$()
