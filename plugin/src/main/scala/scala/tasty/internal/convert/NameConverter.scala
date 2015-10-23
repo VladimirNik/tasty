@@ -30,7 +30,13 @@ trait NameConverter {
     implicit def convertToName(name: g.Name): t.Name =
       if (name.isTermName) convertToTermName(name) else convertToTypeName(name)
 
-    def convertToTermName(name: g.Name): t.TermName = {
+    val specialCases = Map[g.Name, g.Name](g.TermName("$isInstanceOf") -> g.TermName("isInstanceOf"))  
+
+    def convertToTermName(origName: g.Name): t.TermName = {
+      val name = specialCases.get(origName) match {
+        case Some(value) => value
+        case _ => origName
+      }
       def convertFn(fname: g.Name): t.TermName =
         fname match {
           case _ if fname == g.nme.EMPTY_PACKAGE_NAME => StdNames.nme.EMPTY_PACKAGE

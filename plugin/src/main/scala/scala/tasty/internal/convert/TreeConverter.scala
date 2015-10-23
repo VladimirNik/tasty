@@ -106,6 +106,9 @@ trait TreeConverter {
         case apply: g.Apply =>
           val g.treeInfo.Applied(fun, targs, argss) = apply
           fun match {
+            // synthetic $isInstanceOf should be rewritten with isInstanceOf
+            case fun @ g.Select(_, selName) if specialCases.contains(selName) =>
+              t.TypeApply(convertTree(fun), convertTrees(targs))
             case _ =>
               val tArgss = argss map convertTrees
               val tFun0 = convertTree(fun)
