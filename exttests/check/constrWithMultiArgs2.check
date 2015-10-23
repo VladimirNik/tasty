@@ -1,0 +1,20 @@
+package <empty> {
+  class Test[T](k: Int, m: Int)(j: String) extends Object() { 
+    this: Test[Test$$T] =>
+   
+    type Test$$T
+    private[this] type T = Test$$T
+    private[this] val k: Int
+    private[this] val m: Int
+    private[this] val j: String
+    def <init>[T](k: Int)(j: String)(f: Float): Unit = {
+      this[Nothing](k, k)(j)
+      scala.Predef.println()
+      ()
+    }
+    def <init>[T](): Unit = {
+      this[Nothing](5)("jj")(42.0)
+      ()
+    }
+  }
+}

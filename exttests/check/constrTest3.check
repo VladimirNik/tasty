@@ -1,0 +1,9 @@
+package <empty> {
+  class Test(x: Int) extends AnyRef() { this: Test => 
+    private[this] val x: Int
+    def <init>(): Unit = {
+      this(5)
+      ()
+    }
+  }
+}

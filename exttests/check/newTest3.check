@@ -1,0 +1,11 @@
+package <empty> {
+  class Test[U](x: U) extends Object() { self: Test[Test$$U] => 
+    type Test$$U
+    private[this] type U = Test$$U
+    private[this] val x: Test$$U
+    private[this] val a: Test[String] = new Test[String][String]("ff")
+    class Y() extends Object() { this: Test.this.Y =>}
+    private[this] val b: Test[Test.this.Y] = 
+      new Test[Test.this.Y][Test.this.Y](new Test.this.Y())
+  }
+}

@@ -1,0 +1,7 @@
+package <empty> {
+  class Test(f: Int)(b: Int, h: Double) extends X(f) { this: Test => 
+    private[this] val f: Int
+    private[this] val b: Int
+    private[this] val h: Double
+  }
+}

@@ -1,0 +1,10 @@
+package <empty> {
+  class Test[U, V]() extends X() { 
+    self: Test[Test$$U, Test$$V] & Test$$U & Test$$V =>
+   
+    type Test$$U
+    private[this] type U = Test$$U
+    type Test$$V
+    private[this] type V = Test$$V
+  }
+}

@@ -1,0 +1,21 @@
+package <empty> {
+  class Test[T1, T2](x: Int, z: Double)(f: String) extends AnyRef() { 
+    this: Test[Test$$T1, Test$$T2] =>
+   
+    type Test$$T1
+    private[this] type T1 = Test$$T1
+    type Test$$T2
+    private[this] type T2 = Test$$T2
+    private[this] val x: Int
+    private[this] val z: Double
+    private[this] val f: String
+    def <init>[T1, T2](x: Int)(z: Double): Unit = {
+      this[Nothing, Nothing](x, z)("gg")
+      ()
+    }
+    def <init>[T1, T2](): Unit = {
+      this[Nothing, Nothing](5)(42.0)
+      ()
+    }
+  }
+}

@@ -98,20 +98,31 @@ trait TreeConverter {
           //TODO - if there will be problems - try to add - if (th.symbol.isClass && !th.symbol.isPackageClass)
           val tTpe = getThisType(th.symbol)
           t.This(qual) withType tTpe
-        case g.Select(qual, name) =>
-          convertSelect(qual, name, tree.tpe)
-        case g.Apply(fun, args) =>
-          val tArgs = convertTrees(args)
-          val tSel = convertTree(fun)
-          val tFun = fun match {
-            //type arguments should be added to constructor invocation (if class/trait has type parameters)
-            case sel: g.Select if sel.symbol.isConstructor && sel.qualifier.tpe.typeArgs.nonEmpty =>
-              val tTypeArgs = sel.qualifier.tpe.typeArgs map { tp => t.TypeTree(convertType(tp)) }
-              t.TypeApply(tSel, tTypeArgs)
+        case s@g.Select(qual, name) =>
+          //TODO - persist tpe from symbol, not from tree
+          if (s.symbol.isConstructor) {
+            convertSelect(qual, name, s.symbol.info)
+          } else convertSelect(qual, name, tree.tpe) 
+        case apply: g.Apply =>
+          val g.treeInfo.Applied(fun, targs, argss) = apply
+          fun match {
             case _ =>
-              tSel
+              val tArgss = argss map convertTrees
+              val tFun0 = convertTree(fun)
+              val tFun = fun match {
+            	//constructor invocation new Test(x)(y)
+                //type arguments should be added to constructor invocation (if class/trait has type parameters)
+                case sel: g.Select if sel.symbol.isConstructor && sel.qualifier.tpe.typeArgs.nonEmpty =>
+                  val tTypeArgs = sel.qualifier.tpe.typeArgs map { tp => t.TypeTree(convertType(tp)) }
+                  t.TypeApply(tFun0, tTypeArgs)
+                case _ if targs.nonEmpty => 
+                  val tTargs = convertTrees(targs)
+                  t.TypeApply(tFun0, tTargs)
+                case _ =>
+                  tFun0
+              }
+              tArgss.foldLeft(tFun)(t.Apply(_,_))
           }
-          t.Apply(tFun, tArgs)
         case g.TypeApply(fun, args) =>
           val tFun = convertTree(fun)
           val tArgs = convertTrees(args)
@@ -200,7 +211,7 @@ trait TreeConverter {
           val tRhs =
             rhs match {
               //Remove super invocation from primary constructor
-              case g.Block(g.Apply(g.Select(g.Super(_, _), _), _) :: stats, expr) if tree.symbol.isPrimaryConstructor =>
+              case g.Block(g.treeInfo.Applied(g.Select(g.Super(_, _), _), _, _) :: stats, expr) if tree.symbol.isPrimaryConstructor =>
                 if (stats.nonEmpty) {
                   val tStats = convertTrees(stats)
                   val tExpr = convertTree(expr)
@@ -210,13 +221,19 @@ trait TreeConverter {
                 }
               //Change empty block to EmptyTree in constructor
               case g.Block(Nil, g.Literal(g.Constant(()))) if tree.symbol.isConstructor => t.EmptyTree
-              //Add Type parameters application to constructors
-              case g.Block((g.Apply(sel, args) :: other), expr) if tree.symbol.isConstructor && !tree.symbol.isPrimaryConstructor && tree.symbol.owner.typeParams.nonEmpty =>
+              //Add Type parameters application to constructors this(x)(y)...
+              case g.Block((g.treeInfo.Applied(sel, _, argss) :: other), expr) if tree.symbol.isConstructor && !tree.symbol.isPrimaryConstructor && tree.symbol.owner.typeParams.nonEmpty =>
                 val tSel = convertTree(sel)
-                val tArgs = convertTrees(args)
+                val tArgss = argss map convertTrees
+                /* For Dotty in some cases type params can be computed:
+                   class Test[T1, T2](x: T1, z: T2) {
+                     def this(x: T1) = this(x, "gg")
+                   }
+                   result: this[T1, String](x, "gg")
+                */
                 val tTypeParams = tree.symbol.owner.typeParams map { tp => t.TypeTree(convertType(g.definitions.NothingTpe)) }
                 val tTypeApply = t.TypeApply(tSel, tTypeParams)
-                val tApply = t.Apply(tTypeApply, tArgs)
+                val tApply = tArgss.foldLeft[t.Tree](tTypeApply)(t.Apply(_, _))
 
                 val tStats = tApply :: convertTrees(other)
                 val tExpr = convertTree(expr)

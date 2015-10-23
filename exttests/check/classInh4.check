@@ -1,0 +1,3 @@
+package <empty> {
+  class Test() extends X[Int, Double]() { this: Test =>}
+}

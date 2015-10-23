@@ -1,0 +1,6 @@
+package <empty> {
+  final lazy module val Test: Test$ = new Test$()
+  final module class Test$() extends AnyRef() { this: Test.type => 
+    def main(args: Array[String]): Unit = scala.Predef.println("Hello, world")
+  }
+}
