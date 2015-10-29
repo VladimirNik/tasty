@@ -1,0 +1,10 @@
+package <empty> {
+  class Test(y: Int) extends Y(y) { self: Test => 
+    private[this] val y: Int
+    class Test2(y: Int) extends Test(y) { self: Test.this.Test2 => 
+      private[this] val y: Int
+      private[this] val b: Int = this.y
+      private[this] val c: Int = Test.this.y
+    }
+  }
+}

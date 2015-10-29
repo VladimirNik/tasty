@@ -15,12 +15,12 @@ trait TypeConverter {
   private val generatedTypes = new java.util.IdentityHashMap[tasty.Symbol, t.Type]
 
   private def getTypeBasedOnSym(sym: tasty.Symbol)(fn: tasty.Symbol => t.Type): t.Type = {
-    generatedTypes.getOrElse(sym,
-      {
+    //generatedTypes.getOrElse(sym,
+    //  {
         val genTp = fn(sym)
-        generatedTypes += (sym -> genTp)
+    //    generatedTypes += (sym -> genTp)
         genTp
-      })
+    //  })
   }
 
   def getTermRef(sym: tasty.Symbol): t.Type =
@@ -41,6 +41,18 @@ trait TypeConverter {
 
   def getThisType(sym: tasty.Symbol): t.Type = {
     getTypeBasedOnSym(sym)(_.thisType);
+  }
+
+  def getIdentType(sym: g.Symbol): t.Type = {
+    val tSymbol = convertSymbol(sym)
+    assert(tSymbol.isTerm, s"Symbol ($tSymbol) converted to get type for Ident is not term")
+    val refInScope = scopeStack.find{_.isClass} match {
+      case Some(cls) => 
+        cls == sym.enclClass
+      case None => 
+        false
+    }
+    if (refInScope) t.TermRef(t.NoPrefix, tSymbol.name.asTermName, tSymbol) else tSymbol.termRef
   }
 
   def getThisType(sym: g.Symbol): t.Type = {

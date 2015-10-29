@@ -87,9 +87,12 @@ trait TreeConverter {
       val resTree = tree match {
         case g.Ident(name) =>
           val identSymbol = tree.symbol
+          val tIdentSymbol = convertSymbol(identSymbol)
           //TODO check the cases when termRef is the tpe for Ident
           val tTpe = if ((identSymbol ne null) && identSymbol.isTerm) {
-            getTermRef(identSymbol)
+        	// references for param accessors from the same class should
+        	// be of view t.TermRef(t.Ident, name)
+            getIdentType(identSymbol)
           } else {
             convertType(tree.tpe)
           }
@@ -195,8 +198,16 @@ trait TreeConverter {
           val tAlts = convertTrees(alts)
           t.Alternative(tAlts)
         case tree @ g.ValDef(mods, name, tpt, rhs) =>
-          val valTp = getTermRef(tree.symbol)
-
+          val valTp = tree match {
+            // Special case - primary constr parameters symbols should be persisted but all
+            // next references to them should be changed to param accessor
+            // Currently symbol for parameter of primary constr is not cached
+            case _ if isPrimaryConstrParameter(tree.symbol) =>
+              val tSymbol = convertSymImpl(tree.symbol, directParam = true)
+              getTermRef(tSymbol)
+            case _ =>
+              getTermRef(tree.symbol)
+          }
           val tTpt = convertTree(tpt).asInstanceOf[t.TypeTree]
           val tRhs = convertTree(rhs)
           t.ValDef(name, tTpt, tRhs) withType valTp

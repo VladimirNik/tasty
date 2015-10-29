@@ -93,7 +93,7 @@ trait SymbolConverter {
     newTypeParamSymbol(tOwner, newName, flags, sym)
   }
 
-  def convertSymImpl(sym: g.Symbol): t.Symbol = {
+  def convertSymImpl(sym: g.Symbol, directParam: Boolean = false): t.Symbol = {
     //TODO - fix flags
     val flags = convertModifiers(sym)
     val pos: tp.Position = sym.pos
@@ -127,11 +127,22 @@ trait SymbolConverter {
         val tOwner = convertSymbol(sym.owner)
         //TODO fix privateWithin
         newConstructor(tOwner, flags, sym, privateWithin = t.NoSymbol, coord)
+      // In Dotty:
+      // class X(x: Int) extends Y(x) - reference to x from Y(x) is param accessor symbol
+      case _ if !directParam && isPrimaryConstrParameter(sym) =>
+        val paramAccessorSymbol = sym.enclClass.info.decl(sym.name)
+        assert(paramAccessorSymbol.isParamAccessor, s"Incorrect conversion for parameter of primary constructor: ${g.showRaw(sym, printKinds = true)}")
+        convertSymbol(paramAccessorSymbol)
       case _ =>
-        val tOwner = convertSymbol(sym.owner)
-        //TODO fix privateWithin
-        newSymbol(tOwner, convertToName(sym.name), flags, sym, privateWithin = t.NoSymbol, coord)
+        generalSymbolConversion(sym, flags, coord)
     }
     resSym
+  }
+
+  def isPrimaryConstrParameter(sym: g.Symbol) = sym.isParameter && sym.owner.isPrimaryConstructor
+  def generalSymbolConversion(sym: g.Symbol, flags: dotc.core.Flags.FlagSet, coord: tp.Coord) = {
+    val tOwner = convertSymbol(sym.owner)
+    //TODO fix privateWithin
+    newSymbol(tOwner, convertToName(sym.name), flags, sym, privateWithin = t.NoSymbol, coord)
   }
 }
