@@ -11,28 +11,34 @@ checkFolder = exttestsFolder + 'check/'
 testFolder = exttestsFolder + 'tests/'
 useGenBCode = True
 
-def checkTasty( testName, testClass, fromTastyName, *testPattern ):
+def checkTasty( testName, testClass, fromTastyName, testPattern = '', quickTestMode = False ):
   #testName = test1
   #testClass = Test.scala or a/b/c/d/Test.scala
   #fromTastyName = Test
 
-  if testPattern:
-    p = re.compile(testPattern[0])
+  testAll = testPattern == ''
+  data = ''
+
+  if not testAll:
+    p = re.compile(testPattern)
     found = re.match(p, testName)
 
-  if not testPattern or (testPattern == '') or found:
+  if testAll or found:
     #path to test file (for its compilation)
     testPath = testFolder + testName
     #path to res
     checkPath = checkFolder + testName + '.check' #test1.check - file with result output
 
     #read result from file
-    try:
-      with open (checkPath, "r") as checkFile:
-        data = checkFile.read()
+    #in quickTestMode we don't need to read data we just try to see if there are problems
+    #with the compilation of unpickled trees in dotc
+    if not quickTestMode:
+      try:
+        with open (checkPath, "r") as checkFile:
+          data = checkFile.read()
 
-    except IOError:
-      data = ''
+      except IOError:
+        data = ''
 
     #commands to run
     cleanCommand = 'cd ' + testPath + " && find . -type f -name '*.class' -delete"
@@ -51,8 +57,10 @@ def checkTasty( testName, testClass, fromTastyName, *testPattern ):
     )
     (out, err) = proc.communicate()
 
+    checkedData = quickTestMode or (data != '' and ((data in out) or (data in err)))
+
     #print result
-    if data != '' and ((data in out) or (data in err)) and not (('error' in out) or ('error' in err)):
+    if checkedData and not (('error' in out) or ('error' in err)):
       okStr = 'Test: ' + testName + ' completed'
       print '\033[1;32m' + okStr + '\033[1;m'
     else:
