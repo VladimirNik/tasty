@@ -343,9 +343,9 @@ trait TreeConverter {
               }
             case _ => None
           }
-          val constrArgss: List[List[g.Tree]] = ap match {
-            case Some(g.treeInfo.Applied(_, _, argss)) => argss
-            case _                                     => Nil
+          val (constrSel, constrArgss): (Option[g.Tree], List[List[g.Tree]]) = ap match {
+            case Some(g.treeInfo.Applied(sel, _, argss)) => (Some(sel), argss)
+            case _                                     => (None, Nil)
           }
           //def isDefaultAnyRef(tree: g.Tree) = tree match {
           //  case g.Select(g.Ident(sc), name) if name == g.tpnme.AnyRef && sc == g.nme.scala_ => true
@@ -360,8 +360,13 @@ trait TreeConverter {
             case (gParent, index) if !gParent.symbol.isTrait && !isTrait =>
               val gArgs = constrArgss(index)
               val gParentTpe = gParent.tpe
-              val gParentConstructorTpe = gParent.tpe.member(g.nme.CONSTRUCTOR).tpe
-              val tParentConstructorTpe = convertType(gParentConstructorTpe)
+              val gParentConstr = constrSel match {
+                case Some(s) if s.symbol.isConstructor =>
+                  s.symbol
+                case None =>
+                  gParent.tpe.member(g.nme.CONSTRUCTOR)
+              }
+              val tParentConstructorTpe = convertType(gParentConstr.tpe)
 
               val tNewTpe = convertType(gParentTpe.typeConstructor)
               val tNew = t.New(tNewTpe)

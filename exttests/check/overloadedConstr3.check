@@ -1,0 +1,17 @@
+package <empty> {
+  class Test(y: String) extends Y(5.0, y) { self: Test => 
+    private[this] val y: String
+    def <init>(x: Int, y: String, z: Double): Unit = {
+      this("ff")
+      ()
+    }
+    def <init>(): Unit = {
+      this("gg")
+      ()
+    }
+    def <init>(y: String, z: Double): Unit = {
+      this(5, y, z)
+      ()
+    }
+  }
+}

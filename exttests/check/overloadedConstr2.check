@@ -1,0 +1,7 @@
+package <empty> {
+  class Test[T1](y: T1) extends Y[Test$$T1](y, 5) { self: Test[Test$$T1] => 
+    type Test$$T1
+    private[this] type T1 = Test$$T1
+    private[this] val y: Test$$T1
+  }
+}
