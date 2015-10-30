@@ -1,0 +1,26 @@
+package <empty> {
+  class Test() extends Object() { self: Test & Y2 & Y3 => 
+    class A(x: Object) extends Object() { self: Test.this.A & Y3 => 
+      private[this] val x: Object
+      final lazy module val T1: A.this.T1$ = new A.this.T1$()
+      final module class T1$() extends Object() { this: A.this.T1.type => 
+        class Y4() extends Object() { self: Test.A.T1.Y4 & Y3 => 
+          class T3() extends Object() { self: Y4.this.T3 & Test.A.T1.Y4 & Y3 => 
+            class T5(x: Object) extends A.this.T2(x) { self: T3.this.T5 => 
+              private[this] val x: Object
+            }
+          }
+        }
+      }
+      class T2(x: Object) extends Object() { self: A.this.T2 => 
+        private[this] val x: Object
+      }
+    }
+    class X(x: Object) extends Test.this.A(x) with Y3 { self: Test.this.X => 
+      private[this] val x: Object
+    }
+    <trait> interface trait U1() extends Object { self: Test.this.U1 =>}
+    final lazy module val U2: Test.this.U2$ = new Test.this.U2$()
+    final module class U2$() extends Object() { self: Test.this.U2.type =>}
+  }
+}

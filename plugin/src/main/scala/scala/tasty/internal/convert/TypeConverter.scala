@@ -176,7 +176,7 @@ trait TypeConverter {
       case tpe @ g.ThisType(sym) =>
         sym match {
           case _ if sym.isRoot => t.NoPrefix
-          case _ =>
+          case _ if sym.hasPackageFlag =>
             val underlying = tpe.underlying.widen
             val tUnderlying =
               convertType(underlying.typeConstructor) match {
@@ -184,6 +184,9 @@ trait TypeConverter {
                 case tr => throw new Exception(s"Converted underlying ($tr) of ${g.showRaw(tpe)} is not t.TypeRef")
               }
             t.ThisType.raw(tUnderlying)
+          case _ =>
+            val tr = convertSymbol(sym).typeRef
+            t.ThisType.raw(tr)
         }
       case g.SuperType(thisTp, superTp) =>
         val tThisTp = convertType(thisTp)
